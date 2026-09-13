@@ -10,6 +10,9 @@ async function request(origin, path, options = {}) {
   let response;
   try { response = await fetch(origin + path, {...options, credentials:'include', redirect:'error', signal:AbortSignal.timeout(20000)}); }
   catch { throw Error('network'); }
+  return decodeResponse(response);
+}
+async function decodeResponse(response) {
   if (!response.ok) {
     const error=Error(response.status === 401 ? 'login' : response.status === 403 ? 'forbidden' : response.status === 429 ? 'rate-limit' : 'http-' + response.status);
     if(response.status===429){
@@ -53,9 +56,11 @@ async function run(job) {
             });
             if(result?.success!==true)throw Error('unexpected-response');
           }else if(job.site.id==='claude'){
-            result=await request(job.site.origin,'/api/organizations/'+job.organizationId+'/chat_conversations/delete_many',{
-              method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conversation_uuids:group})
-            });
+            const response=await chrome.tabs.sendMessage(job.tab,{type:'cs-claude-delete',jobId:job.id,organizationId:job.organizationId,ids:group},{frameId:0});
+            if(!response||response.error)throw Error(response?.error||'disconnected');
+            if(!Number.isInteger(response.status))throw Error('unexpected-response');
+            result=await decodeResponse({ok:response.status>=200&&response.status<300,status:response.status,
+              headers:{get:()=>response.retryAfter},json:async()=>response.body});
             if(!Array.isArray(result?.deleted))throw Error('unexpected-response');
             acknowledged=group.filter(value=>result.deleted.includes(value));
           }else{

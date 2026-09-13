@@ -2,7 +2,11 @@ const {test}=require('node:test');const assert=require('node:assert/strict');con
 const ids=['11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222'];
 function setup(responses,settings={}){
  let listener;const calls=[],progress=[];
- const context={chrome:{storage:{local:{get:async defaults=>({...defaults,...settings}),set:async values=>Object.assign(settings,values)}},runtime:{id:'extension',onMessage:{addListener:fn=>listener=fn}},tabs:{sendMessage:async(tab,event)=>progress.push(event)}},AbortSignal,setTimeout:fn=>setTimeout(fn,0),URL,
+ const context={chrome:{storage:{local:{get:async defaults=>({...defaults,...settings}),set:async values=>Object.assign(settings,values)}},runtime:{id:'extension',onMessage:{addListener:fn=>listener=fn}},tabs:{sendMessage:async(tab,event)=>event.type==='cs-claude-delete'?(async()=>{
+ calls.push({url:'https://claude.ai/api/organizations/'+event.organizationId+'/chat_conversations/delete_many',options:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conversation_uuids:event.ids})},source:'content'});
+ const next=responses.shift();if(next instanceof Error)throw next;if(next.wait)await next.wait;
+ return {status:next.status||200,body:next.body,retryAfter:next.retryAfter};
+ })():progress.push(event)}},AbortSignal,setTimeout:fn=>setTimeout(fn,0),URL,
  fetch:async(url,options)=>{calls.push({url,options});const next=responses.shift();if(next instanceof Error)throw next;if(next.wait)await next.wait;return {headers:{get:()=>next.retryAfter||null},ok:next.status===undefined||next.status===200,status:next.status||200,json:async()=>next.body};}};
  const sandbox=vm.createContext(context);context.importScripts=()=>vm.runInContext(fs.readFileSync('src/core.js','utf8'),sandbox);
  vm.runInContext(fs.readFileSync('src/background.js','utf8'),sandbox);
@@ -56,7 +60,7 @@ test('Claude deletes only selected IDs in the explicitly selected workspace',asy
  const result=await s.send({type:'cs-delete',jobId:'claude',ids,organizationId:org},{...s.sender,url:'https://claude.ai/new'});
  assert.equal(result.completed.length,2);assert.equal(s.calls.length,1);
  assert.equal(s.calls[0].url,'https://claude.ai/api/organizations/'+org+'/chat_conversations/delete_many');
- assert.equal(s.calls[0].options.method,'POST');
+ assert.equal(s.calls[0].source,'content');assert.equal(s.calls[0].options.method,'POST');
  assert.deepEqual(JSON.parse(s.calls[0].options.body),{conversation_uuids:ids});
  assert.equal(s.calls[0].options.headers.Authorization,undefined);
 });
@@ -90,4 +94,16 @@ test('Claude uses native groups of 20 and preserves partial acknowledgments',asy
  const partial=setup([{body:{deleted:[ids[0],'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa']}}]);
  const failed=await partial.send({type:'cs-delete',jobId:'p',ids,organizationId:ids[0]},{...partial.sender,url:'https://claude.ai/'});
  assert.deepEqual(Array.from(failed.completed),[ids[0]]);assert.equal(failed.error,'unexpected-response');
+});
+test('Claude 403 stops after one native batch and never retries through the worker',async()=>{
+ const many=Array.from({length:21},(_,i)=>String(i).padStart(8,'0')+'-1111-4111-8111-111111111111');
+ const s=setup([{status:403}]);
+ const result=await s.send({type:'cs-delete',jobId:'c',ids:many,organizationId:ids[0]},{...s.sender,url:'https://claude.ai/'});
+ assert.equal(result.error,'forbidden');assert.equal(result.completed.length,0);assert.equal(s.calls.length,1);assert.equal(s.calls[0].source,'content');
+});
+test('Claude 429 honors Retry-After and prevents the next group',async()=>{
+ const many=Array.from({length:21},(_,i)=>String(i).padStart(8,'0')+'-1111-4111-8111-111111111111');
+ const s=setup([{status:429,retryAfter:'120'}]);const before=Date.now();
+ const result=await s.send({type:'cs-delete',jobId:'c',ids:many,organizationId:ids[0]},{...s.sender,url:'https://claude.ai/'});
+ assert.equal(result.error,'rate-limit');assert.equal(s.calls.length,1);assert.ok(s.settings.claudeDeleteCooldownUntil>=before+120000);
 });

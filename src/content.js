@@ -71,7 +71,7 @@
       bar.append(toggle);
     }
     bar.append(actions);
-    const headings=[...root.querySelectorAll('h2,h3,[role="heading"],button')].filter(node=> /^(聊天|聊天記錄|聊天记录|Chats|Chats and tasks|Recents|Your chats|Discussions|Vos discussions|チャット|チャット履歴|Чаты|Ваши чаты)$/i.test(node.textContent.trim()));
+    const headings=[...root.querySelectorAll('h2,h3,[role="heading"],button')].filter(node=> /^(聊天|聊天記錄|聊天记录|Chats|Chats and tasks|Recents|Your chats|Discussions|Vos discussions|チャット|チャット履歴|Чаты|Ваши чаты)$/i.test((node.querySelector('[data-group-name]')?.textContent||node.textContent).trim()));
     const heading=headings.find(node=>!own(node));
     if(heading) { const host=heading.closest('button,a')||heading;host.classList.add('cs-heading-hover');host.insertAdjacentElement('afterend',bar);bar.classList.add('cs-at-heading'); }
     else { const first=items().find(item=>root.contains(item.link));if(first){let container=first.link.closest('ol,ul');if(!container||!root.contains(container))container=first.link.parentElement;container.before(bar);}else root.prepend(bar); }
@@ -140,7 +140,29 @@
       for(const id of ids||[])if(allowed.has(id)){completed.add(id);deleted.add(id);selected.delete(id);}
       hideDeleted();message.textContent=t('progress',{done:completed.size,total:snapshot.length});sync();
     };
-    const progress=event=>{if(event.type==='cs-progress'&&event.jobId===jobId)update(event.completed);};
+    const submitted=new Set();
+    const progress=(event,sender,reply)=>{
+      if(sender?.id!==chrome.runtime.id||event.jobId!==jobId)return false;
+      if(event.type==='cs-progress'){update(event.completed);return false;}
+      if(event.type!=='cs-claude-delete'||site.id!=='claude')return false;
+      if(stopped||organizationId()!==approvedOrganization||event.organizationId!==approvedOrganization||
+        !Array.isArray(event.ids)||!event.ids.length||event.ids.length>20||new Set(event.ids).size!==event.ids.length||
+        event.ids.some(id=>!allowed.has(id)||submitted.has(id))){reply({error:'invalid-request'});return false;}
+      event.ids.forEach(id=>submitted.add(id));
+      // Same-origin content-script fetch uses the website session; never copy cookies or spoof headers.
+      void (async()=>{
+        try{
+          const response=await fetch('/api/organizations/'+approvedOrganization+'/chat_conversations/delete_many',{
+            method:'POST',credentials:'same-origin',mode:'same-origin',redirect:'error',
+            headers:{'Content-Type':'application/json'},body:JSON.stringify({conversation_uuids:event.ids}),
+            signal:AbortSignal.timeout(20000)
+          });
+          const body=response.ok?await response.json():null;
+          reply({status:response.status,retryAfter:response.headers.get('Retry-After'),body});
+        }catch{reply({error:'network'});}
+      })();
+      return true;
+    };
     chrome.runtime.onMessage.addListener(progress);
     let result;
     try { result=await chrome.runtime.sendMessage({type:'cs-delete',jobId,ids:[...allowed],organizationId:approvedOrganization}); if(!result)throw Error('disconnected');update(result.completed); }

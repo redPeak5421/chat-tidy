@@ -167,3 +167,29 @@ test('Claude workspace change while confirming clears selection without deleting
  assert.equal(calls,0);assert.equal(d.querySelectorAll('.cs-checkbox:checked').length,0);
  }finally{dom.window.close()}
 });
+test('Claude title icon glyph does not move toolbar into first conversation',async()=>{
+ const {dom,d}=await setup({url:'https://claude.ai/new',markup:`<div data-testid="sidebar"><div class="labelrow"><button data-group-toggle><span data-group-name>Chats and tasks</span><span data-cds="Icon">\ue02a</span></button><button>View all</button></div><div><a href="/chat/${id('1')}">Example</a></div></div>`});
+ try{assert.equal(d.querySelector('.cs-toolbar').parentElement,d.querySelector('.labelrow'));assert.equal(d.querySelector('[data-group-toggle]').nextElementSibling,d.querySelector('.cs-toolbar'));}finally{dom.window.close()}
+});
+test('Claude deletion runs in the confirmed page with exact IDs and rejects unapproved or replayed batches',async()=>{
+ let receive;const calls=[];
+ const {dom,w,d}=await setup({url:'https://claude.ai/new',markup:`<div data-testid="sidebar"><h2>Chats</h2><a href="/chat/${id('1')}">Example</a></div>`,beforeLoad:w=>{
+ w.document.cookie=`lastActiveOrg=${id('9')};path=/`;
+ w.chrome.runtime.onMessage.addListener=fn=>receive=fn;
+ w.chrome.runtime.onMessage.removeListener=()=>{};
+ w.fetch=async(url,options)=>{calls.push({url,options});return {status:200,ok:true,headers:{get:()=>null},json:async()=>({deleted:[id('1')],failed:[]})}};
+ }});
+ try{
+ let job,finish;w.chrome.runtime.sendMessage=message=>{job=message;return new Promise(r=>finish=r)};
+ d.querySelector('.cs-checkbox').click();d.querySelector('[data-cs-action="delete"]').click();assert.equal(calls.length,0);
+ d.querySelector('[data-cs-confirm]').click();
+ const send=(ids,extra={})=>new Promise(resolve=>{if(receive({type:'cs-claude-delete',jobId:job.jobId,organizationId:id('9'),ids,...extra},{id:'test'},resolve)!==true)resolve(undefined)});
+ await send([id('2')]);assert.equal(calls.length,0);
+ const result=await send([id('1')]);assert.equal(result.status,200);assert.equal(calls.length,1);
+ assert.equal(calls[0].url,`/api/organizations/${id('9')}/chat_conversations/delete_many`);
+ assert.equal(calls[0].options.credentials,'same-origin');assert.equal(calls[0].options.method,'POST');
+ assert.deepEqual(JSON.parse(calls[0].options.body),{conversation_uuids:[id('1')]});
+ await send([id('1')]);assert.equal(calls.length,1);
+ finish({completed:[id('1')]});await wait(30);
+ }finally{dom.window.close()}
+});
