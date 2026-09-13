@@ -258,5 +258,14 @@
   },
   "grokPeriodOlder": {
     "message": "更早"
+  },
+  "supportWindow": {
+    "message": "在獨立視窗支持"
+  },
+  "afdianName": {
+    "message": "愛發電"
+  },
+  "supportOpenError": {
+    "message": "無法開啟視窗，請重試。"
   }
 }

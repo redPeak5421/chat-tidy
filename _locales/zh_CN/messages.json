@@ -258,5 +258,14 @@
   },
   "grokPeriodOlder": {
     "message": "更早"
+  },
+  "supportWindow": {
+    "message": "在独立窗口支持"
+  },
+  "afdianName": {
+    "message": "爱发电"
+  },
+  "supportOpenError": {
+    "message": "无法打开窗口，请重试。"
   }
 }

@@ -258,5 +258,14 @@
   },
   "grokPeriodOlder": {
     "message": "Ранее"
+  },
+  "supportWindow": {
+    "message": "Поддержать в отдельном окне"
+  },
+  "afdianName": {
+    "message": "Afdian"
+  },
+  "supportOpenError": {
+    "message": "Не удалось открыть окно. Повторите попытку."
   }
 }

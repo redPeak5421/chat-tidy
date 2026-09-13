@@ -258,5 +258,14 @@
   },
   "grokPeriodOlder": {
     "message": "それ以前"
+  },
+  "supportWindow": {
+    "message": "別ウィンドウで支援"
+  },
+  "afdianName": {
+    "message": "愛発電"
+  },
+  "supportOpenError": {
+    "message": "ウィンドウを開けませんでした。再試行してください。"
   }
 }
