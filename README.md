@@ -33,4 +33,8 @@ Tests use fictional conversations and simulated responses; they do not delete re
 
 Translations are maintained in `_locales/*/messages.json`. Run `npm run build:i18n` after editing translations. The generated bundle preserves manual language switching; Chrome uses the same catalogs for manifest text. The Chinese catalogs cover simplified and traditional scripts, without separate regional editions.
 
-Package `manifest.json`, `popup.html`, `src/`, `_locales/` and `icons/` for distribution.
+Package `manifest.json`, `popup.html`, `src/`, `_locales/`, `icons/`, `LICENSE` and `THIRD_PARTY_NOTICES.md` for distribution.
+
+## License
+
+Licensed under the [Apache License 2.0](LICENSE). Third-party components retain their respective licenses; see [Third-party notices](THIRD_PARTY_NOTICES.md).

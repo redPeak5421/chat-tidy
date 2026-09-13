@@ -63,3 +63,5 @@ AGENTS.override.md
 sessions/
 transcripts/
 chat-history/
+
+.omc/
