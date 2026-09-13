@@ -42,8 +42,8 @@
   }
   function contextAlive(){
     if(expired)return false;
-    try{if(chrome.runtime.id)return true;}catch{}
-    expired=true;observer?.disconnect();selected.clear();settings.enabled=false;
+    try{if(browser.runtime.id)return true;}catch{}
+    expired=true;ChatTidyBatch.cancel();observer?.disconnect();selected.clear();settings.enabled=false;
     void grokHistory?.setEnabled(false);cleanup();
     const notice=el('section','cs-status cs-context-expired',t('refresh'));notice.dataset.csOwned='true';
     const close=el('button','cs-button',t('close'));close.onclick=()=>notice.remove();notice.append(close);document.body.append(notice);
@@ -153,49 +153,24 @@
   }
   async function deleteBatch(snapshot,approvedOrganization,action='delete'){
     if(!contextAlive()||busy)return;busy=true;stopped=false;sync();
-    const jobId=crypto.randomUUID(), allowed=new Set(snapshot.map(item=>item.id)), completed=new Set();
+    const allowed=new Set(snapshot.map(item=>item.id)), completed=new Set();
     const status=el('section','cs-status');status.dataset.csOwned='true';status.setAttribute('aria-label',t('manage'));
     const message=el('p','',t('progress',{done:0,total:snapshot.length}));message.setAttribute('role','status');
     const hint=el('p','cs-hint',t(action==='archive'?'archiveWorking':'working')),stop=el('button','cs-button',t('stop'));stop.type='button';
-    stop.onclick=()=>{stopped=true;stop.disabled=true;try{void chrome.runtime.sendMessage({type:'cs-cancel',jobId}).catch(()=>{contextAlive();});}catch{contextAlive();}};
+    stop.onclick=()=>{stopped=true;stop.disabled=true;ChatTidyBatch.cancel();};
     status.append(message,hint,stop);(site.id==='grok'?document.querySelector('[role="dialog"]:has([cmdk-list])')||document.body:document.body).append(status);
     const update=ids=>{
       if(!status.isConnected)document.body.append(status);
       for(const id of ids||[])if(allowed.has(id)){completed.add(id);deleted.add(id);selected.delete(id);}
       hideDeleted();message.textContent=t('progress',{done:completed.size,total:snapshot.length});sync();
     };
-    const submitted=new Set();
-    const progress=(event,sender,reply)=>{
-      if(sender?.id!==chrome.runtime.id||event.jobId!==jobId)return false;
-      if(event.type==='cs-progress'){update(event.completed);return false;}
-      if(event.type!=='cs-claude-delete'||site.id!=='claude')return false;
-      if(!Array.isArray(event.ids)){reply({error:'invalid-request'});return false;}
-      const requestAction=event.action||'delete';
-      const task=Array.isArray(event.ids)&&event.ids.length===1&&core.isCoworkId(event.ids[0]);
-      if(requestAction!==action||(action==='archive'&&!task)||(!task&&event.ids?.some(id=>core.isCoworkId(id)))||stopped||organizationId()!==approvedOrganization||event.organizationId!==approvedOrganization||
-        !Array.isArray(event.ids)||!event.ids.length||event.ids.length>20||new Set(event.ids).size!==event.ids.length||
-        event.ids.some(id=>!allowed.has(id)||submitted.has(id))){reply({error:'invalid-request'});return false;}
-      event.ids.forEach(id=>submitted.add(id));
-      // Same-origin content-script fetch uses the website session; never copy cookies or spoof headers.
-      void (async()=>{
-        try{
-          const path=task?'/v1/code/sessions/'+event.ids[0]+(action==='archive'?'/archive':''):'/api/organizations/'+approvedOrganization+'/chat_conversations/delete_many';
-          const headers={'Content-Type':'application/json',...(task?{'anthropic-version':'2023-06-01','anthropic-beta':'ccr-byoc-2025-07-29','anthropic-client-feature':'ccr','x-organization-uuid':approvedOrganization}:{})};
-          const response=await fetch(path,{
-            method:task&&action==='delete'?'DELETE':'POST',credentials:'same-origin',mode:'same-origin',redirect:'error',
-            headers,body:JSON.stringify(task?{}:{conversation_uuids:event.ids}),
-            signal:AbortSignal.timeout(20000)
-          });
-          const body=response.ok?(task?{deleted:event.ids,failed:[]}:await response.json()):null;
-          reply({status:response.status,retryAfter:response.headers.get('Retry-After'),body});
-        }catch{reply({error:'network'});}
-      })();
-      return true;
-    };
     let result;
-    try { chrome.runtime.onMessage.addListener(progress);result=await chrome.runtime.sendMessage({type:action==='archive'?'cs-archive':'cs-delete',jobId,ids:[...allowed],organizationId:approvedOrganization}); if(!result)throw Error('disconnected');update(result.completed); }
-    catch { result={error:'connection-lost'}; }
-    finally { try{chrome.runtime.onMessage.removeListener(progress);}catch{}busy=false; }
+    try {
+      result=await ChatTidyBatch.run({action,ids:[...allowed],organizationId:approvedOrganization,onProgress:update,
+        canRun:()=>!expired&&contextAlive()&&organizationId()===approvedOrganization});
+      update(result.completed);
+    } catch { result={error:'connection-lost'}; }
+    finally { busy=false; }
     if(!contextAlive())return;
     message.textContent=t(result.cancelled?(action==='archive'?'archiveStopped':'stopped'):result.error?'failed':'done',{n:completed.size});
     hint.textContent=result.retryAt ? t('cooldown',{time:new Date(result.retryAt).toLocaleTimeString(i18n.normalize(settings.language))}) : result.error ? t('apiError')+' ('+result.error+')' : '';if(!result.error)hint.remove();
@@ -203,6 +178,7 @@
     if(!settings.enabled){selected.clear();document.querySelectorAll('.cs-checkbox,.cs-toolbar').forEach(node=>node.remove());}
     else scan();sync();void grokHistory?.setEnabled(settings.enabled&&settings.grokShowAll);
   }
+  window.addEventListener('pagehide',()=>{ChatTidyBatch.cancel();});
   // Measure unshifted row bounds so moving titles never move the trigger zone.
   let pointer=null,waveFrame=0;
   function paintWave(){
@@ -220,7 +196,7 @@
     });
   }
   function queueWave(){if(!waveFrame){waveFrame=requestAnimationFrame(paintWave);}}
-  document.addEventListener('pointermove',event=>{pointer={x:event.clientX,y:event.clientY};queueWave();},{passive:true,capture:true});
+  document.addEventListener('pointermove',event=>{if(event.pointerType==='touch')return;pointer={x:event.clientX,y:event.clientY};queueWave();},{passive:true,capture:true});
   document.addEventListener('pointerleave',()=>{pointer=null;queueWave();});
   window.addEventListener('blur',()=>{pointer=null;queueWave();});
   document.addEventListener('scroll',()=>{queueWave();},true);
@@ -229,10 +205,10 @@
   // Prevent parent React link handlers, while preserving the checkbox's native toggle.
   document.addEventListener('click',event=>{if(event.target.matches?.('.cs-checkbox')){event.stopPropagation();const box=event.target;if(!busy){box.checked?selected.set(box.dataset.csId,items().find(item=>item.id===box.dataset.csId)?.title||''):selected.delete(box.dataset.csId);sync();}}},true);
   const grokHistory=site.id==='grok'&&globalThis.ChatTidyGrok?ChatTidyGrok.create({t,changed:schedule,error:code=>{const notice=el('section','cs-status',t('grokLoadError')+' ('+code+')');notice.dataset.csOwned='true';const close=el('button','cs-button',t('close'));close.onclick=()=>notice.remove();notice.append(close);document.body.append(notice);}}):null;
-  chrome.runtime.onMessage.addListener((message,sender,reply)=>{if(message?.type==='cs-site'&&sender.id===chrome.runtime.id){reply({site:site.id});}return false;});
+  browser.runtime.onMessage.addListener((message,sender,reply)=>{if(message?.type==='cs-site'&&sender.id===browser.runtime.id){reply({site:site.id});}return false;});
   document.addEventListener('pointerdown',event=>{if(event.target.matches?.('.cs-checkbox'))event.stopPropagation();},true);
   document.addEventListener('keydown',event=>{if(event.target.matches?.('.cs-checkbox'))event.stopPropagation();},true);
-  chrome.storage.local.get(settings).then(saved=>{
+  browser.storage.local.get(settings).then(saved=>{
     settings={...settings,...saved};
     observer=new MutationObserver(records=>{
       if(records.some(record=>{
@@ -249,7 +225,7 @@
       }))schedule();
     });scan();watch();void grokHistory?.setEnabled(settings.enabled&&settings.grokShowAll);
   }).catch(()=>{ /* Invalidated extension: refreshing the page re-injects it. */ });
-  chrome.storage.onChanged.addListener((changes,area)=>{
+  browser.storage.onChanged.addListener((changes,area)=>{
     if(area!=='local'||!['enabled','language','checkboxMode','grokShowAll'].some(key=>changes[key]))return;
     for(const key of ['enabled','language','checkboxMode','grokShowAll'])if(changes[key])settings[key]=changes[key].newValue;
     if(busy)return;

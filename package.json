@@ -4,10 +4,14 @@
   "private": true,
   "scripts": {
     "test": "node --test tests/*.test.cjs",
-    "check": "node scripts/build-i18n.cjs --check && node --check src/core.js && node --check src/i18n.js && node --check src/content.js && node --check src/popup.js && node --check src/background.js && node --check src/grok.js && node --check src/support.js",
-    "build:i18n": "node scripts/build-i18n.cjs"
+    "check": "node scripts/build-i18n.cjs --check && node --check src/core.js && node --check src/i18n.js && node --check src/content.js && node --check src/popup.js && node --check src/batch.js && node --check src/grok.js && node --check src/support.js",
+    "build:i18n": "node scripts/build-i18n.cjs",
+    "test:webkit": "playwright test",
+    "build:safari:macos": "xcodebuild -project \"safari/Chat Tidy/Chat Tidy.xcodeproj\" -scheme \"Chat Tidy (macOS)\" -configuration Debug -derivedDataPath build/safari-macos CODE_SIGNING_ALLOWED=NO build",
+    "build:safari:ios": "xcodebuild -project \"safari/Chat Tidy/Chat Tidy.xcodeproj\" -scheme \"Chat Tidy (iOS)\" -sdk iphonesimulator -configuration Debug -derivedDataPath build/safari-ios CODE_SIGNING_ALLOWED=NO build"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "jsdom": "^26.1.0"
   },
   "license": "Apache-2.0"

@@ -65,3 +65,9 @@ transcripts/
 chat-history/
 
 .omc/
+
+# Xcode user state and WebKit reports
+xcuserdata/
+*.xcuserstate
+playwright-report/
+test-results/

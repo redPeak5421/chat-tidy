@@ -2,12 +2,12 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-function load(chrome) {
-  const context = {chrome, navigator:{language:'ja'}};
+function load(browser) {
+  const context = {browser, navigator:{language:'ja'}};
   vm.runInNewContext(fs.readFileSync('src/i18n.js','utf8'), context);
   return context.ChatTidyI18n;
 }
-test('Chrome catalogs resolve every manifest message with matching placeholders', () => {
+test('Safari catalogs resolve every manifest message with matching placeholders', () => {
   const manifest = JSON.parse(fs.readFileSync('manifest.json'));
   assert.equal(manifest.default_locale, 'en');
   for (const locale of ['en','zh_CN','zh_TW','fr','ja','ru']) {

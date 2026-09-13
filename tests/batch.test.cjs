@@ -1,18 +1,18 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');const vm=require('node:vm');const fs=require('node:fs');
 const ids=['11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222'];
 function setup(responses,settings={}){
- let listener;const calls=[],progress=[];
- const context={chrome:{storage:{local:{get:async defaults=>({...defaults,...settings}),set:async values=>Object.assign(settings,values)}},runtime:{id:'extension',onMessage:{addListener:fn=>listener=fn}},tabs:{sendMessage:async(tab,event)=>event.type==='cs-claude-delete'?(async()=>{
- calls.push({url:'https://claude.ai/api/organizations/'+event.organizationId+'/chat_conversations/delete_many',options:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conversation_uuids:event.ids})},source:'content'});
- const next=responses.shift();if(next instanceof Error)throw next;if(next.wait)await next.wait;
- return {status:next.status||200,body:next.body,retryAfter:next.retryAfter};
- })():progress.push(event)}},AbortSignal,setTimeout:fn=>setTimeout(fn,0),URL,
- fetch:async(url,options)=>{calls.push({url,options});const next=responses.shift();if(next instanceof Error)throw next;if(next.wait)await next.wait;return {headers:{get:()=>next.retryAfter||null},ok:next.status===undefined||next.status===200,status:next.status||200,json:async()=>next.body};}};
- const sandbox=vm.createContext(context);context.importScripts=()=>vm.runInContext(fs.readFileSync('src/core.js','utf8'),sandbox);
- vm.runInContext(fs.readFileSync('src/background.js','utf8'),sandbox);
- const sender={id:'extension',tab:{id:7},frameId:0,url:'https://chatgpt.com/'};
- const send=(message,source=sender)=>new Promise(resolve=>{if(listener(message,source,resolve)!==true)resolve(undefined)});
- return {send,calls,progress,sender,settings};
+ const calls=[],progress=[];let origin='https://chatgpt.com';let busy=false;
+ const context={browser:{storage:{local:{get:async defaults=>({...defaults,...settings}),set:async values=>Object.assign(settings,values)}}},
+ location:{get href(){return origin+'/';}},navigator:{locks:{request:async(name,options,callback)=>{if(busy)return callback(null);busy=true;try{return await callback({name});}finally{busy=false;}}}},
+ AbortSignal,URL,setTimeout:fn=>setTimeout(fn,0),fetch:async(path,options)=>{
+ const url=origin+path;calls.push({url,options,source:'content'});const next=responses.shift();if(next instanceof Error)throw next;if(next.wait)await next.wait;
+ return {headers:{get:()=>next.retryAfter||null},ok:next.status===undefined||next.status>=200&&next.status<300,status:next.status||200,json:async()=>next.body};}};
+ const sandbox=vm.createContext(context);
+ for(const file of ['core','batch'])vm.runInContext(fs.readFileSync('src/'+file+'.js','utf8'),sandbox);
+ const sender={url:origin+'/'};
+ const send=(message,source=sender)=>{origin=new URL(source.url).origin;if(message.type==='cs-cancel'){context.ChatTidyBatch.cancel();return Promise.resolve({ok:true});}
+ return context.ChatTidyBatch.run({action:message.type==='cs-archive'?'archive':'delete',ids:message.ids,organizationId:message.organizationId,onProgress:ids=>progress.push(ids)});};
+ return {send,calls,progress,sender,settings,context};
 }
 test('background authenticates once and PATCHes precisely the approved IDs',async()=>{
  const s=setup([{body:{accessToken:'test-token'}},{body:{success:true}},{body:{success:true}}]);
@@ -21,9 +21,12 @@ test('background authenticates once and PATCHes precisely the approved IDs',asyn
  for(let i=0;i<2;i++){const call=s.calls[i+1];assert.equal(call.url,'https://chatgpt.com/backend-api/conversation/'+ids[i]);assert.equal(call.options.method,'PATCH');assert.deepEqual(JSON.parse(call.options.body),{is_visible:false});assert.equal(call.options.headers.Authorization,'Bearer test-token');}
  assert.ok(!JSON.stringify(s.progress).includes('test-token'));
 });
-test('rejects hostile origins, frames and malformed IDs without network requests',async()=>{
- const s=setup([]);for(const sender of [{...s.sender,url:'https://evil.test/'},{...s.sender,frameId:1},{...s.sender,id:'other'}])await s.send({type:'cs-delete',jobId:'b',ids},sender);
- const invalid=await s.send({type:'cs-delete',jobId:'b',ids:['../../delete-all']});assert.equal(invalid.error,'invalid-request');assert.equal(s.calls.length,0);
+test('rejects unsupported origins and malformed or duplicate IDs without network requests',async()=>{
+ const s=setup([]);const unsupported=await s.send({type:'cs-delete',ids},{url:'https://evil.test/'});
+ assert.equal(unsupported.error,'unsupported-site');
+ for(const bad of [['../../delete-all'],[ids[0],ids[0]],[]]){
+ const result=await s.send({type:'cs-delete',ids:bad});assert.equal(result.error,'invalid-request');}
+ assert.equal(s.calls.length,0);
 });
 test('stops at a failed request and reports only acknowledged completions',async()=>{
  const s=setup([{body:{accessToken:'token'}},{body:{success:true}},{status:429}]);const result=await s.send({type:'cs-delete',jobId:'b',ids});assert.equal(result.error,'rate-limit');assert.deepEqual(Array.from(result.completed),[ids[0]]);
@@ -32,7 +35,7 @@ test('expired login and unexpected success body never claim deletion',async()=>{
  for(const responses of [[{body:{}}],[{body:{accessToken:'token'}},{body:{}}]]){const s=setup(responses);const result=await s.send({type:'cs-delete',jobId:'b',ids});assert.equal(result.completed.length,0);assert.ok(result.error);}
 });
 test('cancel prevents subsequent requests while preserving the in-flight result',async()=>{
- const s=setup([{body:{accessToken:'token'}},{body:{success:true}}]);const pending=s.send({type:'cs-delete',jobId:'b',ids});await s.send({type:'cs-cancel',jobId:'b'});const result=await pending;assert.equal(result.cancelled,true);assert.equal(s.calls.length,1);
+ const s=setup([{body:{accessToken:'token'}},{body:{success:true}}]);const pending=s.send({type:'cs-delete',jobId:'b',ids});await s.send({type:'cs-cancel',jobId:'b'});const result=await pending;assert.equal(result.cancelled,true);assert.equal(s.calls.length,0);
 });
 
 test('launches only configured concurrency and waits for the entire wave',async()=>{
@@ -124,11 +127,45 @@ test('Claude mixed deletion separates native chat batches from individual Cowork
  for(const concurrency of [1,3]){
  const s=setup([{body:{deleted:ids}},{body:{deleted:[task]}}],{concurrency});
  const result=await s.send({type:'cs-delete',jobId:'c',ids:[...ids,task],organizationId:ids[0]},{...s.sender,url:'https://claude.ai/'});
- assert.equal(result.completed.length,3);assert.deepEqual(s.calls.map(c=>JSON.parse(c.options.body).conversation_uuids),[ids,[task]]);
+ assert.equal(result.completed.length,3);assert.deepEqual(JSON.parse(s.calls[0].options.body).conversation_uuids,ids);assert.equal(s.calls[1].url,'https://claude.ai/v1/code/sessions/'+task);
  }
 });
 test('Claude archive accepts Cowork IDs only and keeps their case',async()=>{
  const task='cse_01AAAAAAAAAAAAAAAAAAAAAA';const s=setup([{body:{deleted:[task]}}]);
  const result=await s.send({type:'cs-archive',jobId:'a',ids:[task],organizationId:ids[0]},{...s.sender,url:'https://claude.ai/'});
  assert.deepEqual(Array.from(result.completed),[task]);
+});
+
+test('all requests are direct same-origin fetches with no extension messaging',async()=>{
+ const s=setup([{body:{accessToken:'t'}},{body:{success:true}}]);
+ await s.send({type:'cs-delete',ids:[ids[0]]});
+ for(const {options} of s.calls){assert.equal(options.credentials,'same-origin');assert.equal(options.mode,'same-origin');assert.equal(options.redirect,'error');}
+});
+test('native lock rejects overlapping batches and releases after completion',async()=>{
+ let release;const wait=new Promise(r=>release=r);const s=setup([{body:{accessToken:'t'},wait},{body:{success:true}}]);
+ const pending=s.send({type:'cs-delete',ids:[ids[0]]});await new Promise(r=>setImmediate(r));
+ const other=await s.send({type:'cs-delete',ids:[ids[1]]});assert.equal(other.error,'busy');
+ release();assert.equal((await pending).completed.length,1);
+});
+test('workspace validity is rechecked after login and before each wave',async()=>{
+ const s=setup([{body:{deleted:[ids[0]]}}],{concurrency:1});s.context.location={href:'https://claude.ai/'};
+ const result=await s.context.ChatTidyBatch.run({action:'delete',ids,organizationId:ids[0],canRun:()=>false});
+ assert.equal(result.error,'workspace-changed');assert.equal(s.calls.length,0);
+});
+
+test('missing native locks fails closed without sending a request',async()=>{
+ const s=setup([]);s.context.navigator.locks=undefined;
+ const result=await s.send({type:'cs-delete',ids});assert.equal(result.error,'connection-lost');assert.equal(s.calls.length,0);
+});
+test('invalidating the context during login prevents destructive requests',async()=>{
+ let release;const gate=new Promise(r=>release=r);let valid=true;
+ const s=setup([{body:{accessToken:'t'},wait:gate}]);
+ const pending=s.context.ChatTidyBatch.run({ids,canRun:()=>valid});await new Promise(r=>setImmediate(r));
+ valid=false;release();const result=await pending;assert.equal(result.error,'workspace-changed');assert.equal(s.calls.length,1);assert.equal(result.completed.length,0);
+});
+test('workspace changes after a Claude wave stop all later groups',async()=>{
+ const many=Array.from({length:21},(_,i)=>String(i).padStart(8,'0')+'-1111-4111-8111-111111111111');
+ const s=setup([{body:{deleted:many.slice(0,20)}}]);s.context.location={href:'https://claude.ai/'};let valid=true;
+ const result=await s.context.ChatTidyBatch.run({ids:many,organizationId:ids[0],canRun:()=>valid,onProgress:()=>{valid=false;}});
+ assert.equal(result.error,'workspace-changed');assert.equal(result.completed.length,20);assert.equal(s.calls.length,1);
 });

@@ -13,7 +13,7 @@ globalThis.ChatTidyI18n = (() => {
   function browserLanguage() {
     if(cachedLanguage)return cachedLanguage;
     let language=globalThis.navigator?.language || 'en';
-    try{language=globalThis.chrome?.i18n?.getUILanguage?.() || language;}catch{nativeAvailable=false;}
+    try{language=globalThis.browser?.i18n?.getUILanguage?.() || language;}catch{nativeAvailable=false;}
     return cachedLanguage=normalize(language);
   }
   const dict = Object.fromEntries(Object.entries(catalogs).map(([lang, messages]) => [lang,
@@ -26,7 +26,7 @@ globalThis.ChatTidyI18n = (() => {
     // Chrome uses the browser locale; the bundled catalogs preserve manual language switching.
     const browserLocale=browserLanguage();
     try {
-    const native = nativeAvailable && globalThis.chrome?.i18n;
+    const native = nativeAvailable && globalThis.browser?.i18n;
     if (native?.getMessage && locale === browserLocale) {
       const substitutions = [];
       for (const [name, placeholder] of Object.entries(entry.placeholders || {})) {

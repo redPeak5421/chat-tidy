@@ -4,9 +4,13 @@ English | [简体中文](README.zh-CN.md)
 
 A browser extension for selecting and deleting ChatGPT, Claude and Grok conversations from the sidebar.
 
-## Install
+## Installation
 
-In Chrome or another Chromium browser, enable Developer mode on the extensions page and load this directory as an unpacked extension. Refresh the website after installing or updating.
+The `safari-main` branch targets Safari 16.4 or later, with macOS 13.3 and iOS/iPadOS 16.4 deployment targets. The Chromium version remains on `main`.
+
+Open `safari/Chat Tidy/Chat Tidy.xcodeproj` in Xcode, select the macOS or iOS scheme, and configure signing for both app and extension targets. Build and run, enable Chat Tidy in Safari extension settings, and grant access to each supported website. Reload website tabs after installing or updating.
+
+See [Safari development and validation](safari/README.md) for build commands, signing, architecture and verification limits.
 
 ## Usage
 
@@ -41,9 +45,9 @@ npm test
 
 Tests use fictional conversations and simulated responses; they do not delete real chats.
 
-Translations are maintained in `_locales/*/messages.json`. Run `npm run build:i18n` after editing translations. The generated bundle preserves manual language switching; Chrome uses the same catalogs for manifest text. The Chinese catalogs cover simplified and traditional scripts, without separate regional editions.
+Translations are maintained in `_locales/*/messages.json`. Run `npm run build:i18n` after editing translations. The generated bundle preserves manual language switching; Safari uses the same catalogs for manifest text. The Chinese catalogs cover simplified and traditional scripts, without separate regional editions.
 
-Package `manifest.json`, `popup.html`, `src/`, `_locales/`, `icons/`, `LICENSE` for distribution.
+The Safari project copies only `manifest.json`, `popup.html`, `src/`, `_locales/`, `icons/` and `LICENSE` into the extension. Use Xcode signing and Archive for distribution.
 
 ## Support
 
@@ -57,3 +61,9 @@ If Chat Tidy is useful to you, you can support its development on Ko-fi or Afdia
 ## License
 
 Licensed under the [Apache License 2.0](LICENSE). The GitHub logo is an official brand asset used to link to this repository, subject to [GitHub’s brand guidelines](https://brand.github.com/foundations/logo). It is not covered by this project’s Apache license.
+
+## Safari execution
+
+All three sites execute requests directly from the initiating page’s isolated content script using same-origin credentials. There is no background worker, runtime API polyfill, page-script relay, or native messaging bridge. The installation host uses AppKit/UIKit controls.
+
+Native Web Locks prevent overlapping batches within the same website storage partition. Different websites can run independently; private browsing and separate storage partitions have independent locks. Leaving the page cancels subsequent requests, and batches never resume automatically. Already submitted requests may finish. Keep the initiating website open until processing ends.

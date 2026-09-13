@@ -2,11 +2,13 @@ const {test}=require('node:test');const assert=require('node:assert/strict');con
 const id=n=>`${n.repeat(8)}-${n.repeat(4)}-4${n.repeat(3)}-8${n.repeat(3)}-${n.repeat(12)}`;
 const row=n=>`<div class="row"><a href="/c/${id(n)}"><span>Chat ${n}</span></a><button aria-haspopup="menu" data-owner="${n}">…</button></div>`;
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
-async function setup({beforeLoad,getSettings,url='https://chatgpt.com/',markup}={}){
+async function setup({realBatch=false,beforeLoad,getSettings,url='https://chatgpt.com/',markup}={}){
  const dom=new JSDOM(markup??`<nav><h2>聊天</h2><div id="history">${row('1')}${row('2')}</div></nav><main><a href="/c/${id('3')}">Reference link</a></main>`,{url,runScripts:'outside-only',pretendToBeVisual:true});const w=dom.window;
  w.HTMLElement.prototype.getClientRects=function(){return this.hidden?[]:[{width:100,height:30}]};w.HTMLElement.prototype.scrollIntoView=function(){};w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'))};
- let onChange;w.chrome={storage:{local:{get:async()=>({language:'en',enabled:true})},onChanged:{addListener:fn=>onChange=fn}},runtime:{id:'test',onMessage:{addListener:()=>{},removeListener:()=>{}},sendMessage:async message=>({completed:message.ids||[]})}};
- if(getSettings)w.chrome.storage.local.get=getSettings;
+ let onChange;w.browser={storage:{local:{get:async()=>({language:'en',enabled:true})},onChanged:{addListener:fn=>onChange=fn}},runtime:{id:'test',onMessage:{addListener:()=>{},removeListener:()=>{}},sendMessage:async message=>({completed:message.ids||[]})}};
+ if(getSettings)w.browser.storage.local.get=getSettings;
+ w.ChatTidyBatch={run:async job=>({completed:job.ids}),cancel:()=>{}};
+ if(realBatch){w.navigator.locks={request:async(name,options,fn)=>fn({name})};w.AbortSignal=AbortSignal;w.eval(fs.readFileSync('src/batch.js','utf8'));}
  beforeLoad?.(w);
  for(const f of ['core','i18n','content'])if(fs.existsSync(`src/${f}.js`))w.eval(fs.readFileSync(`src/${f}.js`,'utf8'));
  await wait(150);return {dom,w,d:w.document,change:async changes=>{onChange?.(changes,'local');await wait(150)}};
@@ -40,18 +42,18 @@ test('settings switch language and disable removes controls',async()=>{
 test('all six language packs have every string',async()=>{
  const {dom,w}=await setup();try{const api=w.ChatTidyI18n;const keys=Object.keys(api.dict.en);assert.equal(Object.keys(api.languages).length,6);for(const pack of Object.values(api.dict))for(const key of keys)assert.ok(pack[key],key);}finally{dom.window.close()}
 });
-test('batch sends only selected IDs to background without native UI or scroll',async()=>{
+test('batch sends only selected IDs to the direct executor without native UI or scroll',async()=>{
  const {dom,w,d}=await setup();try{
- let calls=[],native=0;w.chrome.runtime.sendMessage=async message=>{calls.push(message);return {completed:message.ids}};
+ let calls=[],native=0;w.ChatTidyBatch.run=async message=>{calls.push(message);return {completed:message.ids}};
  w.HTMLElement.prototype.scrollIntoView=()=>{throw Error('must not scroll')};
  d.querySelectorAll('[data-owner]').forEach(node=>{node.onclick=()=>native++;node.onpointerdown=()=>native++});
  d.querySelector('[data-cs-action="all"]').click();d.querySelector('[data-cs-action="delete"]').click();d.querySelector('[data-cs-confirm]').click();await wait(150);
  assert.equal(native,0);assert.deepEqual(Array.from(calls[0].ids),[id('1'),id('2')]);assert.equal(d.querySelectorAll('.cs-deleted-row').length,2);assert.match(d.querySelector('.cs-status').textContent,/Removed 2/);assert.equal(d.querySelector('[role="menu"],[role="dialog"]'),null);
  }finally{dom.window.close()}
 });
-test('failed background batch retains unfinished selections',async()=>{
+test('failed direct batch retains unfinished selections',async()=>{
  const {dom,w,d}=await setup();try{
- w.chrome.runtime.sendMessage=async()=>({completed:[id('1')],error:'rate-limit'});
+ w.ChatTidyBatch.run=async()=>({completed:[id('1')],error:'rate-limit'});
  d.querySelector('[data-cs-action="all"]').click();d.querySelector('[data-cs-action="delete"]').click();d.querySelector('[data-cs-confirm]').click();await wait(150);
  assert.equal(d.querySelectorAll('.cs-checkbox:checked').length,1);assert.match(d.querySelector('.cs-status').textContent,/rate-limit/);
  }finally{dom.window.close()}
@@ -61,7 +63,7 @@ test('checkbox does not navigate using a parent click handler',async()=>{
 });
 test('popup persists language and renders translated help',async()=>{
  const dom=new JSDOM(fs.readFileSync('popup.html','utf8'),{url:'https://extension.test/',runScripts:'outside-only'});const w=dom.window,d=w.document,saved={};
- try{w.chrome={storage:{local:{get:async()=>({enabled:true,language:'en'}),set:async data=>Object.assign(saved,data)}}};
+ try{w.browser={storage:{local:{get:async()=>({enabled:true,language:'en'}),set:async data=>Object.assign(saved,data)}}};
  for(const f of ['i18n','popup'])w.eval(fs.readFileSync(`src/${f}.js`,'utf8'));await wait(0);
  const lang=d.getElementById('language');lang.value='ja';lang.dispatchEvent(new w.Event('change'));await wait(0);assert.equal(saved.language,'ja');assert.equal(d.querySelector('summary').textContent,'使い方');
  assert.equal(d.getElementById('layout'),null);assert.ok(d.querySelector('.logo svg'));
@@ -149,7 +151,7 @@ for(const site of ['claude','grok'])test(`${site} confirms once and sends only s
  const {dom,w,d}=await setup({url,markup:`<div ${attr}><h2>Chats</h2><a href="/${route}/${id('1')}">Example one</a><a href="/${route}/${id('2')}">Example two</a><button class="native-menu">Menu</button></div>`,beforeLoad:w=>{w.document.cookie=`lastActiveOrg=${id('9')};path=/`;}});
  try{
  const calls=[];let nativeClicks=0;d.querySelector('.native-menu').onclick=()=>nativeClicks++;
- w.chrome.runtime.sendMessage=async message=>{calls.push(message);return {completed:message.ids}};
+ w.ChatTidyBatch.run=async message=>{calls.push(message);return {completed:message.ids}};
  d.querySelector('.cs-checkbox').click();d.querySelector('[data-cs-action="delete"]').click();
  assert.equal(calls.length,0);assert.match(d.querySelector('.cs-confirm').textContent,new RegExp(site==='claude'?'Claude':'Grok'));
  d.querySelector('[data-cs-confirm]').click();await wait(100);
@@ -161,7 +163,7 @@ for(const site of ['claude','grok'])test(`${site} confirms once and sends only s
 test('Claude workspace change while confirming clears selection without deleting',async()=>{
  const {dom,w,d}=await setup({url:'https://claude.ai/new',markup:`<div data-testid="sidebar"><h2>Chats</h2><a href="/chat/${id('1')}">Example</a></div>`,beforeLoad:w=>{w.document.cookie=`lastActiveOrg=${id('8')};path=/`;}});
  try{
- let calls=0;w.chrome.runtime.sendMessage=async()=>{calls++;return {completed:[]}};
+ let calls=0;w.ChatTidyBatch.run=async()=>{calls++;return {completed:[]}};
  d.querySelector('.cs-checkbox').click();d.querySelector('[data-cs-action="delete"]').click();
  d.cookie=`lastActiveOrg=${id('9')};path=/`;d.querySelector('[data-cs-confirm]').click();await wait(100);
  assert.equal(calls,0);assert.equal(d.querySelectorAll('.cs-checkbox:checked').length,0);
@@ -171,36 +173,30 @@ test('Claude title icon glyph does not move toolbar into first conversation',asy
  const {dom,d}=await setup({url:'https://claude.ai/new',markup:`<div data-testid="sidebar"><div class="labelrow"><button data-group-toggle><span data-group-name>Chats and tasks</span><span data-cds="Icon">\ue02a</span></button><button>View all</button></div><div><a href="/chat/${id('1')}">Example</a></div></div>`});
  try{assert.equal(d.querySelector('.cs-toolbar').parentElement,d.querySelector('.labelrow'));assert.equal(d.querySelector('[data-group-toggle]').nextElementSibling,d.querySelector('.cs-toolbar'));}finally{dom.window.close()}
 });
-test('Claude deletion runs in the confirmed page with exact IDs and rejects unapproved or replayed batches',async()=>{
- let receive;const calls=[];
- const {dom,w,d}=await setup({url:'https://claude.ai/new',markup:`<div data-testid="sidebar"><h2>Chats</h2><a href="/chat/${id('1')}">Example</a></div>`,beforeLoad:w=>{
+test('Claude executes only confirmed IDs directly with no runtime relay',async()=>{
+ const calls=[];
+ const {dom,w,d}=await setup({realBatch:true,url:'https://claude.ai/new',markup:`<div data-testid="sidebar"><h2>Chats</h2><a href="/chat/${id('1')}">Example</a></div>`,beforeLoad:w=>{
  w.document.cookie=`lastActiveOrg=${id('9')};path=/`;
- w.chrome.runtime.onMessage.addListener=fn=>receive=fn;
- w.chrome.runtime.onMessage.removeListener=()=>{};
+ w.browser.runtime.sendMessage=()=>{throw Error('no relay permitted')};
  w.fetch=async(url,options)=>{calls.push({url,options});return {status:200,ok:true,headers:{get:()=>null},json:async()=>({deleted:[id('1')],failed:[]})}};
  }});
  try{
- let job,finish;w.chrome.runtime.sendMessage=message=>{job=message;return new Promise(r=>finish=r)};
  d.querySelector('.cs-checkbox').click();d.querySelector('[data-cs-action="delete"]').click();assert.equal(calls.length,0);
- d.querySelector('[data-cs-confirm]').click();
- const send=(ids,extra={})=>new Promise(resolve=>{if(receive({type:'cs-claude-delete',jobId:job.jobId,organizationId:id('9'),ids,...extra},{id:'test'},resolve)!==true)resolve(undefined)});
- await send([id('2')]);assert.equal(calls.length,0);
- const result=await send([id('1')]);assert.equal(result.status,200);assert.equal(calls.length,1);
- assert.equal(calls[0].url,`/api/organizations/${id('9')}/chat_conversations/delete_many`);
+ d.querySelector('[data-cs-confirm]').click();await wait(50);
+ assert.equal(calls.length,1);assert.equal(calls[0].url,`/api/organizations/${id('9')}/chat_conversations/delete_many`);
  assert.equal(calls[0].options.credentials,'same-origin');assert.equal(calls[0].options.method,'POST');
  assert.deepEqual(JSON.parse(calls[0].options.body),{conversation_uuids:[id('1')]});
- await send([id('1')]);assert.equal(calls.length,1);
- finish({completed:[id('1')]});await wait(30);
+ assert.equal(d.querySelectorAll('.cs-deleted-row').length,1);
  }finally{dom.window.close()}
 });
 test('ChatGPT archive reviews selection then sends archive only and preserves failures',async()=>{
  const {dom,w,d}=await setup();try{
- const calls=[];w.chrome.runtime.sendMessage=async message=>{calls.push(message);return {completed:[id('1')],error:'rate-limit'}};
+ const calls=[];w.ChatTidyBatch.run=async message=>{calls.push(message);return {completed:[id('1')],error:'rate-limit'}};
  const archive=d.querySelector('[data-cs-action="archive"]');assert.equal(archive.disabled,true);
  d.querySelector('[data-cs-action="all"]').click();archive.click();assert.equal(calls.length,0);
  assert.match(d.querySelector('.cs-confirm').textContent,/Archive selected|Archived Chats/);
  d.querySelector('[data-cs-confirm]').click();await wait(100);
- assert.equal(calls.length,1);assert.equal(calls[0].type,'cs-archive');assert.equal(calls[0].ids.length,2);
+ assert.equal(calls.length,1);assert.equal(calls[0].action,'archive');assert.equal(calls[0].ids.length,2);
  assert.equal(d.querySelectorAll('.cs-checkbox:checked').length,1);
  }finally{dom.window.close()}
 });
@@ -210,21 +206,20 @@ for(const site of ['claude','grok'])test(`${site} does not offer local or unveri
  try{if(site==='grok')assert.equal(d.querySelector('[data-cs-action="archive"]'),null);else{d.querySelector('.cs-checkbox').click();assert.equal(d.querySelector('[data-cs-action="archive"]').disabled,true);}}finally{dom.window.close()}
 });
 for(const action of ['archive','delete'])test(`Cowork ${action} uses the native endpoint and accepts an empty successful response`,async()=>{
- const task='cse_01AAAAAAAAAAAAAAAAAAAAAA';let receive;const calls=[];
- const {dom,w,d}=await setup({url:'https://claude.ai/chats',markup:`<div data-testid="sidebar"><h2>Chats</h2><a href="/cowork/${task}">Example task</a></div>`,beforeLoad:w=>{
- w.document.cookie=`lastActiveOrg=${id('9')};path=/`;w.chrome.runtime.onMessage.addListener=fn=>receive=fn;
+ const task='cse_01AAAAAAAAAAAAAAAAAAAAAA';const calls=[];
+ const {dom,w,d}=await setup({realBatch:true,url:'https://claude.ai/chats',markup:`<div data-testid="sidebar"><h2>Chats</h2><a href="/cowork/${task}">Example task</a></div>`,beforeLoad:w=>{
+ w.document.cookie=`lastActiveOrg=${id('9')};path=/`;
  w.fetch=async(url,options)=>{calls.push({url,options});return {ok:true,status:204,headers:{get:()=>null},json:async()=>{throw Error('empty')}}};
  }});
  try{
- let job,finish;w.chrome.runtime.sendMessage=message=>{job=message;return new Promise(r=>finish=r)};
  d.querySelector('.cs-checkbox').click();assert.equal(d.querySelector(`[data-cs-action="${action}"]`).disabled,false);
  d.querySelector(`[data-cs-action="${action}"]`).click();d.querySelector('[data-cs-confirm]').click();
- const result=await new Promise(resolve=>receive({type:'cs-claude-delete',action,jobId:job.jobId,organizationId:id('9'),ids:[task]},{id:'test'},resolve));
- assert.equal(result.status,204);assert.equal(calls.length,1);assert.equal(calls[0].url,'/v1/code/sessions/'+task+(action==='archive'?'/archive':''));
+ await wait(50);
+ assert.equal(calls.length,1);assert.equal(calls[0].url,'/v1/code/sessions/'+task+(action==='archive'?'/archive':''));
  assert.equal(calls[0].options.method,action==='archive'?'POST':'DELETE');assert.deepEqual(JSON.parse(calls[0].options.body),{});
  assert.equal(calls[0].options.headers['x-organization-uuid'],id('9'));
  assert.equal(calls[0].options.headers['X-Device-Attestation'],undefined);
- finish({completed:[task]});await wait(30);
+ assert.equal(d.querySelectorAll('.cs-deleted-row').length,1);
  }finally{dom.window.close()}
 });
 test('Grok search dialog recognizes empty overlay links, adds top delete and keeps selection in sync',async()=>{
@@ -235,14 +230,14 @@ test('Grok search dialog recognizes empty overlay links, adds top delete and kee
  let native=0;list.addEventListener('click',()=>native++);list.addEventListener('pointerdown',()=>native++);
  const box=list.querySelector('.cs-checkbox');box.dispatchEvent(new w.MouseEvent('pointerdown',{bubbles:true}));box.click();
  assert.equal(native,0);assert.equal(d.querySelector('[data-sidebar] .cs-checkbox').checked,true);
- const calls=[];w.chrome.runtime.sendMessage=async message=>{calls.push(message);return {completed:message.ids}};
+ const calls=[];w.ChatTidyBatch.run=async message=>{calls.push(message);return {completed:message.ids}};
  d.querySelector('.cs-search-toolbar [data-cs-action="delete"]').click();assert.equal(d.querySelector('.cs-confirm').parentElement,d.querySelector('[role="dialog"]'));
  d.querySelector('[data-cs-confirm]').click();await wait(80);assert.deepEqual(Array.from(calls[0].ids),[id('1')]);assert.ok(list.querySelector('[cmdk-item]').classList.contains('cs-deleted-row'));
  }finally{dom.window.close()}
 });
 for(const site of ['grok','claude'])test(`popup show-all switch visibility follows active ${site} page`,async()=>{
  const dom=new JSDOM(fs.readFileSync('popup.html','utf8'),{url:'https://extension.test/',runScripts:'outside-only'});const w=dom.window,d=w.document,saved={};
- try{w.chrome={tabs:{query:async()=>[{id:1}],sendMessage:async()=>({site})},storage:{local:{get:async()=>({enabled:true,language:'en',grokShowAll:false}),set:async data=>Object.assign(saved,data)}}};
+ try{w.browser={tabs:{query:async()=>[{id:1}],sendMessage:async()=>({site})},storage:{local:{get:async()=>({enabled:true,language:'en',grokShowAll:false}),set:async data=>Object.assign(saved,data)}}};
  for(const name of ['i18n','popup'])w.eval(fs.readFileSync(`src/${name}.js`,'utf8'));await wait(10);
  assert.equal(d.querySelector('#grok-options').hidden,site!=='grok');
  if(site==='grok'){const input=d.querySelector('#grokShowAll');input.checked=true;input.dispatchEvent(new w.Event('change'));await wait(10);assert.equal(saved.grokShowAll,true);}
@@ -250,7 +245,7 @@ for(const site of ['grok','claude'])test(`popup show-all switch visibility follo
 });
 test('extension reload disconnects stale sidebar controls and requests a page refresh',async()=>{
  const {dom,w,d}=await setup();try{
- w.chrome.runtime.id=undefined;
+ w.browser.runtime.id=undefined;
  d.querySelector('#history').insertAdjacentHTML('beforeend',row('4'));await wait(160);
  assert.equal(d.querySelectorAll('.cs-checkbox').length,0);assert.match(d.querySelector('.cs-context-expired').textContent,/Refresh/);
  d.querySelector('#history').insertAdjacentHTML('beforeend',row('5'));await wait(120);

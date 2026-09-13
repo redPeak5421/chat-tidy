@@ -25,6 +25,7 @@
       ],
       "js": [
         "src/core.js",
+        "src/batch.js",
         "src/i18n.js",
         "src/grok.js",
         "src/content.js"
@@ -46,8 +47,5 @@
     "https://claude.ai/*",
     "https://grok.com/*"
   ],
-  "background": {
-    "service_worker": "src/background.js"
-  },
   "default_locale": "en"
 }
