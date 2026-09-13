@@ -191,5 +191,29 @@
   },
   "repository": {
     "message": "在 GitHub 查看源码"
+  },
+  "diagnostics": {
+    "message": "问题诊断"
+  },
+  "diagnosticStart": {
+    "message": "开始记录"
+  },
+  "diagnosticExport": {
+    "message": "导出报告"
+  },
+  "diagnosticStop": {
+    "message": "停止并清空"
+  },
+  "diagnosticHelp": {
+    "message": "仅在当前标签页内存记录耗时和数量。开始后复现问题，再导出报告。"
+  },
+  "diagnosticRunning": {
+    "message": "记录中，请回到 ChatGPT 复现问题。"
+  },
+  "diagnosticUnavailable": {
+    "message": "请先打开并刷新 ChatGPT 页面。"
+  },
+  "diagnosticEmpty": {
+    "message": "请先开始记录，再导出。"
   }
 }

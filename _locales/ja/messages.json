@@ -191,5 +191,29 @@
   },
   "repository": {
     "message": "GitHubでソースを見る"
+  },
+  "diagnostics": {
+    "message": "診断"
+  },
+  "diagnosticStart": {
+    "message": "記録開始"
+  },
+  "diagnosticExport": {
+    "message": "書き出す"
+  },
+  "diagnosticStop": {
+    "message": "停止・消去"
+  },
+  "diagnosticHelp": {
+    "message": "このタブのメモリに時間と件数のみ記録。問題を再現して書き出してください。"
+  },
+  "diagnosticRunning": {
+    "message": "記録中。ChatGPTで問題を再現してください。"
+  },
+  "diagnosticUnavailable": {
+    "message": "ChatGPTを開いて再読み込みしてください。"
+  },
+  "diagnosticEmpty": {
+    "message": "先に記録を開始してください。"
   }
 }

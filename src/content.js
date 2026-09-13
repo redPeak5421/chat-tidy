@@ -61,6 +61,7 @@
     else { const first=items().find(item=>root.contains(item.link));if(first){let container=first.link.closest('ol,ul');if(!container||!root.contains(container))container=first.link.parentElement;container.before(bar);}else root.prepend(bar); }
   }
   function scan() {
+    const scanStarted=performance.now();
     if(!settings.enabled||busy)return;
     observer?.disconnect();
     hideDeleted();
@@ -81,7 +82,7 @@
     // One toolbar for each top-level visible sidebar; nested history containers do not duplicate it.
     const parents=roots().filter(root=>found.some(item=>root.contains(item.link)));
     for(const root of parents.filter(root=>!parents.some(other=>other!==root&&other.contains(root))))toolbar(root);
-    sync();watch();queueWave();
+    sync();watch();queueWave();metric('scans');maximum('maxScanMs',performance.now()-scanStarted);
   }
   function schedule(){if(scheduled)return;scheduled=true;setTimeout(()=>{scheduled=false;scan();},80);}
   function watch(){observer?.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['href','hidden','aria-hidden','class']});}
@@ -133,26 +134,53 @@
     if(!settings.enabled){selected.clear();document.querySelectorAll('.cs-checkbox,.cs-toolbar').forEach(node=>node.remove());}
     else scan();sync();
   }
+  // Opt-in, in-memory counters only: never include text, IDs, URLs or credentials.
+  let diagnostic=null,taskObserver=null,queuedAt=0;
+  function metric(key,value=1){if(diagnostic)diagnostic[key]=(diagnostic[key]||0)+value;}
+  function maximum(key,value){if(diagnostic)diagnostic[key]=Math.max(diagnostic[key]||0,Math.round(value));}
+  function startDiagnostics(){
+    taskObserver?.disconnect();
+    diagnostic={started:performance.now(),pointerEvents:0,frames:0,scans:0,scrollEvents:0,blurResets:0,longTasks:0,maxFrameWaitMs:0,maxPaintMs:0,maxScanMs:0,maxLongTaskMs:0,framesWithAnchor:0,framesWithSelection:0};
+    if(globalThis.PerformanceObserver?.supportedEntryTypes?.includes('longtask')){
+      taskObserver=new PerformanceObserver(list=>{for(const entry of list.getEntries()){metric('longTasks');maximum('maxLongTaskMs',entry.duration);}});
+      taskObserver.observe({type:'longtask',buffered:false});
+    }
+  }
+  chrome.runtime.onMessage.addListener((message,sender,reply)=>{
+    if(sender.id!==chrome.runtime.id || sender.url!==chrome.runtime.getURL('popup.html'))return;
+    if(message.type==='cs-diagnostics-start'){startDiagnostics();reply({ok:true});}
+    if(message.type==='cs-diagnostics-stop'){taskObserver?.disconnect();diagnostic=null;reply({ok:true});}
+    if(message.type==='cs-diagnostics-report'){
+      const links=[...document.querySelectorAll('.cs-chat-link')];
+      reply(diagnostic?{version:chrome.runtime.getManifest().version,elapsedMs:Math.round(performance.now()-diagnostic.started),...Object.fromEntries(Object.entries(diagnostic).filter(([key])=>key!=='started')),selectedCount:selected.size,trackedRows:links.length,checkboxCount:document.querySelectorAll('.cs-checkbox').length,dynamicRows:links.filter(n=>n.classList.contains('cs-dynamic')).length,activeRows:links.filter(n=>n.classList.contains('cs-wave-active')).length,pointerKnown:!!pointer,pageVisible:document.visibilityState==='visible',busy}:null);
+    }
+  });
+
   // Measure unshifted row bounds so moving titles never move the trigger zone.
   let pointer=null,waveFrame=0;
   function paintWave(){
     waveFrame=0;
+    const paintStarted=performance.now();metric('frames');maximum('maxFrameWaitMs',paintStarted-queuedAt);
     const links=[...document.querySelectorAll('.cs-chat-link.cs-dynamic')];
     const rects=links.map(link=>link.getBoundingClientRect());
     const anchor=pointer && rects.find((r,i)=>visible(links[i]) && pointer.x>=r.left-8 && pointer.x<=r.left+56 && pointer.y>=r.top && pointer.y<=r.bottom);
+    if(anchor)metric('framesWithAnchor');
+    if(selected.size)metric('framesWithSelection');
     links.forEach((link,i)=>{
       const r=rects[i],distance=pointer?Math.abs(pointer.y-(r.top+r.height/2)):Infinity;
       const radius=Math.max(1,r.height)*3.2;
       const strength=anchor && Math.abs(r.left-anchor.left)<24 && distance<radius ? Math.pow(Math.cos(distance/radius*Math.PI/2),2) : 0;
-      link.style.setProperty('--cs-wave',strength.toFixed(3));
-      link.classList.toggle('cs-wave-active',strength>.08);
+      const next=strength.toFixed(3);
+      if(link.style.getPropertyValue('--cs-wave')!==next)link.style.setProperty('--cs-wave',next);
+      if(link.classList.contains('cs-wave-active')!==(strength>.08))link.classList.toggle('cs-wave-active',strength>.08);
     });
+    maximum('maxPaintMs',performance.now()-paintStarted);
   }
-  function queueWave(){if(!waveFrame)waveFrame=requestAnimationFrame(paintWave);}
-  document.addEventListener('pointermove',event=>{pointer={x:event.clientX,y:event.clientY};queueWave();},{passive:true,capture:true});
+  function queueWave(){if(!waveFrame){queuedAt=performance.now();waveFrame=requestAnimationFrame(paintWave);}}
+  document.addEventListener('pointermove',event=>{metric('pointerEvents');pointer={x:event.clientX,y:event.clientY};queueWave();},{passive:true,capture:true});
   document.addEventListener('pointerleave',()=>{pointer=null;queueWave();});
-  window.addEventListener('blur',()=>{pointer=null;queueWave();});
-  document.addEventListener('scroll',()=>{pointer=null;queueWave();},true);
+  window.addEventListener('blur',()=>{metric('blurResets');pointer=null;queueWave();});
+  document.addEventListener('scroll',()=>{metric('scrollEvents');queueWave();},true);
   document.addEventListener('click',event=>{if(event.target.closest?.('.cs-toolbar'))return;document.querySelectorAll('.cs-actions:not(.cs-inline)').forEach(n=>n.hidden=true);document.querySelectorAll('.cs-toggle').forEach(n=>n.setAttribute('aria-expanded','false'));});
   document.addEventListener('keydown',event=>{if(event.key==='Escape'){document.querySelectorAll('.cs-actions:not(.cs-inline)').forEach(n=>n.hidden=true);document.querySelectorAll('.cs-toggle[aria-expanded="true"]').forEach(n=>{n.setAttribute('aria-expanded','false');n.focus();});} });
   // Prevent parent React link handlers, while preserving the checkbox's native toggle.
@@ -161,7 +189,7 @@
     settings={...settings,...saved};
     observer=new MutationObserver(records=>{
       if(records.some(record=>{
-        if(own(record.target))return false;
+        if(own(record.target) || record.target.closest?.('main'))return false;
         if(record.type==='attributes'){
           if(record.attributeName!=='class')return true;
           // Ignore our wave/selection class updates; repair only missing row markers.

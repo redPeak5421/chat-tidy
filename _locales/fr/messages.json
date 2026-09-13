@@ -191,5 +191,29 @@
   },
   "repository": {
     "message": "Voir le code sur GitHub"
+  },
+  "diagnostics": {
+    "message": "Diagnostic"
+  },
+  "diagnosticStart": {
+    "message": "Démarrer"
+  },
+  "diagnosticExport": {
+    "message": "Exporter"
+  },
+  "diagnosticStop": {
+    "message": "Arrêter et effacer"
+  },
+  "diagnosticHelp": {
+    "message": "Durées et compteurs en mémoire dans cet onglet uniquement. Reproduisez le problème puis exportez."
+  },
+  "diagnosticRunning": {
+    "message": "Enregistrement actif. Reproduisez le problème sur ChatGPT."
+  },
+  "diagnosticUnavailable": {
+    "message": "Ouvrez et actualisez ChatGPT."
+  },
+  "diagnosticEmpty": {
+    "message": "Démarrez avant d’exporter."
   }
 }

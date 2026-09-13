@@ -191,5 +191,29 @@
   },
   "repository": {
     "message": "View source on GitHub"
+  },
+  "diagnostics": {
+    "message": "Diagnostics"
+  },
+  "diagnosticStart": {
+    "message": "Start recording"
+  },
+  "diagnosticExport": {
+    "message": "Export report"
+  },
+  "diagnosticStop": {
+    "message": "Stop and clear"
+  },
+  "diagnosticHelp": {
+    "message": "Records timing and counts only, in this tab’s memory. Start, reproduce the problem, then export."
+  },
+  "diagnosticRunning": {
+    "message": "Recording. Reproduce the problem on ChatGPT."
+  },
+  "diagnosticUnavailable": {
+    "message": "Open ChatGPT and refresh it first."
+  },
+  "diagnosticEmpty": {
+    "message": "Start recording before exporting."
   }
 }

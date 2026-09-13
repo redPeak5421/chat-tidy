@@ -116,3 +116,44 @@ test('initialization paints an already observed pointer without another movement
  assert.equal(link.style.getPropertyValue('--cs-wave'),'1.000');
  }finally{dom.window.close()}
 });
+
+
+test('selected checkbox does not prevent another row hover after a scroll event',async()=>{
+ const {dom,w,d}=await setup();try{
+ const links=[...d.querySelectorAll('.cs-chat-link')];
+ links.forEach((link,i)=>link.getBoundingClientRect=()=>({left:20,right:300,top:100+i*40,bottom:140+i*40,height:40,width:280}));
+ links[0].querySelector('input').click();
+ links[1].dispatchEvent(new w.MouseEvent('pointermove',{bubbles:true,clientX:35,clientY:160}));
+ d.querySelector('#history').dispatchEvent(new w.Event('scroll'));
+ await wait(50);
+ assert.ok(links[0].querySelector('input').checked);
+ assert.equal(links[1].style.getPropertyValue('--cs-wave'),'1.000');
+ assert.ok(links[1].classList.contains('cs-wave-active'));
+ }finally{dom.window.close()}
+});
+test('diagnostics are opt-in, popup-only, aggregate-only and clearable; main updates do not rescan',async()=>{
+ let listener;
+ const {dom,w,d}=await setup({beforeLoad(w){
+ w.chrome.runtime.getURL=path=>'chrome-extension://test/'+path;
+ w.chrome.runtime.getManifest=()=>({version:'test'});
+ w.chrome.runtime.onMessage.addListener=fn=>listener=fn;
+ }});try{
+ const sender={id:'test',url:'chrome-extension://test/popup.html'};
+ const request=(action,from=sender)=>{let reply;listener({type:'cs-diagnostics-'+action},from,value=>reply=value);return reply;};
+ assert.equal(request('report'),null);
+ assert.equal(request('start',{id:'other',url:sender.url}),undefined);
+ assert.equal(request('report'),null);
+ assert.equal(request('start').ok,true);
+ d.querySelector('input').click();
+ d.dispatchEvent(new w.MouseEvent('pointermove',{clientX:35,clientY:120}));
+ d.querySelector('main').append(d.createElement('p'));
+ await wait(130);
+ const report=request('report');
+ assert.equal(report.selectedCount,1);assert.equal(report.pointerEvents,1);
+ assert.equal(report.scans,0);assert.ok(report.framesWithSelection>0);
+ assert.ok(!JSON.stringify(report).includes('Chat 1'));
+ assert.ok(!JSON.stringify(report).includes(id('1')));
+ assert.ok(Object.values(report).every(value=>typeof value==='number'||typeof value==='boolean'||value==='test'));
+ assert.equal(request('stop').ok,true);assert.equal(request('report'),null);
+ }finally{dom.window.close()}
+});
