@@ -183,5 +183,53 @@
   },
   "repository": {
     "message": "在 GitHub 查看原始碼"
+  },
+  "archive": {
+    "message": "封存"
+  },
+  "archiveTitle": {
+    "message": "封存所選聊天？"
+  },
+  "archiveWarning": {
+    "message": "將這 $N$ 則聊天封存到 ChatGPT。可在設定 → 資料控制 → 已封存聊天中還原。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "archiveConfirm": {
+    "message": "封存 $N$ 則聊天",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "archiveWorking": {
+    "message": "正在背景封存，可繼續操作頁面。"
+  },
+  "archiveStopped": {
+    "message": "已處理 $N$ 則後停止。已封存記錄可在網站中還原。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "coworkArchiveWarning": {
+    "message": "將這 $N$ 個 Cowork 任務封存到 Claude。可透過 Claude 的已封存任務篩選還原。僅支援 Cowork 任務封存。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "coworkArchiveOnly": {
+    "message": "Claude 封存僅支援 Cowork 任務，請勿同時勾選一般聊天。"
   }
 }

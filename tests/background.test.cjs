@@ -107,3 +107,28 @@ test('Claude 429 honors Retry-After and prevents the next group',async()=>{
  const result=await s.send({type:'cs-delete',jobId:'c',ids:many,organizationId:ids[0]},{...s.sender,url:'https://claude.ai/'});
  assert.equal(result.error,'rate-limit');assert.equal(s.calls.length,1);assert.ok(s.settings.claudeDeleteCooldownUntil>=before+120000);
 });
+test('ChatGPT archive sets only is_archived and never sends deletion payload',async()=>{
+ const s=setup([{body:{accessToken:'t'}},{body:{success:true}},{body:{success:true}}]);
+ const result=await s.send({type:'cs-archive',jobId:'a',ids});
+ assert.equal(result.completed.length,2);
+ for(const call of s.calls.slice(1))assert.deepEqual(JSON.parse(call.options.body),{is_archived:true});
+});
+test('unsupported native archive never makes a network or delete request',async()=>{
+ for(const url of ['https://claude.ai/','https://grok.com/']){
+ const s=setup([]);const result=await s.send({type:'cs-archive',jobId:'a',ids,organizationId:ids[0]},{...s.sender,url});
+ assert.equal(result.error,'unsupported-action');assert.equal(s.calls.length,0);
+ }
+});
+test('Claude mixed deletion separates native chat batches from individual Cowork tasks regardless of concurrency',async()=>{
+ const task='cse_01AAAAAAAAAAAAAAAAAAAAAA';
+ for(const concurrency of [1,3]){
+ const s=setup([{body:{deleted:ids}},{body:{deleted:[task]}}],{concurrency});
+ const result=await s.send({type:'cs-delete',jobId:'c',ids:[...ids,task],organizationId:ids[0]},{...s.sender,url:'https://claude.ai/'});
+ assert.equal(result.completed.length,3);assert.deepEqual(s.calls.map(c=>JSON.parse(c.options.body).conversation_uuids),[ids,[task]]);
+ }
+});
+test('Claude archive accepts Cowork IDs only and keeps their case',async()=>{
+ const task='cse_01AAAAAAAAAAAAAAAAAAAAAA';const s=setup([{body:{deleted:[task]}}]);
+ const result=await s.send({type:'cs-archive',jobId:'a',ids:[task],organizationId:ids[0]},{...s.sender,url:'https://claude.ai/'});
+ assert.deepEqual(Array.from(result.completed),[task]);
+});

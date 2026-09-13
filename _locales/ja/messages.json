@@ -183,5 +183,53 @@
   },
   "repository": {
     "message": "GitHubでソースを見る"
+  },
+  "archive": {
+    "message": "アーカイブ"
+  },
+  "archiveTitle": {
+    "message": "選択したチャットをアーカイブ？"
+  },
+  "archiveWarning": {
+    "message": "$N$件をChatGPTでアーカイブします。設定 → データコントロール → アーカイブ済みチャットから復元できます。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "archiveConfirm": {
+    "message": "$N$件をアーカイブ",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "archiveWorking": {
+    "message": "バックグラウンドでアーカイブ中。ページは引き続き使用できます。"
+  },
+  "archiveStopped": {
+    "message": "$N$件で停止。アーカイブ済みの項目はサイトから復元できます。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "coworkArchiveWarning": {
+    "message": "$N$件のCoworkタスクをClaudeでアーカイブします。アーカイブ済みタスクのフィルターから復元できます。対象はCoworkタスクのみです。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "coworkArchiveOnly": {
+    "message": "Claudeのアーカイブ対象はCoworkタスクのみです。通常のチャットと同時に選択しないでください。"
   }
 }

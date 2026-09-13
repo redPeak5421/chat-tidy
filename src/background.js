@@ -40,7 +40,11 @@ async function run(job) {
     }
     const groupSize=job.site.id==='claude'?20:1;
     const groups=[];
-    for(let i=0;i<job.ids.length;i+=groupSize)groups.push(job.ids.slice(i,i+groupSize));
+    for(const id of job.ids){
+      const last=groups.at(-1);
+      if(last&&last.length<groupSize&&!ChatTidyCore.isCoworkId(id)&&!ChatTidyCore.isCoworkId(last[0]))last.push(id);
+      else groups.push([id]);
+    }
     // Bounded waves: never start another wave until all in-flight outcomes are known.
     for(let offset=0;offset<groups.length;offset+=concurrency){
       if(job.cancelled)break;
@@ -52,11 +56,11 @@ async function run(job) {
           if(job.site.id==='chatgpt'){
             result=await request(job.site.origin,'/backend-api/conversation/'+id,{
               method:'PATCH',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
-              body:JSON.stringify({is_visible:false})
+              body:JSON.stringify(job.action==='archive'?{is_archived:true}:{is_visible:false})
             });
             if(result?.success!==true)throw Error('unexpected-response');
           }else if(job.site.id==='claude'){
-            const response=await chrome.tabs.sendMessage(job.tab,{type:'cs-claude-delete',jobId:job.id,organizationId:job.organizationId,ids:group},{frameId:0});
+            const response=await chrome.tabs.sendMessage(job.tab,{type:'cs-claude-delete',action:job.action,jobId:job.id,organizationId:job.organizationId,ids:group},{frameId:0});
             if(!response||response.error)throw Error(response?.error||'disconnected');
             if(!Number.isInteger(response.status))throw Error('unexpected-response');
             result=await decodeResponse({ok:response.status>=200&&response.status<300,status:response.status,
@@ -93,13 +97,16 @@ chrome.runtime.onMessage.addListener((message,sender,reply)=>{
     if(active?.id === message.jobId && active.tab === sender.tab.id && active.site.id === site.id) active.cancelled = true;
     reply({ok:true});return false;
   }
-  if (message?.type !== 'cs-delete') return false;
+  if (!['cs-delete','cs-archive'].includes(message?.type)) return false;
+  const action=message.type==='cs-archive'?'archive':'delete';
+  if(action==='archive'&&site.id!=='chatgpt'&&site.id!=='claude'){reply({completed:[],error:'unsupported-action'});return false;}
   if (active) { reply({completed:[],error:'busy'});return false; }
-  if (typeof message.jobId !== 'string' || message.jobId.length > 100 || !Array.isArray(message.ids) || !message.ids.length || message.ids.length > 1000 || message.ids.some(id=>typeof id !== 'string' || !UUID.test(id)) || new Set(message.ids).size !== message.ids.length) {
+  if (typeof message.jobId !== 'string' || message.jobId.length > 100 || !Array.isArray(message.ids) || !message.ids.length || message.ids.length > 1000 || message.ids.some(id=>typeof id !== 'string' || (!UUID.test(id)&&!(site.id==='claude'&&ChatTidyCore.isCoworkId(id)))) || new Set(message.ids).size !== message.ids.length) {
     reply({completed:[],error:'invalid-request'});return false;
   }
   if(site.id==='claude'&&(typeof message.organizationId!=='string'||!UUID.test(message.organizationId))){reply({completed:[],error:'invalid-request'});return false;}
-  active = {site,organizationId:message.organizationId,id:message.jobId,ids:[...message.ids],tab:sender.tab.id,cancelled:false};
+  if(action==='archive'&&site.id==='claude'&&message.ids.some(id=>!ChatTidyCore.isCoworkId(id))){reply({completed:[],error:'unsupported-action'});return false;}
+  active = {site,action,organizationId:message.organizationId,id:message.jobId,ids:[...message.ids],tab:sender.tab.id,cancelled:false};
   void run(active).then(reply);
   return true;
 });

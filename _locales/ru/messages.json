@@ -183,5 +183,53 @@
   },
   "repository": {
     "message": "Исходный код на GitHub"
+  },
+  "archive": {
+    "message": "Архивировать"
+  },
+  "archiveTitle": {
+    "message": "Архивировать выбранные чаты?"
+  },
+  "archiveWarning": {
+    "message": "Архивировать $N$ чатов в ChatGPT. Восстановление: Настройки → Управление данными → Архивированные чаты.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "archiveConfirm": {
+    "message": "Архивировать $N$ чатов",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "archiveWorking": {
+    "message": "Архивация в фоне. Можно продолжать пользоваться страницей."
+  },
+  "archiveStopped": {
+    "message": "Остановлено после $N$. Архивированные записи можно восстановить на сайте.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "coworkArchiveWarning": {
+    "message": "Архивировать $N$ задач Cowork в Claude. Восстановление через фильтр архивированных задач. Только задачи Cowork.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "coworkArchiveOnly": {
+    "message": "В Claude архивируются только задачи Cowork. Не выбирайте вместе с обычными чатами."
   }
 }

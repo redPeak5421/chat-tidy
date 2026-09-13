@@ -183,5 +183,53 @@
   },
   "repository": {
     "message": "Voir le code sur GitHub"
+  },
+  "archive": {
+    "message": "Archiver"
+  },
+  "archiveTitle": {
+    "message": "Archiver la sélection ?"
+  },
+  "archiveWarning": {
+    "message": "Archiver ces $N$ chats dans ChatGPT. Restauration dans Paramètres → Contrôles des données → Chats archivés.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "archiveConfirm": {
+    "message": "Archiver $N$ chats",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "archiveWorking": {
+    "message": "Archivage en arrière-plan. Vous pouvez continuer à utiliser la page."
+  },
+  "archiveStopped": {
+    "message": "Arrêt après $N$. Les éléments archivés peuvent être restaurés sur le site.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "coworkArchiveWarning": {
+    "message": "Archiver ces $N$ tâches Cowork dans Claude. Restaurez-les avec le filtre des tâches archivées. Seules les tâches Cowork sont prises en charge.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "coworkArchiveOnly": {
+    "message": "L’archivage Claude concerne uniquement les tâches Cowork, sans chats ordinaires."
   }
 }

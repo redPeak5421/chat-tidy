@@ -9,10 +9,13 @@ globalThis.ChatTidyCore = (() => {
   function siteForUrl(value) {
     try { return sites[new URL(value).origin] || null; } catch { return null; }
   }
+  function isCoworkId(value){return typeof value==='string'&&/^cse_[0-9]{2}[1-9A-HJ-NP-Za-km-z]{22}$/.test(value);}
   function chatId(href, origin = 'https://chatgpt.com') {
     try {
       const site=siteForUrl(origin); if(!site)return null;
       const url=new URL(href,site.origin);if(url.origin!==site.origin)return null;
+      const task=url.pathname.match(/^\/cowork\/([^/]+)\/?$/)?.[1];
+      if(site.id==='claude'&&isCoworkId(task))return task;
       return url.pathname.match(new RegExp('^'+site.route+'('+uuid+')/?$','i'))?.[1].toLowerCase() || null;
     } catch { return null; }
   }
@@ -24,5 +27,5 @@ globalThis.ChatTidyCore = (() => {
       else selected.set(id, title);
     }
   }
-  return {chatId, select, siteForUrl};
+  return {chatId, select, siteForUrl, isCoworkId};
 })();

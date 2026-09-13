@@ -193,3 +193,37 @@ test('Claude deletion runs in the confirmed page with exact IDs and rejects unap
  finish({completed:[id('1')]});await wait(30);
  }finally{dom.window.close()}
 });
+test('ChatGPT archive reviews selection then sends archive only and preserves failures',async()=>{
+ const {dom,w,d}=await setup();try{
+ const calls=[];w.chrome.runtime.sendMessage=async message=>{calls.push(message);return {completed:[id('1')],error:'rate-limit'}};
+ const archive=d.querySelector('[data-cs-action="archive"]');assert.equal(archive.disabled,true);
+ d.querySelector('[data-cs-action="all"]').click();archive.click();assert.equal(calls.length,0);
+ assert.match(d.querySelector('.cs-confirm').textContent,/Archive selected|Archived Chats/);
+ d.querySelector('[data-cs-confirm]').click();await wait(100);
+ assert.equal(calls.length,1);assert.equal(calls[0].type,'cs-archive');assert.equal(calls[0].ids.length,2);
+ assert.equal(d.querySelectorAll('.cs-checkbox:checked').length,1);
+ }finally{dom.window.close()}
+});
+for(const site of ['claude','grok'])test(`${site} does not offer local or unverified archive`,async()=>{
+ const attr=site==='claude'?'data-testid="sidebar"':'data-sidebar="sidebar"';const route=site==='claude'?'chat':'c';
+ const {dom,d}=await setup({url:site==='claude'?'https://claude.ai/':'https://grok.com/',markup:`<div ${attr}><h2>Chats</h2><a href="/${route}/${id('1')}">Example</a></div>`});
+ try{if(site==='grok')assert.equal(d.querySelector('[data-cs-action="archive"]'),null);else{d.querySelector('.cs-checkbox').click();assert.equal(d.querySelector('[data-cs-action="archive"]').disabled,true);}}finally{dom.window.close()}
+});
+for(const action of ['archive','delete'])test(`Cowork ${action} uses the native endpoint and accepts an empty successful response`,async()=>{
+ const task='cse_01AAAAAAAAAAAAAAAAAAAAAA';let receive;const calls=[];
+ const {dom,w,d}=await setup({url:'https://claude.ai/chats',markup:`<div data-testid="sidebar"><h2>Chats</h2><a href="/cowork/${task}">Example task</a></div>`,beforeLoad:w=>{
+ w.document.cookie=`lastActiveOrg=${id('9')};path=/`;w.chrome.runtime.onMessage.addListener=fn=>receive=fn;
+ w.fetch=async(url,options)=>{calls.push({url,options});return {ok:true,status:204,headers:{get:()=>null},json:async()=>{throw Error('empty')}}};
+ }});
+ try{
+ let job,finish;w.chrome.runtime.sendMessage=message=>{job=message;return new Promise(r=>finish=r)};
+ d.querySelector('.cs-checkbox').click();assert.equal(d.querySelector(`[data-cs-action="${action}"]`).disabled,false);
+ d.querySelector(`[data-cs-action="${action}"]`).click();d.querySelector('[data-cs-confirm]').click();
+ const result=await new Promise(resolve=>receive({type:'cs-claude-delete',action,jobId:job.jobId,organizationId:id('9'),ids:[task]},{id:'test'},resolve));
+ assert.equal(result.status,204);assert.equal(calls.length,1);assert.equal(calls[0].url,'/v1/code/sessions/'+task+(action==='archive'?'/archive':''));
+ assert.equal(calls[0].options.method,action==='archive'?'POST':'DELETE');assert.deepEqual(JSON.parse(calls[0].options.body),{});
+ assert.equal(calls[0].options.headers['x-organization-uuid'],id('9'));
+ assert.equal(calls[0].options.headers['X-Device-Attestation'],undefined);
+ finish({completed:[task]});await wait(30);
+ }finally{dom.window.close()}
+});

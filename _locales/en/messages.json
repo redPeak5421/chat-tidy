@@ -183,5 +183,53 @@
   },
   "repository": {
     "message": "View source on GitHub"
+  },
+  "archive": {
+    "message": "Archive"
+  },
+  "archiveTitle": {
+    "message": "Archive selected chats?"
+  },
+  "archiveWarning": {
+    "message": "Archive these $N$ chats in ChatGPT. You can restore them from Settings → Data controls → Archived Chats.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "archiveConfirm": {
+    "message": "Archive $N$ chats",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "archiveWorking": {
+    "message": "Archiving in the background. You can continue using the page."
+  },
+  "archiveStopped": {
+    "message": "Stopped after $N$. Archived items can be restored on the website.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "coworkArchiveWarning": {
+    "message": "Archive these $N$ Cowork tasks in Claude. Restore them using Claude’s archived task filter. Only Cowork tasks can be archived.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "coworkArchiveOnly": {
+    "message": "Claude archive supports Cowork tasks only. Select tasks without ordinary chats."
   }
 }

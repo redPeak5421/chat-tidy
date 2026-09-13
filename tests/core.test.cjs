@@ -29,3 +29,9 @@ test('provider routes accept only chats on the selected origin',()=>{
  assert.equal(api.siteForUrl('https://grok.com/').id,'grok');
  assert.equal(api.siteForUrl('http://grok.com/'),null);
 });
+test('Claude Cowork IDs are case-sensitive and scoped to Cowork routes',()=>{
+ const id='cse_01AAAAAAAAAAAAAAAAAAAAAA';
+ assert.equal(api.chatId('/cowork/'+id,'https://claude.ai'),id);
+ assert.equal(api.chatId('/cowork/'+id,'https://grok.com'),null);
+ assert.equal(api.chatId('/chat/'+id,'https://claude.ai'),null);
+});

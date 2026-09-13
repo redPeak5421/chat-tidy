@@ -183,5 +183,53 @@
   },
   "repository": {
     "message": "在 GitHub 查看源码"
+  },
+  "archive": {
+    "message": "归档"
+  },
+  "archiveTitle": {
+    "message": "归档所选聊天？"
+  },
+  "archiveWarning": {
+    "message": "将这 $N$ 条聊天归档到 ChatGPT。可在设置 → 数据控制 → 已归档聊天中恢复。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "archiveConfirm": {
+    "message": "归档 $N$ 条聊天",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "archiveWorking": {
+    "message": "正在后台归档，可继续操作页面。"
+  },
+  "archiveStopped": {
+    "message": "已处理 $N$ 条后停止。已归档记录可在网站中恢复。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "coworkArchiveWarning": {
+    "message": "将这 $N$ 个 Cowork 任务归档到 Claude。可通过 Claude 的已归档任务筛选恢复。仅支持 Cowork 任务归档。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "coworkArchiveOnly": {
+    "message": "Claude 归档仅支持 Cowork 任务，请不要同时勾选普通聊天。"
   }
 }

@@ -14,11 +14,15 @@ The popup provides an enable switch, checkbox visibility, deletion concurrency a
 
 ChatGPT and Grok support 1–3 concurrent deletion requests. Claude sends same-origin requests from the initiating page to the website’s native bulk-delete endpoint, with up to 20 selected chats per request and a 500 ms interval between groups; the concurrency setting applies to ChatGPT and Grok. A 403 stops immediately without retries or alternate endpoints. Rate limits stop the batch, start a cooldown and reduce concurrency. Stop prevents pending requests; requests already sent cannot be recalled. Keep the initiating page open until processing ends.
 
+ChatGPT also supports native bulk archiving, with restoration through its Archived Chats settings. Grok archiving is not offered because no native conversation archive operation has been verified; there is no local hiding substitute.
+
+Cowork uses its native session endpoints, one task per request, independently of the concurrency setting. Some tasks require device attestation. This extension does not generate or copy device proofs; rejected operations stop and must be completed using Claude’s native controls. Successful responses are required before items disappear.
+
 ## Privacy and compatibility
 
 Runs only on chatgpt.com, claude.ai and grok.com. Preferences and cooldown state are stored locally. Conversation titles, identifiers and session credentials are used temporarily for user-requested operations. No developer server, advertising or analytics. Website API changes may affect compatibility.
 
-Claude selection is scoped to the active workspace. Cowork tasks and Grok bots are excluded. These are website interfaces, not documented public APIs; endpoint behavior was checked against website code, while automated tests use simulated responses.
+Claude selection is scoped to the active workspace. Cowork tasks support selection, deletion and native archiving. Ordinary Claude chats do not support archiving in this extension; select only Cowork tasks to enable Archive. Grok bots are excluded. These are website interfaces, not documented public APIs; endpoint behavior was checked against website code, while automated tests use simulated responses.
 
 ## Development
 

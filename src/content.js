@@ -42,7 +42,7 @@
     document.querySelectorAll('.cs-toolbar').forEach(bar=>bar.classList.toggle('cs-has-selection',selected.size>0));
     document.querySelectorAll('.cs-count').forEach(node=>{if(node.textContent!==count)node.textContent=count;});
     document.querySelectorAll('.cs-checkbox').forEach(box=>{box.checked=selected.has(box.dataset.csId);box.disabled=busy;box.closest('a')?.classList.toggle('cs-selected',box.checked);});
-    document.querySelectorAll('[data-cs-action]').forEach(button=>{button.disabled=busy || ((button.dataset.csAction==='clear'||button.dataset.csAction==='delete')&&!selected.size);});
+    document.querySelectorAll('[data-cs-action]').forEach(button=>{button.disabled=busy || (button.dataset.csAction==='archive'&&site.id==='claude'&&[...selected.keys()].some(id=>!core.isCoworkId(id))) || ((button.dataset.csAction==='clear'||button.dataset.csAction==='delete'||button.dataset.csAction==='archive')&&!selected.size);});
   }
   function button(key,action) { const b=el('button','cs-button',t(key));b.type='button';b.dataset.csAction=action;b.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();act(action);});return b; }
   function act(action) {
@@ -50,7 +50,8 @@
     sameWorkspace();
     document.querySelectorAll('.cs-actions').forEach(n=>n.hidden=true);
     document.querySelectorAll('.cs-toggle').forEach(n=>n.setAttribute('aria-expanded','false'));
-    if(action==='delete')return confirmDelete();
+    if(action==='archive'&&site.id==='claude'&&[...selected.keys()].some(id=>!core.isCoworkId(id)))return;
+    if(action==='delete'||(action==='archive'&&(site.id==='chatgpt'||site.id==='claude')))return confirmDelete(action);
     core.select(selected,items(),action);sync();
   }
   function toolbar(root) {
@@ -59,7 +60,7 @@
     bar.setAttribute('role','group');bar.setAttribute('aria-label',t('manage'));
     const count=el('span','cs-count');count.setAttribute('aria-live','polite');
     const actions=el('div','cs-actions');actions.append(count);
-    for(const key of ['clear','invert','all','delete'])actions.append(button(key,key));
+    for(const key of ['clear','invert','all',...(site.id!=='grok'?['archive']:[]),'delete']){const control=button(key,key);if(key==='archive'&&site.id==='claude')control.title=t('coworkArchiveOnly');actions.append(control);}
     {
       actions.hidden=true;const toggle=el('button','cs-button cs-toggle');
       const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -103,20 +104,20 @@
   function schedule(){if(scheduled)return;scheduled=true;setTimeout(()=>{scheduled=false;scan();},80);}
   function watch(){observer?.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['href','hidden','aria-hidden','class']});}
   function cleanup(){document.querySelectorAll('.cs-heading-hover').forEach(node=>node.classList.remove('cs-heading-hover'));document.querySelectorAll('[data-cs-owned]').forEach(node=>node.remove());document.querySelectorAll('.cs-chat-link').forEach(node=>{node.classList.remove('cs-chat-link','cs-dynamic','cs-selected','cs-wave-active');node.style.removeProperty('--cs-wave');});}
-  function confirmDelete(){
+  function confirmDelete(action='delete'){
     if(!selected.size||document.querySelector('.cs-confirm'))return;
     if(!sameWorkspace()){sync();return;}
     const approvedOrganization=selectionOrganization;
     const snapshot=[...selected].map(([id,title])=>({id,title}));
     const dialog=el('dialog','cs-confirm');dialog.dataset.csOwned='true';
-    const title=el('h2','',t('confirmTitle'));title.id='cs-confirm-title';dialog.setAttribute('aria-labelledby',title.id);
-    dialog.append(title,el('p','',t('warning',{n:snapshot.length,site:site.name})));
+    const title=el('h2','',t(action==='archive'?'archiveTitle':'confirmTitle'));title.id='cs-confirm-title';dialog.setAttribute('aria-labelledby',title.id);
+    dialog.append(title,el('p','',t(action==='archive'?(site.id==='claude'?'coworkArchiveWarning':'archiveWarning'):'warning',{n:snapshot.length,site:site.name})));
     const list=el('ul','cs-review');for(const item of snapshot)list.append(el('li','',item.title));dialog.append(list);
-    const footer=el('div','cs-footer'),cancel=el('button','cs-button',t('cancel')),confirm=el('button','cs-button cs-danger',t('confirm',{n:snapshot.length}));
+    const footer=el('div','cs-footer'),cancel=el('button','cs-button',t('cancel')),confirm=el('button','cs-button cs-danger',t(action==='archive'?'archiveConfirm':'confirm',{n:snapshot.length}));
     cancel.dataset.csCancel='true';confirm.dataset.csConfirm='true';cancel.type=confirm.type='button';
     const opener=document.activeElement;const close=()=>{dialog.close();dialog.remove();opener?.focus();};
     cancel.onclick=close;dialog.addEventListener('cancel',event=>{event.preventDefault();close();});
-    confirm.onclick=()=>{close();if(!sameWorkspace()){sync();return;}void deleteBatch(snapshot,approvedOrganization);};footer.append(cancel,confirm);dialog.append(footer);document.body.append(dialog);dialog.showModal();cancel.focus();
+    confirm.onclick=()=>{close();if(!sameWorkspace()){sync();return;}void deleteBatch(snapshot,approvedOrganization,action);};footer.append(cancel,confirm);dialog.append(footer);document.body.append(dialog);dialog.showModal();cancel.focus();
   }
   const deleted = new Set();
   function hideDeleted() {
@@ -128,12 +129,12 @@
       row.classList.add('cs-deleted-row');
     }
   }
-  async function deleteBatch(snapshot,approvedOrganization){
+  async function deleteBatch(snapshot,approvedOrganization,action='delete'){
     if(busy)return;busy=true;stopped=false;sync();
     const jobId=crypto.randomUUID(), allowed=new Set(snapshot.map(item=>item.id)), completed=new Set();
     const status=el('section','cs-status');status.dataset.csOwned='true';status.setAttribute('aria-label',t('manage'));
     const message=el('p','',t('progress',{done:0,total:snapshot.length}));message.setAttribute('role','status');
-    const hint=el('p','cs-hint',t('working')),stop=el('button','cs-button',t('stop'));stop.type='button';
+    const hint=el('p','cs-hint',t(action==='archive'?'archiveWorking':'working')),stop=el('button','cs-button',t('stop'));stop.type='button';
     stop.onclick=()=>{stopped=true;stop.disabled=true;chrome.runtime.sendMessage({type:'cs-cancel',jobId}).catch(()=>{});};
     status.append(message,hint,stop);document.body.append(status);
     const update=ids=>{
@@ -145,19 +146,24 @@
       if(sender?.id!==chrome.runtime.id||event.jobId!==jobId)return false;
       if(event.type==='cs-progress'){update(event.completed);return false;}
       if(event.type!=='cs-claude-delete'||site.id!=='claude')return false;
-      if(stopped||organizationId()!==approvedOrganization||event.organizationId!==approvedOrganization||
+      if(!Array.isArray(event.ids)){reply({error:'invalid-request'});return false;}
+      const requestAction=event.action||'delete';
+      const task=Array.isArray(event.ids)&&event.ids.length===1&&core.isCoworkId(event.ids[0]);
+      if(requestAction!==action||(action==='archive'&&!task)||(!task&&event.ids?.some(id=>core.isCoworkId(id)))||stopped||organizationId()!==approvedOrganization||event.organizationId!==approvedOrganization||
         !Array.isArray(event.ids)||!event.ids.length||event.ids.length>20||new Set(event.ids).size!==event.ids.length||
         event.ids.some(id=>!allowed.has(id)||submitted.has(id))){reply({error:'invalid-request'});return false;}
       event.ids.forEach(id=>submitted.add(id));
       // Same-origin content-script fetch uses the website session; never copy cookies or spoof headers.
       void (async()=>{
         try{
-          const response=await fetch('/api/organizations/'+approvedOrganization+'/chat_conversations/delete_many',{
-            method:'POST',credentials:'same-origin',mode:'same-origin',redirect:'error',
-            headers:{'Content-Type':'application/json'},body:JSON.stringify({conversation_uuids:event.ids}),
+          const path=task?'/v1/code/sessions/'+event.ids[0]+(action==='archive'?'/archive':''):'/api/organizations/'+approvedOrganization+'/chat_conversations/delete_many';
+          const headers={'Content-Type':'application/json',...(task?{'anthropic-version':'2023-06-01','anthropic-beta':'ccr-byoc-2025-07-29','anthropic-client-feature':'ccr','x-organization-uuid':approvedOrganization}:{})};
+          const response=await fetch(path,{
+            method:task&&action==='delete'?'DELETE':'POST',credentials:'same-origin',mode:'same-origin',redirect:'error',
+            headers,body:JSON.stringify(task?{}:{conversation_uuids:event.ids}),
             signal:AbortSignal.timeout(20000)
           });
-          const body=response.ok?await response.json():null;
+          const body=response.ok?(task?{deleted:event.ids,failed:[]}:await response.json()):null;
           reply({status:response.status,retryAfter:response.headers.get('Retry-After'),body});
         }catch{reply({error:'network'});}
       })();
@@ -165,10 +171,10 @@
     };
     chrome.runtime.onMessage.addListener(progress);
     let result;
-    try { result=await chrome.runtime.sendMessage({type:'cs-delete',jobId,ids:[...allowed],organizationId:approvedOrganization}); if(!result)throw Error('disconnected');update(result.completed); }
+    try { result=await chrome.runtime.sendMessage({type:action==='archive'?'cs-archive':'cs-delete',jobId,ids:[...allowed],organizationId:approvedOrganization}); if(!result)throw Error('disconnected');update(result.completed); }
     catch { result={error:'connection-lost'}; }
     finally { chrome.runtime.onMessage.removeListener(progress);busy=false; }
-    message.textContent=t(result.cancelled?'stopped':result.error?'failed':'done',{n:completed.size});
+    message.textContent=t(result.cancelled?(action==='archive'?'archiveStopped':'stopped'):result.error?'failed':'done',{n:completed.size});
     hint.textContent=result.retryAt ? t('cooldown',{time:new Date(result.retryAt).toLocaleTimeString(i18n.normalize(settings.language))}) : result.error ? t('apiError')+' ('+result.error+')' : '';if(!result.error)hint.remove();
     stop.disabled=false;stop.textContent=t('close');stop.onclick=()=>status.remove();
     if(!settings.enabled){selected.clear();document.querySelectorAll('.cs-checkbox,.cs-toolbar').forEach(node=>node.remove());}
