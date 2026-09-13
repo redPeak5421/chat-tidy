@@ -24,7 +24,7 @@
     "message": "全选和反选仅处理侧栏当前已加载的聊天。向下滚动可加载更多；页面刷新后选择会清空。"
   },
   "privacy": {
-    "message": "仅在 ChatGPT 页面运行。只保存设置，不保存聊天内容或登录凭据，不向第三方发送数据。"
+    "message": "在 ChatGPT、Claude 和 Grok 页面运行。只保存设置，不保存聊天或登录凭据，不向第三方发送数据。"
   },
   "clear": {
     "message": "取消选择"
@@ -54,11 +54,15 @@
     "message": "删除所选聊天？"
   },
   "warning": {
-    "message": "将通过 ChatGPT 删除下面 $N$ 条聊天。删除后无法恢复。",
+    "message": "将按 $SITE$ 原生删除方式处理这 $N$ 条聊天。Chat Tidy 无法撤销此操作。",
     "placeholders": {
       "n": {
         "content": "$1",
         "example": "3"
+      },
+      "site": {
+        "content": "$2",
+        "example": "Claude"
       }
     }
   },
@@ -130,7 +134,7 @@
     }
   },
   "refresh": {
-    "message": "安装或更新插件后，请刷新 ChatGPT 页面。"
+    "message": "安装或更新插件后，请刷新网站页面。"
   },
   "saved": {
     "message": "已保存"
@@ -154,7 +158,7 @@
     "message": "并发删除"
   },
   "concurrencyHelp": {
-    "message": "默认 2；非官方限额。遇到限流停止并冷却，自动降为 1。"
+    "message": "ChatGPT / Grok 默认并发 2，非官方限额；Claude 原生批量每组 20 条。遇限流停止。"
   },
   "cooldown": {
     "message": "限流冷却中，可在 $TIME$ 后重试。",
@@ -169,10 +173,10 @@
     "message": "隐藏时，移到聊天左侧即可展开。"
   },
   "extensionName": {
-    "message": "Chat Tidy — ChatGPT"
+    "message": "Chat Tidy"
   },
   "extensionDescription": {
-    "message": "从侧边栏选择并批量删除 ChatGPT 聊天。支持六种语言。"
+    "message": "在侧边栏勾选并批量删除 ChatGPT、Claude 和 Grok 聊天，支持六种语言。"
   },
   "actionTitle": {
     "message": "Chat Tidy — 管理聊天"

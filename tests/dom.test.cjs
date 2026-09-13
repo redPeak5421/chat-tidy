@@ -2,8 +2,8 @@ const {test}=require('node:test');const assert=require('node:assert/strict');con
 const id=n=>`${n.repeat(8)}-${n.repeat(4)}-4${n.repeat(3)}-8${n.repeat(3)}-${n.repeat(12)}`;
 const row=n=>`<div class="row"><a href="/c/${id(n)}"><span>Chat ${n}</span></a><button aria-haspopup="menu" data-owner="${n}">…</button></div>`;
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
-async function setup({beforeLoad,getSettings}={}){
- const dom=new JSDOM(`<nav><h2>聊天</h2><div id="history">${row('1')}${row('2')}</div></nav><main><a href="/c/${id('3')}">Reference link</a></main>`,{url:'https://chatgpt.com/',runScripts:'outside-only',pretendToBeVisual:true});const w=dom.window;
+async function setup({beforeLoad,getSettings,url='https://chatgpt.com/',markup}={}){
+ const dom=new JSDOM(markup??`<nav><h2>聊天</h2><div id="history">${row('1')}${row('2')}</div></nav><main><a href="/c/${id('3')}">Reference link</a></main>`,{url,runScripts:'outside-only',pretendToBeVisual:true});const w=dom.window;
  w.HTMLElement.prototype.getClientRects=function(){return this.hidden?[]:[{width:100,height:30}]};w.HTMLElement.prototype.scrollIntoView=function(){};w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'))};
  let onChange;w.chrome={storage:{local:{get:async()=>({language:'en',enabled:true})},onChanged:{addListener:fn=>onChange=fn}},runtime:{id:'test',onMessage:{addListener:()=>{},removeListener:()=>{}},sendMessage:async message=>({completed:message.ids||[]})}};
  if(getSettings)w.chrome.storage.local.get=getSettings;
@@ -129,5 +129,41 @@ test('selected checkbox does not prevent another row hover after a scroll event'
  assert.ok(links[0].querySelector('input').checked);
  assert.equal(links[1].style.getPropertyValue('--cs-wave'),'1.000');
  assert.ok(links[1].classList.contains('cs-wave-active'));
+ }finally{dom.window.close()}
+});
+
+for(const site of ['claude','grok'])test(site+' sidebar selection excludes tasks, bots and main content',async()=>{
+ const claude=site==='claude',origin=claude?'https://claude.ai':'https://grok.com',route=claude?'/chat/':'/c/';
+ const markup=`<div ${claude?'data-testid="sidebar"':'data-sidebar="sidebar"'}><button>${claude?'Chats and tasks':'聊天'}</button><div><a href="${route+id('1')}"><span>Example chat</span></a></div><a href="${claude?'/cowork/cse_example':'/bot/'+id('2')}">Other item</a></div><main><a href="${route+id('3')}">Reference</a></main>`;
+ const {dom,d}=await setup({url:origin,markup});try{
+ assert.equal(d.querySelectorAll('.cs-checkbox').length,1);
+ assert.equal(d.querySelector('main .cs-checkbox'),null);
+ d.querySelector('.cs-checkbox').click();assert.equal(d.querySelectorAll('.cs-selected').length,1);
+ d.querySelector('[data-cs-action="clear"]').click();assert.equal(d.querySelectorAll('.cs-selected').length,0);
+ }finally{dom.window.close()}
+});
+for(const site of ['claude','grok'])test(`${site} confirms once and sends only selected chats without native menu clicks`,async()=>{
+ const url=site==='claude'?'https://claude.ai/new':'https://grok.com/';
+ const attr=site==='claude'?'data-testid="sidebar"':'data-sidebar="sidebar"';
+ const route=site==='claude'?'chat':'c';
+ const {dom,w,d}=await setup({url,markup:`<div ${attr}><h2>Chats</h2><a href="/${route}/${id('1')}">Example one</a><a href="/${route}/${id('2')}">Example two</a><button class="native-menu">Menu</button></div>`,beforeLoad:w=>{w.document.cookie=`lastActiveOrg=${id('9')};path=/`;}});
+ try{
+ const calls=[];let nativeClicks=0;d.querySelector('.native-menu').onclick=()=>nativeClicks++;
+ w.chrome.runtime.sendMessage=async message=>{calls.push(message);return {completed:message.ids}};
+ d.querySelector('.cs-checkbox').click();d.querySelector('[data-cs-action="delete"]').click();
+ assert.equal(calls.length,0);assert.match(d.querySelector('.cs-confirm').textContent,new RegExp(site==='claude'?'Claude':'Grok'));
+ d.querySelector('[data-cs-confirm]').click();await wait(100);
+ assert.equal(calls.length,1);assert.deepEqual(Array.from(calls[0].ids),[id('1')]);assert.equal(nativeClicks,0);
+ if(site==='claude')assert.equal(calls[0].organizationId,id('9'));
+ assert.equal(d.querySelectorAll('.cs-deleted-row').length,1);
+ }finally{dom.window.close()}
+});
+test('Claude workspace change while confirming clears selection without deleting',async()=>{
+ const {dom,w,d}=await setup({url:'https://claude.ai/new',markup:`<div data-testid="sidebar"><h2>Chats</h2><a href="/chat/${id('1')}">Example</a></div>`,beforeLoad:w=>{w.document.cookie=`lastActiveOrg=${id('8')};path=/`;}});
+ try{
+ let calls=0;w.chrome.runtime.sendMessage=async()=>{calls++;return {completed:[]}};
+ d.querySelector('.cs-checkbox').click();d.querySelector('[data-cs-action="delete"]').click();
+ d.cookie=`lastActiveOrg=${id('9')};path=/`;d.querySelector('[data-cs-confirm]').click();await wait(100);
+ assert.equal(calls,0);assert.equal(d.querySelectorAll('.cs-checkbox:checked').length,0);
  }finally{dom.window.close()}
 });

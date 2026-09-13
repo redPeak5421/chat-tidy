@@ -16,3 +16,16 @@ test('invert touches only supplied loaded IDs; select all deduplicates',()=>{
  api.select(selected,[{id:'a',title:'A'},{id:'b',title:'B'}],'all'); assert.equal(selected.size,2);
  api.select(selected,[],'clear'); assert.equal(selected.size,0);
 });
+
+test('provider routes accept only chats on the selected origin',()=>{
+ const id='11111111-1111-4111-8111-111111111111';
+ assert.equal(api.chatId('/chat/'+id,'https://claude.ai'),id);
+ assert.equal(api.chatId('/c/'+id,'https://grok.com'),id);
+ assert.equal(api.chatId('https://grok.com/c/'+id,'https://claude.ai'),null);
+ assert.equal(api.chatId('/cowork/cse_example','https://claude.ai'),null);
+ assert.equal(api.chatId('/bot/'+id,'https://grok.com'),null);
+ assert.equal(api.chatId('/chat/'+id,'https://claude.ai.evil.test'),null);
+ assert.equal(api.siteForUrl('https://claude.ai/new').id,'claude');
+ assert.equal(api.siteForUrl('https://grok.com/').id,'grok');
+ assert.equal(api.siteForUrl('http://grok.com/'),null);
+});

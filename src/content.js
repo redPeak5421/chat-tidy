@@ -3,19 +3,34 @@
   if (globalThis.__chatTidyInstalled) return;
   globalThis.__chatTidyInstalled = true;
   const core = ChatTidyCore, i18n = ChatTidyI18n;
+  const site=core.siteForUrl(location.href);
+  if(!site)return;
   let settings = {enabled:true,checkboxMode:'dynamic',language:i18n.browserLanguage()};
+  function organizationId(){
+    if(site.id!=='claude')return null;
+    const value=document.cookie.split(';').map(part=>part.trim()).find(part=>part.startsWith('lastActiveOrg='))?.slice(14);
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value||'')?value:null;
+  }
+  let selectionOrganization=organizationId();
   const selected = new Map();
+  function sameWorkspace(){
+    const current=organizationId();
+    if(current===selectionOrganization)return true;
+    selectionOrganization=current;selected.clear();deleted.clear();
+    document.querySelectorAll('.cs-deleted-row').forEach(row=>row.classList.remove('cs-deleted-row'));
+    return false;
+  }
   let busy = false, stopped = false, scheduled = false, observer;
   const t = (key,vars) => i18n.t(settings.language,key,vars);
   const own = node => node?.nodeType === 1 && (node.matches('[data-cs-owned]') || node.closest('[data-cs-owned]'));
   function el(tag,className,text) { const node=document.createElement(tag); if(className)node.className=className; if(text!==undefined)node.textContent=text; return node; }
   function visible(node) { return node?.isConnected && !node.closest('[hidden],[aria-hidden="true"],.cs-deleted-row') && node.getClientRects().length > 0 && getComputedStyle(node).visibility !== 'hidden'; }
-  function roots() { return [...document.querySelectorAll('nav,aside,[data-testid="history"],#history,[data-testid="sidebar"]')].filter(node=>visible(node)&&!node.closest('main')); }
+  function roots() { return [...document.querySelectorAll(site.roots)].filter(node=>visible(node)&&!node.closest('main')); }
   function items() {
     const result=[],seen=new Set();
     for(const root of roots()) for(const link of root.querySelectorAll('a[href]')) {
       if(seen.has(link)||!visible(link))continue;
-      seen.add(link);const id=core.chatId(link.getAttribute('href'));if(!id)continue;
+      seen.add(link);const id=core.chatId(link.getAttribute('href'),site.origin);if(!id)continue;
       const clone=link.cloneNode(true);clone.querySelectorAll('[data-cs-owned],button').forEach(n=>n.remove());
       const title=(clone.textContent||link.getAttribute('title')||'').trim();
       if(title)result.push({id,title,link,root});
@@ -32,6 +47,7 @@
   function button(key,action) { const b=el('button','cs-button',t(key));b.type='button';b.dataset.csAction=action;b.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();act(action);});return b; }
   function act(action) {
     if(busy)return;
+    sameWorkspace();
     document.querySelectorAll('.cs-actions').forEach(n=>n.hidden=true);
     document.querySelectorAll('.cs-toggle').forEach(n=>n.setAttribute('aria-expanded','false'));
     if(action==='delete')return confirmDelete();
@@ -55,7 +71,7 @@
       bar.append(toggle);
     }
     bar.append(actions);
-    const headings=[...root.querySelectorAll('h2,h3,[role="heading"],button')].filter(node=> /^(聊天|聊天記錄|聊天记录|Chats|Your chats|Discussions|Vos discussions|チャット|チャット履歴|Чаты|Ваши чаты)$/i.test(node.textContent.trim()));
+    const headings=[...root.querySelectorAll('h2,h3,[role="heading"],button')].filter(node=> /^(聊天|聊天記錄|聊天记录|Chats|Chats and tasks|Recents|Your chats|Discussions|Vos discussions|チャット|チャット履歴|Чаты|Ваши чаты)$/i.test(node.textContent.trim()));
     const heading=headings.find(node=>!own(node));
     if(heading) { const host=heading.closest('button,a')||heading;host.classList.add('cs-heading-hover');host.insertAdjacentElement('afterend',bar);bar.classList.add('cs-at-heading'); }
     else { const first=items().find(item=>root.contains(item.link));if(first){let container=first.link.closest('ol,ul');if(!container||!root.contains(container))container=first.link.parentElement;container.before(bar);}else root.prepend(bar); }
@@ -63,6 +79,7 @@
   function scan() {
     if(!settings.enabled||busy)return;
     observer?.disconnect();
+    sameWorkspace();
     hideDeleted();
     const found=items();
     for(const item of found) {
@@ -88,28 +105,30 @@
   function cleanup(){document.querySelectorAll('.cs-heading-hover').forEach(node=>node.classList.remove('cs-heading-hover'));document.querySelectorAll('[data-cs-owned]').forEach(node=>node.remove());document.querySelectorAll('.cs-chat-link').forEach(node=>{node.classList.remove('cs-chat-link','cs-dynamic','cs-selected','cs-wave-active');node.style.removeProperty('--cs-wave');});}
   function confirmDelete(){
     if(!selected.size||document.querySelector('.cs-confirm'))return;
+    if(!sameWorkspace()){sync();return;}
+    const approvedOrganization=selectionOrganization;
     const snapshot=[...selected].map(([id,title])=>({id,title}));
     const dialog=el('dialog','cs-confirm');dialog.dataset.csOwned='true';
     const title=el('h2','',t('confirmTitle'));title.id='cs-confirm-title';dialog.setAttribute('aria-labelledby',title.id);
-    dialog.append(title,el('p','',t('warning',{n:snapshot.length})));
+    dialog.append(title,el('p','',t('warning',{n:snapshot.length,site:site.name})));
     const list=el('ul','cs-review');for(const item of snapshot)list.append(el('li','',item.title));dialog.append(list);
     const footer=el('div','cs-footer'),cancel=el('button','cs-button',t('cancel')),confirm=el('button','cs-button cs-danger',t('confirm',{n:snapshot.length}));
     cancel.dataset.csCancel='true';confirm.dataset.csConfirm='true';cancel.type=confirm.type='button';
     const opener=document.activeElement;const close=()=>{dialog.close();dialog.remove();opener?.focus();};
     cancel.onclick=close;dialog.addEventListener('cancel',event=>{event.preventDefault();close();});
-    confirm.onclick=()=>{close();void deleteBatch(snapshot);};footer.append(cancel,confirm);dialog.append(footer);document.body.append(dialog);dialog.showModal();cancel.focus();
+    confirm.onclick=()=>{close();if(!sameWorkspace()){sync();return;}void deleteBatch(snapshot,approvedOrganization);};footer.append(cancel,confirm);dialog.append(footer);document.body.append(dialog);dialog.showModal();cancel.focus();
   }
   const deleted = new Set();
   function hideDeleted() {
-    for(const link of document.querySelectorAll('nav a[href],aside a[href],#history a[href],[data-testid="history"] a[href],[data-testid="sidebar"] a[href]')) {
-      if(!deleted.has(core.chatId(link.getAttribute('href'))))continue;
+    for(const link of document.querySelectorAll(site.roots.split(',').map(root=>root+' a[href]').join(','))) {
+      if(!deleted.has(core.chatId(link.getAttribute('href'),site.origin)))continue;
       let row=link;
       const parent=link.parentElement;
       if(parent && !parent.matches('nav,aside,ul,ol,#history') && parent.querySelectorAll('a[href]').length===1 && !parent.querySelector('.cs-toolbar')) row=parent;
       row.classList.add('cs-deleted-row');
     }
   }
-  async function deleteBatch(snapshot){
+  async function deleteBatch(snapshot,approvedOrganization){
     if(busy)return;busy=true;stopped=false;sync();
     const jobId=crypto.randomUUID(), allowed=new Set(snapshot.map(item=>item.id)), completed=new Set();
     const status=el('section','cs-status');status.dataset.csOwned='true';status.setAttribute('aria-label',t('manage'));
@@ -124,7 +143,7 @@
     const progress=event=>{if(event.type==='cs-progress'&&event.jobId===jobId)update(event.completed);};
     chrome.runtime.onMessage.addListener(progress);
     let result;
-    try { result=await chrome.runtime.sendMessage({type:'cs-delete',jobId,ids:[...allowed]}); if(!result)throw Error('disconnected');update(result.completed); }
+    try { result=await chrome.runtime.sendMessage({type:'cs-delete',jobId,ids:[...allowed],organizationId:approvedOrganization}); if(!result)throw Error('disconnected');update(result.completed); }
     catch { result={error:'connection-lost'}; }
     finally { chrome.runtime.onMessage.removeListener(progress);busy=false; }
     message.textContent=t(result.cancelled?'stopped':result.error?'failed':'done',{n:completed.size});
@@ -133,7 +152,6 @@
     if(!settings.enabled){selected.clear();document.querySelectorAll('.cs-checkbox,.cs-toolbar').forEach(node=>node.remove());}
     else scan();sync();
   }
-  // Opt-in, in-memory counters only: never include text, IDs, URLs or credentials.
   // Measure unshifted row bounds so moving titles never move the trigger zone.
   let pointer=null,waveFrame=0;
   function paintWave(){

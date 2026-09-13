@@ -24,7 +24,7 @@
     "message": "全選択・反転の対象は読み込み済みのチャットのみです。スクロールで追加読み込みできます。再読み込みで選択は解除されます。"
   },
   "privacy": {
-    "message": "ChatGPT上のみで動作します。保存するのは設定だけで、チャットや認証情報は保存せず、第三者へ送信しません。"
+    "message": "ChatGPT、Claude、Grokで動作します。設定のみ保存し、チャットや認証情報の保存、第三者への送信は行いません。"
   },
   "clear": {
     "message": "選択解除"
@@ -54,11 +54,15 @@
     "message": "選択したチャットを削除？"
   },
   "warning": {
-    "message": "以下の$N$件をChatGPTで削除します。元に戻せません。",
+    "message": "$SITE$の標準の削除処理で$N$件を削除します。Chat Tidyでは元に戻せません。",
     "placeholders": {
       "n": {
         "content": "$1",
         "example": "3"
+      },
+      "site": {
+        "content": "$2",
+        "example": "Claude"
       }
     }
   },
@@ -130,7 +134,7 @@
     }
   },
   "refresh": {
-    "message": "インストール・更新後にChatGPTを再読み込みしてください。"
+    "message": "インストール・更新後にサイトを再読み込みしてください。"
   },
   "saved": {
     "message": "保存済み"
@@ -154,7 +158,7 @@
     "message": "同時削除"
   },
   "concurrencyHelp": {
-    "message": "初期値2。公式の上限ではありません。制限時は停止し、1に減らします。"
+    "message": "ChatGPT / Grok：初期値2、公式上限ではありません。Claude：標準の20件一括処理。制限時は停止します。"
   },
   "cooldown": {
     "message": "制限の待機中です。$TIME$以降に再試行してください。",
@@ -169,10 +173,10 @@
     "message": "非表示時はチャットの左端で展開します。"
   },
   "extensionName": {
-    "message": "Chat Tidy — ChatGPT"
+    "message": "Chat Tidy"
   },
   "extensionDescription": {
-    "message": "サイドバーからChatGPTのチャットを選択して一括削除。6言語に対応。"
+    "message": "サイドバーからChatGPT、Claude、Grokのチャットを選択して一括削除。6言語対応。"
   },
   "actionTitle": {
     "message": "Chat Tidy — チャットを管理"

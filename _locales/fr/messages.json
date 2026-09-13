@@ -24,7 +24,7 @@
     "message": "Tout sélectionner et inverser concernent uniquement les discussions déjà chargées. Faites défiler pour en charger davantage. Actualiser efface la sélection."
   },
   "privacy": {
-    "message": "Fonctionne uniquement sur ChatGPT. Seuls les réglages sont enregistrés, sans discussions ni identifiants. Aucune donnée transmise à des tiers."
+    "message": "Fonctionne sur ChatGPT, Claude et Grok. Seuls les réglages sont enregistrés, sans chats ni identifiants ni envoi à des tiers."
   },
   "clear": {
     "message": "Désélectionner"
@@ -54,11 +54,15 @@
     "message": "Supprimer la sélection ?"
   },
   "warning": {
-    "message": "ChatGPT supprimera ces $N$ discussions. Cette action est irréversible.",
+    "message": "Supprimer ces $N$ chats avec la fonction native de $SITE$. Chat Tidy ne peut pas annuler cette opération.",
     "placeholders": {
       "n": {
         "content": "$1",
         "example": "3"
+      },
+      "site": {
+        "content": "$2",
+        "example": "Claude"
       }
     }
   },
@@ -130,7 +134,7 @@
     }
   },
   "refresh": {
-    "message": "Actualisez ChatGPT après l’installation ou la mise à jour."
+    "message": "Actualisez le site après l’installation ou la mise à jour."
   },
   "saved": {
     "message": "Enregistré"
@@ -154,7 +158,7 @@
     "message": "Suppressions"
   },
   "concurrencyHelp": {
-    "message": "Par défaut 2, sans garantie officielle. En cas de limitation : arrêt et réduction à 1."
+    "message": "ChatGPT / Grok : 2 par défaut, sans limite officielle. Claude : lots natifs de 20. Arrêt en cas de limitation."
   },
   "cooldown": {
     "message": "Limitation : réessayez après $TIME$.",
@@ -169,10 +173,10 @@
     "message": "Pour les révéler, approchez le bord gauche."
   },
   "extensionName": {
-    "message": "Chat Tidy — ChatGPT"
+    "message": "Chat Tidy"
   },
   "extensionDescription": {
-    "message": "Sélectionnez et supprimez plusieurs discussions ChatGPT depuis la barre latérale. Six langues."
+    "message": "Sélectionnez et supprimez les chats ChatGPT, Claude et Grok depuis la barre latérale. Six langues."
   },
   "actionTitle": {
     "message": "Chat Tidy — Gérer les discussions"

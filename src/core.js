@@ -1,11 +1,19 @@
 /* Shared pure selection logic. No network or browser credentials. */
 globalThis.ChatTidyCore = (() => {
   const uuid = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
-  function chatId(href) {
+  const sites = Object.freeze({
+    'https://chatgpt.com': Object.freeze({id:'chatgpt',name:'ChatGPT',origin:'https://chatgpt.com',route:'(?:/g/[^/]+)?/c/',roots:'nav,aside,[data-testid="history"],#history,[data-testid="sidebar"]'}),
+    'https://claude.ai': Object.freeze({id:'claude',name:'Claude',origin:'https://claude.ai',route:'/chat/',roots:'[data-testid="sidebar"]'}),
+    'https://grok.com': Object.freeze({id:'grok',name:'Grok',origin:'https://grok.com',route:'/c/',roots:'[data-sidebar="sidebar"]'})
+  });
+  function siteForUrl(value) {
+    try { return sites[new URL(value).origin] || null; } catch { return null; }
+  }
+  function chatId(href, origin = 'https://chatgpt.com') {
     try {
-      const url = new URL(href, 'https://chatgpt.com');
-      if (url.origin !== 'https://chatgpt.com') return null;
-      return url.pathname.match(new RegExp('^(?:/g/[^/]+)?/c/(' + uuid + ')/?$', 'i'))?.[1].toLowerCase() || null;
+      const site=siteForUrl(origin); if(!site)return null;
+      const url=new URL(href,site.origin);if(url.origin!==site.origin)return null;
+      return url.pathname.match(new RegExp('^'+site.route+'('+uuid+')/?$','i'))?.[1].toLowerCase() || null;
     } catch { return null; }
   }
   function select(selected, items, action) {
@@ -16,5 +24,5 @@ globalThis.ChatTidyCore = (() => {
       else selected.set(id, title);
     }
   }
-  return {chatId, select};
+  return {chatId, select, siteForUrl};
 })();
