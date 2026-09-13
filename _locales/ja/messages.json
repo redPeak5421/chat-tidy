@@ -240,5 +240,23 @@
   },
   "grokLoadError": {
     "message": "すべてを読み込めませんでした。すべて表示をオフにしてから再度オンにしてください。"
+  },
+  "grokOpenHistory": {
+    "message": "標準のチャット履歴を開く"
+  },
+  "grokPeriodToday": {
+    "message": "今日"
+  },
+  "grokPeriodYesterday": {
+    "message": "昨日"
+  },
+  "grokPeriodWeek": {
+    "message": "過去7日間"
+  },
+  "grokPeriodYear": {
+    "message": "今年"
+  },
+  "grokPeriodOlder": {
+    "message": "それ以前"
   }
 }

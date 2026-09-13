@@ -240,5 +240,23 @@
   },
   "grokLoadError": {
     "message": "無法載入全部聊天，請關閉再開啟「顯示全部」重試。"
+  },
+  "grokOpenHistory": {
+    "message": "開啟原生聊天記錄"
+  },
+  "grokPeriodToday": {
+    "message": "今天"
+  },
+  "grokPeriodYesterday": {
+    "message": "昨天"
+  },
+  "grokPeriodWeek": {
+    "message": "最近7天"
+  },
+  "grokPeriodYear": {
+    "message": "本年度"
+  },
+  "grokPeriodOlder": {
+    "message": "更早"
   }
 }

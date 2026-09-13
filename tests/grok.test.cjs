@@ -31,3 +31,19 @@ test('extra rows inherit native row layout without copying selection or menu con
  manager.render();assert.equal(w.document.querySelectorAll('[data-cs-extra]').length,1);
  }finally{w.close()}
 });
+test('expanded history groups native and extra rows, opens native history once, and restores',async()=>{
+ const dom=new JSDOM(`<div data-sidebar="sidebar"><div class="cs-toolbar"><button class="cs-toggle">Manage</button></div><ul><li><a href="/c/${id('1')}">One</a></li></ul><button id="native">View all</button></div>`,{url:'https://grok.com/',runScripts:'outside-only'}),w=dom.window;
+ try{
+ const ago=n=>{const d=new Date();d.setDate(d.getDate()-n);return d.toISOString()};
+ w.fetch=async()=>({ok:true,json:async()=>({conversations:[{conversationId:id('1'),title:'One',modifyTime:ago(1)},{conversationId:id('2'),title:'Two',modifyTime:ago(3)},{conversationId:id('3'),title:'Three',modifyTime:ago(4)}]})});
+ w.eval(fs.readFileSync('src/core.js','utf8'));w.eval(fs.readFileSync('src/grok.js','utf8'));
+ let opened=0;w.document.querySelector('#native').onclick=()=>opened++;
+ const manager=w.ChatTidyGrok.create({changed:()=>{},error:e=>assert.fail(e)});await manager.setEnabled(true);manager.render();
+ assert.deepEqual([...w.document.querySelectorAll('.cs-grok-period')].map(n=>n.textContent),['grokPeriodYesterday','grokPeriodWeek']);
+ assert.equal(w.document.querySelectorAll('.cs-grok-open').length,1);w.document.querySelector('.cs-grok-open').click();assert.equal(opened,1);
+ assert.equal(w.document.querySelector('.cs-toolbar').firstElementChild.classList.contains('cs-grok-open'),true);
+ await manager.setEnabled(false);assert.equal(w.document.querySelectorAll('.cs-grok-period,.cs-grok-open,[data-cs-extra]').length,0);assert.equal(w.document.querySelector('#native').classList.contains('cs-grok-view-all'),false);
+ const period=w.ChatTidyGrok.period,now=new Date(2026,0,3,12);
+ assert.equal(period(new Date(2025,11,31),now),'Week');assert.equal(period(new Date(2025,0,1),now),'Older');assert.equal(period('bad',now),null);
+ }finally{w.close()}
+});

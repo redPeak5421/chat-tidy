@@ -240,5 +240,23 @@
   },
   "grokLoadError": {
     "message": "Could not load all chats. Turn Show all off and on to retry."
+  },
+  "grokOpenHistory": {
+    "message": "Open native chat history"
+  },
+  "grokPeriodToday": {
+    "message": "Today"
+  },
+  "grokPeriodYesterday": {
+    "message": "Yesterday"
+  },
+  "grokPeriodWeek": {
+    "message": "Last 7 days"
+  },
+  "grokPeriodYear": {
+    "message": "This year"
+  },
+  "grokPeriodOlder": {
+    "message": "Older"
   }
 }

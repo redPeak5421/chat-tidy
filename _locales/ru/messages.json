@@ -240,5 +240,23 @@
   },
   "grokLoadError": {
     "message": "Не удалось загрузить все чаты. Выключите и снова включите «Показать все»."
+  },
+  "grokOpenHistory": {
+    "message": "Открыть историю Grok"
+  },
+  "grokPeriodToday": {
+    "message": "Сегодня"
+  },
+  "grokPeriodYesterday": {
+    "message": "Вчера"
+  },
+  "grokPeriodWeek": {
+    "message": "Последние 7 дней"
+  },
+  "grokPeriodYear": {
+    "message": "В этом году"
+  },
+  "grokPeriodOlder": {
+    "message": "Ранее"
   }
 }

@@ -240,5 +240,23 @@
   },
   "grokLoadError": {
     "message": "Chargement incomplet. Désactivez puis réactivez Tout afficher pour réessayer."
+  },
+  "grokOpenHistory": {
+    "message": "Ouvrir l’historique natif"
+  },
+  "grokPeriodToday": {
+    "message": "Aujourd’hui"
+  },
+  "grokPeriodYesterday": {
+    "message": "Hier"
+  },
+  "grokPeriodWeek": {
+    "message": "7 derniers jours"
+  },
+  "grokPeriodYear": {
+    "message": "Cette année"
+  },
+  "grokPeriodOlder": {
+    "message": "Plus ancien"
   }
 }

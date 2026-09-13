@@ -119,6 +119,7 @@
     // One toolbar for each top-level visible sidebar; nested history containers do not duplicate it.
     const parents=roots().filter(root=>found.some(item=>root.contains(item.link)));
     for(const root of parents.filter(root=>!parents.some(other=>other!==root&&other.contains(root))))toolbar(root);
+    grokHistory?.render();
     sync();watch();queueWave();
   }
   function schedule(){if(expired||scheduled)return;scheduled=true;setTimeout(()=>{scheduled=false;scan();},80);}
@@ -227,7 +228,7 @@
   document.addEventListener('keydown',event=>{if(event.key==='Escape'){document.querySelectorAll('.cs-actions').forEach(n=>n.hidden=true);document.querySelectorAll('.cs-toggle[aria-expanded="true"]').forEach(n=>{n.setAttribute('aria-expanded','false');n.focus();});} });
   // Prevent parent React link handlers, while preserving the checkbox's native toggle.
   document.addEventListener('click',event=>{if(event.target.matches?.('.cs-checkbox')){event.stopPropagation();const box=event.target;if(!busy){box.checked?selected.set(box.dataset.csId,items().find(item=>item.id===box.dataset.csId)?.title||''):selected.delete(box.dataset.csId);sync();}}},true);
-  const grokHistory=site.id==='grok'&&globalThis.ChatTidyGrok?ChatTidyGrok.create({changed:schedule,error:code=>{const notice=el('section','cs-status',t('grokLoadError')+' ('+code+')');notice.dataset.csOwned='true';const close=el('button','cs-button',t('close'));close.onclick=()=>notice.remove();notice.append(close);document.body.append(notice);}}):null;
+  const grokHistory=site.id==='grok'&&globalThis.ChatTidyGrok?ChatTidyGrok.create({t,changed:schedule,error:code=>{const notice=el('section','cs-status',t('grokLoadError')+' ('+code+')');notice.dataset.csOwned='true';const close=el('button','cs-button',t('close'));close.onclick=()=>notice.remove();notice.append(close);document.body.append(notice);}}):null;
   chrome.runtime.onMessage.addListener((message,sender,reply)=>{if(message?.type==='cs-site'&&sender.id===chrome.runtime.id){reply({site:site.id});}return false;});
   document.addEventListener('pointerdown',event=>{if(event.target.matches?.('.cs-checkbox'))event.stopPropagation();},true);
   document.addEventListener('keydown',event=>{if(event.target.matches?.('.cs-checkbox'))event.stopPropagation();},true);
