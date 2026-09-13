@@ -8,15 +8,6 @@
   "language": {
     "message": "Langue"
   },
-  "layout": {
-    "message": "Commandes sur la page"
-  },
-  "menuLayout": {
-    "message": "Ouvrir un petit menu au clic"
-  },
-  "buttonLayout": {
-    "message": "Afficher quatre boutons"
-  },
   "help": {
     "message": "Mode d’emploi"
   },
@@ -147,9 +138,6 @@
   "working": {
     "message": "Suppression en arrière-plan. Vous pouvez utiliser la page."
   },
-  "empty": {
-    "message": "Sélectionnez une discussion."
-  },
   "apiError": {
     "message": "Vérifiez votre connexion ou réessayez plus tard. Actualisez pour vérifier le résultat."
   },
@@ -191,29 +179,5 @@
   },
   "repository": {
     "message": "Voir le code sur GitHub"
-  },
-  "diagnostics": {
-    "message": "Diagnostic"
-  },
-  "diagnosticStart": {
-    "message": "Démarrer"
-  },
-  "diagnosticExport": {
-    "message": "Exporter"
-  },
-  "diagnosticStop": {
-    "message": "Arrêter et effacer"
-  },
-  "diagnosticHelp": {
-    "message": "Durées et compteurs en mémoire dans cet onglet uniquement. Reproduisez le problème puis exportez."
-  },
-  "diagnosticRunning": {
-    "message": "Enregistrement actif. Reproduisez le problème sur ChatGPT."
-  },
-  "diagnosticUnavailable": {
-    "message": "Ouvrez et actualisez ChatGPT."
-  },
-  "diagnosticEmpty": {
-    "message": "Démarrez avant d’exporter."
   }
 }

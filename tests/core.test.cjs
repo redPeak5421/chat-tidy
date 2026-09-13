@@ -16,13 +16,3 @@ test('invert touches only supplied loaded IDs; select all deduplicates',()=>{
  api.select(selected,[{id:'a',title:'A'},{id:'b',title:'B'}],'all'); assert.equal(selected.size,2);
  api.select(selected,[],'clear'); assert.equal(selected.size,0);
 });
-test('deletion queue stops at first failure',async()=>{
- assert.ok(api); const calls=[];
- const result=await api.runQueue([{id:'a'},{id:'b'},{id:'c'}],async(item)=>{calls.push(item.id);if(item.id==='b')throw Error('changed');},()=>false,()=>{},async()=>{});
- assert.deepEqual(calls,['a','b']);assert.equal(result.done,1);assert.equal(result.error.message,'changed');
-});
-test('cancellation prevents the next deletion',async()=>{
- assert.ok(api); let stop=false,calls=0;
- const result=await api.runQueue([{id:'a'},{id:'b'}],async()=>{calls++;stop=true;},()=>stop,()=>{},async()=>{});
- assert.equal(calls,1);assert.equal(result.cancelled,true);
-});

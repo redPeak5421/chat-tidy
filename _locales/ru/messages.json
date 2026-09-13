@@ -8,15 +8,6 @@
   "language": {
     "message": "Язык"
   },
-  "layout": {
-    "message": "Управление на странице"
-  },
-  "menuLayout": {
-    "message": "Открывать небольшое меню"
-  },
-  "buttonLayout": {
-    "message": "Показывать четыре кнопки"
-  },
   "help": {
     "message": "Как пользоваться"
   },
@@ -147,9 +138,6 @@
   "working": {
     "message": "Удаление в фоне. Можно продолжать пользоваться страницей."
   },
-  "empty": {
-    "message": "Сначала выберите чат."
-  },
   "apiError": {
     "message": "Проверьте вход или повторите позже. Обновите страницу для проверки результата."
   },
@@ -191,29 +179,5 @@
   },
   "repository": {
     "message": "Исходный код на GitHub"
-  },
-  "diagnostics": {
-    "message": "Диагностика"
-  },
-  "diagnosticStart": {
-    "message": "Начать"
-  },
-  "diagnosticExport": {
-    "message": "Экспорт"
-  },
-  "diagnosticStop": {
-    "message": "Стоп и очистка"
-  },
-  "diagnosticHelp": {
-    "message": "Только время и счётчики в памяти вкладки. Воспроизведите проблему, затем экспортируйте."
-  },
-  "diagnosticRunning": {
-    "message": "Запись включена. Воспроизведите проблему в ChatGPT."
-  },
-  "diagnosticUnavailable": {
-    "message": "Откройте и обновите ChatGPT."
-  },
-  "diagnosticEmpty": {
-    "message": "Сначала начните запись."
   }
 }

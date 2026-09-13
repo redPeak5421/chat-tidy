@@ -8,15 +8,6 @@
   "language": {
     "message": "Language"
   },
-  "layout": {
-    "message": "Page controls"
-  },
-  "menuLayout": {
-    "message": "Click to open a small menu"
-  },
-  "buttonLayout": {
-    "message": "Show four buttons"
-  },
   "help": {
     "message": "How to use"
   },
@@ -147,9 +138,6 @@
   "working": {
     "message": "Deleting in the background. You can continue using the page."
   },
-  "empty": {
-    "message": "Select a chat first."
-  },
   "apiError": {
     "message": "Check your login or retry later. Refresh to verify uncertain results."
   },
@@ -191,29 +179,5 @@
   },
   "repository": {
     "message": "View source on GitHub"
-  },
-  "diagnostics": {
-    "message": "Diagnostics"
-  },
-  "diagnosticStart": {
-    "message": "Start recording"
-  },
-  "diagnosticExport": {
-    "message": "Export report"
-  },
-  "diagnosticStop": {
-    "message": "Stop and clear"
-  },
-  "diagnosticHelp": {
-    "message": "Records timing and counts only, in this tab’s memory. Start, reproduce the problem, then export."
-  },
-  "diagnosticRunning": {
-    "message": "Recording. Reproduce the problem on ChatGPT."
-  },
-  "diagnosticUnavailable": {
-    "message": "Open ChatGPT and refresh it first."
-  },
-  "diagnosticEmpty": {
-    "message": "Start recording before exporting."
   }
 }

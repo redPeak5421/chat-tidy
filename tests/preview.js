@@ -1,5 +1,5 @@
 const previewTitles=['示例：旅行计划','示例：读书笔记','示例：学习安排','示例：每周食谱','示例：写作练习','示例：项目清单','示例：健身计划','示例：语言学习','示例：园艺指南','示例：摄影技巧','Demo: Weekend ideas','Demo: Reading list'];
-const settings={enabled:true,language:'zh-CN',layout:'menu'};let settingsChanged=()=>{};
+const settings={enabled:true,language:'zh-CN'};let settingsChanged=()=>{};
 window.chrome={storage:{local:{get:async()=>settings,set:async data=>{const changes={};for(const [key,value] of Object.entries(data)){settings[key]=value;changes[key]={newValue:value};}settingsChanged(changes,'local');}},onChanged:{addListener:fn=>settingsChanged=fn}}};
 const historyList=document.getElementById('history');
 if(historyList)previewTitles.forEach((title,index)=>{

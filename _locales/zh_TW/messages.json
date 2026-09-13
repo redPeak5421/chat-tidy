@@ -8,15 +8,6 @@
   "language": {
     "message": "語言"
   },
-  "layout": {
-    "message": "頁面操作方式"
-  },
-  "menuLayout": {
-    "message": "點擊顯示小選單"
-  },
-  "buttonLayout": {
-    "message": "直接顯示四個按鈕"
-  },
   "help": {
     "message": "使用說明"
   },
@@ -147,9 +138,6 @@
   "working": {
     "message": "背景刪除中，可以繼續操作頁面。"
   },
-  "empty": {
-    "message": "請先選擇聊天。"
-  },
   "apiError": {
     "message": "請檢查登入狀態或稍後重試；結果不確定時請重新整理核對。"
   },
@@ -191,29 +179,5 @@
   },
   "repository": {
     "message": "在 GitHub 查看原始碼"
-  },
-  "diagnostics": {
-    "message": "問題診斷"
-  },
-  "diagnosticStart": {
-    "message": "開始記錄"
-  },
-  "diagnosticExport": {
-    "message": "匯出報告"
-  },
-  "diagnosticStop": {
-    "message": "停止並清空"
-  },
-  "diagnosticHelp": {
-    "message": "僅在目前分頁記憶體記錄耗時與數量。開始後重現問題，再匯出。"
-  },
-  "diagnosticRunning": {
-    "message": "記錄中，請回到 ChatGPT 重現問題。"
-  },
-  "diagnosticUnavailable": {
-    "message": "請先開啟並重新整理 ChatGPT。"
-  },
-  "diagnosticEmpty": {
-    "message": "請先開始記錄，再匯出。"
   }
 }

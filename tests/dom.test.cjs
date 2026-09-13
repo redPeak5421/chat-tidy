@@ -5,7 +5,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 async function setup({beforeLoad,getSettings}={}){
  const dom=new JSDOM(`<nav><h2>聊天</h2><div id="history">${row('1')}${row('2')}</div></nav><main><a href="/c/${id('3')}">Reference link</a></main>`,{url:'https://chatgpt.com/',runScripts:'outside-only',pretendToBeVisual:true});const w=dom.window;
  w.HTMLElement.prototype.getClientRects=function(){return this.hidden?[]:[{width:100,height:30}]};w.HTMLElement.prototype.scrollIntoView=function(){};w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'))};
- let onChange;w.chrome={storage:{local:{get:async()=>({language:'en',enabled:true,layout:'menu'})},onChanged:{addListener:fn=>onChange=fn}},runtime:{id:'test',onMessage:{addListener:()=>{},removeListener:()=>{}},sendMessage:async message=>({completed:message.ids||[]})}};
+ let onChange;w.chrome={storage:{local:{get:async()=>({language:'en',enabled:true})},onChanged:{addListener:fn=>onChange=fn}},runtime:{id:'test',onMessage:{addListener:()=>{},removeListener:()=>{}},sendMessage:async message=>({completed:message.ids||[]})}};
  if(getSettings)w.chrome.storage.local.get=getSettings;
  beforeLoad?.(w);
  for(const f of ['core','i18n','content'])if(fs.existsSync(`src/${f}.js`))w.eval(fs.readFileSync(`src/${f}.js`,'utf8'));
@@ -31,9 +31,9 @@ test('all, invert, clear and cancellation never invoke native delete',async()=>{
  d.querySelector('[data-cs-action="clear"]').click();assert.equal(d.querySelectorAll('.cs-checkbox:checked').length,0);
  }finally{dom.window.close()}
 });
-test('settings switch language/layout and disable removes controls',async()=>{
+test('settings switch language and disable removes controls',async()=>{
  const {dom,d,change}=await setup();try{
- await change({language:{newValue:'fr'},layout:{newValue:'buttons'}});assert.equal(d.querySelector('[data-cs-action="delete"]').textContent,'Supprimer');assert.equal(d.querySelector('.cs-actions').hidden,true);assert.ok(d.querySelector('.cs-toggle svg'));
+ await change({language:{newValue:'fr'}});assert.equal(d.querySelector('[data-cs-action="delete"]').textContent,'Supprimer');assert.equal(d.querySelector('.cs-actions').hidden,true);assert.ok(d.querySelector('.cs-toggle svg'));
  await change({enabled:{newValue:false}});assert.equal(d.querySelectorAll('.cs-checkbox,.cs-toolbar').length,0);
  }finally{dom.window.close()}
 });
@@ -59,9 +59,9 @@ test('failed background batch retains unfinished selections',async()=>{
 test('checkbox does not navigate using a parent click handler',async()=>{
  const {dom,d}=await setup();try{let navigations=0;d.querySelector('nav').addEventListener('click',()=>navigations++);d.querySelector('.cs-checkbox').click();assert.equal(navigations,0);assert.equal(d.querySelector('.cs-checkbox').checked,true);}finally{dom.window.close()}
 });
-test('popup persists language and layout and renders translated help',async()=>{
+test('popup persists language and renders translated help',async()=>{
  const dom=new JSDOM(fs.readFileSync('popup.html','utf8'),{url:'https://extension.test/',runScripts:'outside-only'});const w=dom.window,d=w.document,saved={};
- try{w.chrome={storage:{local:{get:async()=>({enabled:true,layout:'menu',language:'en'}),set:async data=>Object.assign(saved,data)}}};
+ try{w.chrome={storage:{local:{get:async()=>({enabled:true,language:'en'}),set:async data=>Object.assign(saved,data)}}};
  for(const f of ['i18n','popup'])w.eval(fs.readFileSync(`src/${f}.js`,'utf8'));await wait(0);
  const lang=d.getElementById('language');lang.value='ja';lang.dispatchEvent(new w.Event('change'));await wait(0);assert.equal(saved.language,'ja');assert.equal(d.querySelector('summary').textContent,'使い方');
  assert.equal(d.getElementById('layout'),null);assert.ok(d.querySelector('.logo svg'));
@@ -129,31 +129,5 @@ test('selected checkbox does not prevent another row hover after a scroll event'
  assert.ok(links[0].querySelector('input').checked);
  assert.equal(links[1].style.getPropertyValue('--cs-wave'),'1.000');
  assert.ok(links[1].classList.contains('cs-wave-active'));
- }finally{dom.window.close()}
-});
-test('diagnostics are opt-in, popup-only, aggregate-only and clearable; main updates do not rescan',async()=>{
- let listener;
- const {dom,w,d}=await setup({beforeLoad(w){
- w.chrome.runtime.getURL=path=>'chrome-extension://test/'+path;
- w.chrome.runtime.getManifest=()=>({version:'test'});
- w.chrome.runtime.onMessage.addListener=fn=>listener=fn;
- }});try{
- const sender={id:'test',url:'chrome-extension://test/popup.html'};
- const request=(action,from=sender)=>{let reply;listener({type:'cs-diagnostics-'+action},from,value=>reply=value);return reply;};
- assert.equal(request('report'),null);
- assert.equal(request('start',{id:'other',url:sender.url}),undefined);
- assert.equal(request('report'),null);
- assert.equal(request('start').ok,true);
- d.querySelector('input').click();
- d.dispatchEvent(new w.MouseEvent('pointermove',{clientX:35,clientY:120}));
- d.querySelector('main').append(d.createElement('p'));
- await wait(130);
- const report=request('report');
- assert.equal(report.selectedCount,1);assert.equal(report.pointerEvents,1);
- assert.equal(report.scans,0);assert.ok(report.framesWithSelection>0);
- assert.ok(!JSON.stringify(report).includes('Chat 1'));
- assert.ok(!JSON.stringify(report).includes(id('1')));
- assert.ok(Object.values(report).every(value=>typeof value==='number'||typeof value==='boolean'||value==='test'));
- assert.equal(request('stop').ok,true);assert.equal(request('report'),null);
  }finally{dom.window.close()}
 });

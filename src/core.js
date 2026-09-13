@@ -1,4 +1,4 @@
-/* Shared pure selection and queue logic. No network or browser credentials. */
+/* Shared pure selection logic. No network or browser credentials. */
 globalThis.ChatTidyCore = (() => {
   const uuid = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
   function chatId(href) {
@@ -16,16 +16,5 @@ globalThis.ChatTidyCore = (() => {
       else selected.set(id, title);
     }
   }
-  async function runQueue(items, remove, stopped, progress, delay = ms => new Promise(r => setTimeout(r, ms))) {
-    let done = 0;
-    for (const item of items) {
-      if (stopped()) return {done, cancelled: true};
-      try { await remove(item); }
-      catch (error) { return {done, error, cancelled: stopped()}; }
-      done++; progress(done, item);
-      if (done < items.length) await delay(700);
-    }
-    return {done, cancelled: false};
-  }
-  return {chatId, select, runQueue};
+  return {chatId, select};
 })();

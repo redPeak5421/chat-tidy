@@ -38,7 +38,3 @@ Package `manifest.json`, `popup.html`, `src/`, `_locales/`, `icons/`, `LICENSE` 
 ## License
 
 Licensed under the [Apache License 2.0](LICENSE). The GitHub logo is an official brand asset used to link to this repository, subject to [GitHub’s brand guidelines](https://brand.github.com/foundations/logo). It is not covered by this project’s Apache license.
-
-### 本地问题诊断
-
-在 ChatGPT 标签页打开插件的“问题诊断”，点击“开始记录”，关闭弹窗并复现悬停问题，再打开插件“导出报告”。报告仅包含事件次数、行数、选择数量和耗时，不包含聊天标题、内容、会话 ID、网址或登录凭据。诊断默认关闭，仅保存在当前页面内存；刷新页面或“停止并清空”即清除。页面长任务表示主线程繁忙，并不能单独证明卡顿来自 ChatGPT。
