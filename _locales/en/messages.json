@@ -188,5 +188,8 @@
   },
   "actionTitle": {
     "message": "Chat Tidy — Manage chats"
+  },
+  "repository": {
+    "message": "View source on GitHub"
   }
 }

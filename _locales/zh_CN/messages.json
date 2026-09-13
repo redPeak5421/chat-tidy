@@ -188,5 +188,8 @@
   },
   "actionTitle": {
     "message": "Chat Tidy — 管理聊天"
+  },
+  "repository": {
+    "message": "在 GitHub 查看源码"
   }
 }

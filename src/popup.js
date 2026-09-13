@@ -5,6 +5,9 @@
   let settings={...defaults,...await chrome.storage.local.get(defaults)};
   function render(){
     document.documentElement.lang=settings.language;
+    const repository=document.querySelector('.repository-link');
+    repository.title=api.t(settings.language,'repository');
+    repository.setAttribute('aria-label',repository.title);
     document.querySelectorAll('[data-i18n]').forEach(node=>node.textContent=api.t(settings.language,node.dataset.i18n));
     document.getElementById('enabled').checked=settings.enabled;
     document.getElementById('language').value=settings.language;

@@ -188,5 +188,8 @@
   },
   "actionTitle": {
     "message": "Chat Tidy — Управление чатами"
+  },
+  "repository": {
+    "message": "Исходный код на GitHub"
   }
 }
