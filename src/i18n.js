@@ -8,8 +8,13 @@ globalThis.ChatTidyI18n = (() => {
     if (/^zh(-|$)/.test(value)) return 'zh-CN';
     return languages[value.split('-')[0]] ? value.split('-')[0] : 'en';
   }
+  let nativeAvailable=true;
+  let cachedLanguage;
   function browserLanguage() {
-    return normalize(globalThis.chrome?.i18n?.getUILanguage?.() || globalThis.navigator?.language || 'en');
+    if(cachedLanguage)return cachedLanguage;
+    let language=globalThis.navigator?.language || 'en';
+    try{language=globalThis.chrome?.i18n?.getUILanguage?.() || language;}catch{nativeAvailable=false;}
+    return cachedLanguage=normalize(language);
   }
   const dict = Object.fromEntries(Object.entries(catalogs).map(([lang, messages]) => [lang,
     Object.fromEntries(Object.entries(messages).map(([key, entry]) => [key,
@@ -19,8 +24,10 @@ globalThis.ChatTidyI18n = (() => {
     const entry = catalogs[locale][key] || catalogs.en[key];
     if (!entry) return key;
     // Chrome uses the browser locale; the bundled catalogs preserve manual language switching.
-    const native = globalThis.chrome?.i18n;
-    if (native?.getMessage && locale === browserLanguage()) {
+    const browserLocale=browserLanguage();
+    try {
+    const native = nativeAvailable && globalThis.chrome?.i18n;
+    if (native?.getMessage && locale === browserLocale) {
       const substitutions = [];
       for (const [name, placeholder] of Object.entries(entry.placeholders || {})) {
         substitutions[Number(placeholder.content.slice(1)) - 1] = String(vars[name] ?? '');
@@ -28,6 +35,7 @@ globalThis.ChatTidyI18n = (() => {
       const message = native.getMessage(key, substitutions);
       if (message) return message;
     }
+    }catch{nativeAvailable=false;}
     return (dict[locale][key] || dict.en[key]).replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ''));
   }
   return {languages, dict, normalize, browserLanguage, t};

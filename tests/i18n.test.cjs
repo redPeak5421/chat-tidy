@@ -44,3 +44,12 @@ test('locale normalization handles Chrome underscores and Chinese script/region 
   assert.equal(api.normalize('de-DE'),'en');
   assert.equal(api.browserLanguage(),'ja');
 });
+test('invalidated Chrome i18n falls back to bundled translations without repeated API calls',()=>{
+ let calls=0;const api=load({i18n:{getUILanguage:()=>{calls++;throw Error('Extension context invalidated.')},getMessage:()=>{calls++;throw Error('Extension context invalidated.')}}});
+ assert.equal(api.browserLanguage(),'ja');assert.equal(api.t('ja','delete'),'削除');assert.equal(api.t('en','selected',{n:2}),'2 selected');assert.ok(calls<=1);
+});
+test('invalidation after initialization preserves language and translated placeholders',()=>{
+ let expired=false,calls=0;const api=load({i18n:{getUILanguage:()=>{if(expired)throw Error('Extension context invalidated.');return 'fr'},getMessage:()=>{calls++;if(expired)throw Error('Extension context invalidated.');return ''}}});
+ assert.equal(api.browserLanguage(),'fr');expired=true;
+ assert.equal(api.t('fr','selected',{n:3}),'3 sélectionnées');assert.equal(api.t('fr','selected',{n:4}),'4 sélectionnées');assert.ok(calls<=1);
+});

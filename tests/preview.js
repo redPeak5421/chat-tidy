@@ -15,10 +15,10 @@ document.getElementById('preview-language')?.addEventListener('change',e=>chrome
 
 // Local preview only: simulate background responses without sending any requests.
 const progressListeners=new Set();let previewStopped=false;
-chrome.runtime={onMessage:{addListener:fn=>progressListeners.add(fn),removeListener:fn=>progressListeners.delete(fn)},sendMessage:async message=>{
+chrome.runtime={id:'preview',onMessage:{addListener:fn=>progressListeners.add(fn),removeListener:fn=>progressListeners.delete(fn)},sendMessage:async message=>{
  if(message.type==='cs-cancel'){previewStopped=true;return {ok:true};}
- if(message.type!=='cs-delete')return;
+ if(!['cs-delete','cs-archive'].includes(message.type))return;
  previewStopped=false;const completed=[];
- for(const id of message.ids){if(previewStopped)break;await new Promise(r=>setTimeout(r,350));completed.push(id);for(const fn of progressListeners)fn({type:'cs-progress',jobId:message.jobId,completed:[...completed]});}
+ for(const id of message.ids){if(previewStopped)break;await new Promise(r=>setTimeout(r,350));completed.push(id);for(const fn of progressListeners)fn({type:'cs-progress',jobId:message.jobId,completed:[...completed]},{id:'preview'});}
  return {completed,cancelled:previewStopped};
 }};

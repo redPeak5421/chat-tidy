@@ -248,3 +248,12 @@ for(const site of ['grok','claude'])test(`popup show-all switch visibility follo
  if(site==='grok'){const input=d.querySelector('#grokShowAll');input.checked=true;input.dispatchEvent(new w.Event('change'));await wait(10);assert.equal(saved.grokShowAll,true);}
  }finally{w.close()}
 });
+test('extension reload disconnects stale sidebar controls and requests a page refresh',async()=>{
+ const {dom,w,d}=await setup();try{
+ w.chrome.runtime.id=undefined;
+ d.querySelector('#history').insertAdjacentHTML('beforeend',row('4'));await wait(160);
+ assert.equal(d.querySelectorAll('.cs-checkbox').length,0);assert.match(d.querySelector('.cs-context-expired').textContent,/Refresh/);
+ d.querySelector('#history').insertAdjacentHTML('beforeend',row('5'));await wait(120);
+ assert.equal(d.querySelectorAll('.cs-context-expired').length,1);
+ }finally{dom.window.close()}
+});

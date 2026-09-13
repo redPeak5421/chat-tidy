@@ -20,6 +20,7 @@
     document.querySelectorAll('.cs-deleted-row').forEach(row=>row.classList.remove('cs-deleted-row'));
     return false;
   }
+  let expired=false;
   let busy = false, stopped = false, scheduled = false, observer;
   const t = (key,vars) => i18n.t(settings.language,key,vars);
   const own = node => node?.nodeType === 1 && (node.matches('[data-cs-owned]') || node.closest('[data-cs-owned]'));
@@ -39,6 +40,15 @@
     }
     return result;
   }
+  function contextAlive(){
+    if(expired)return false;
+    try{if(chrome.runtime.id)return true;}catch{}
+    expired=true;observer?.disconnect();selected.clear();settings.enabled=false;
+    void grokHistory?.setEnabled(false);cleanup();
+    const notice=el('section','cs-status cs-context-expired',t('refresh'));notice.dataset.csOwned='true';
+    const close=el('button','cs-button',t('close'));close.onclick=()=>notice.remove();notice.append(close);document.body.append(notice);
+    return false;
+  }
   function sync() {
     const count=t('selected',{n:selected.size});
     document.querySelectorAll('.cs-toolbar').forEach(bar=>bar.classList.toggle('cs-has-selection',selected.size>0));
@@ -48,7 +58,7 @@
   }
   function button(key,action) { const b=el('button','cs-button',t(key));b.type='button';b.dataset.csAction=action;b.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();act(action);});return b; }
   function act(action) {
-    if(busy)return;
+    if(!contextAlive()||busy)return;
     sameWorkspace();
     document.querySelectorAll('.cs-actions').forEach(n=>n.hidden=true);
     document.querySelectorAll('.cs-toggle').forEach(n=>n.setAttribute('aria-expanded','false'));
@@ -84,7 +94,7 @@
     else { const first=items().find(item=>root.contains(item.link));if(first){let container=first.link.closest('ol,ul');if(!container||!root.contains(container))container=first.link.parentElement;container.before(bar);}else root.prepend(bar); }
   }
   function scan() {
-    if(!settings.enabled||busy)return;
+    if(!contextAlive()||!settings.enabled||busy)return;
     observer?.disconnect();
     sameWorkspace();
     grokHistory?.render();
@@ -111,10 +121,11 @@
     for(const root of parents.filter(root=>!parents.some(other=>other!==root&&other.contains(root))))toolbar(root);
     sync();watch();queueWave();
   }
-  function schedule(){if(scheduled)return;scheduled=true;setTimeout(()=>{scheduled=false;scan();},80);}
-  function watch(){observer?.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['href','hidden','aria-hidden','class']});}
+  function schedule(){if(expired||scheduled)return;scheduled=true;setTimeout(()=>{scheduled=false;scan();},80);}
+  function watch(){if(expired)return;observer?.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['href','hidden','aria-hidden','class']});}
   function cleanup(){document.querySelectorAll('.cs-grok-result').forEach(n=>n.classList.remove('cs-grok-result'));document.querySelectorAll('.cs-grok-search-link').forEach(n=>n.classList.remove('cs-grok-search-link'));document.querySelectorAll('.cs-heading-hover').forEach(node=>node.classList.remove('cs-heading-hover'));document.querySelectorAll('[data-cs-owned]').forEach(node=>node.remove());document.querySelectorAll('.cs-chat-link').forEach(node=>{node.classList.remove('cs-chat-link','cs-dynamic','cs-selected','cs-wave-active');node.style.removeProperty('--cs-wave');});}
   function confirmDelete(action='delete'){
+    if(!contextAlive())return;
     if(!selected.size||document.querySelector('.cs-confirm'))return;
     if(!sameWorkspace()){sync();return;}
     const approvedOrganization=selectionOrganization;
@@ -140,12 +151,12 @@
     }
   }
   async function deleteBatch(snapshot,approvedOrganization,action='delete'){
-    if(busy)return;busy=true;stopped=false;sync();
+    if(!contextAlive()||busy)return;busy=true;stopped=false;sync();
     const jobId=crypto.randomUUID(), allowed=new Set(snapshot.map(item=>item.id)), completed=new Set();
     const status=el('section','cs-status');status.dataset.csOwned='true';status.setAttribute('aria-label',t('manage'));
     const message=el('p','',t('progress',{done:0,total:snapshot.length}));message.setAttribute('role','status');
     const hint=el('p','cs-hint',t(action==='archive'?'archiveWorking':'working')),stop=el('button','cs-button',t('stop'));stop.type='button';
-    stop.onclick=()=>{stopped=true;stop.disabled=true;chrome.runtime.sendMessage({type:'cs-cancel',jobId}).catch(()=>{});};
+    stop.onclick=()=>{stopped=true;stop.disabled=true;try{void chrome.runtime.sendMessage({type:'cs-cancel',jobId}).catch(()=>{contextAlive();});}catch{contextAlive();}};
     status.append(message,hint,stop);(site.id==='grok'?document.querySelector('[role="dialog"]:has([cmdk-list])')||document.body:document.body).append(status);
     const update=ids=>{
       if(!status.isConnected)document.body.append(status);
@@ -180,11 +191,11 @@
       })();
       return true;
     };
-    chrome.runtime.onMessage.addListener(progress);
     let result;
-    try { result=await chrome.runtime.sendMessage({type:action==='archive'?'cs-archive':'cs-delete',jobId,ids:[...allowed],organizationId:approvedOrganization}); if(!result)throw Error('disconnected');update(result.completed); }
+    try { chrome.runtime.onMessage.addListener(progress);result=await chrome.runtime.sendMessage({type:action==='archive'?'cs-archive':'cs-delete',jobId,ids:[...allowed],organizationId:approvedOrganization}); if(!result)throw Error('disconnected');update(result.completed); }
     catch { result={error:'connection-lost'}; }
-    finally { chrome.runtime.onMessage.removeListener(progress);busy=false; }
+    finally { try{chrome.runtime.onMessage.removeListener(progress);}catch{}busy=false; }
+    if(!contextAlive())return;
     message.textContent=t(result.cancelled?(action==='archive'?'archiveStopped':'stopped'):result.error?'failed':'done',{n:completed.size});
     hint.textContent=result.retryAt ? t('cooldown',{time:new Date(result.retryAt).toLocaleTimeString(i18n.normalize(settings.language))}) : result.error ? t('apiError')+' ('+result.error+')' : '';if(!result.error)hint.remove();
     stop.disabled=false;stop.textContent=t('close');stop.onclick=()=>status.remove();
