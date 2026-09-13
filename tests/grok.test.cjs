@@ -16,3 +16,18 @@ test('list errors stop pagination without automatic retry',async()=>{
  assert.equal(calls,1);assert.deepEqual(errors,['http-429']);await list.setEnabled(false);
  }finally{w.close()}
 });
+
+test('extra rows inherit native row layout without copying selection or menu controls',async()=>{
+ const dom=new JSDOM(`<style>.native-row{margin:0 4px}.native-link{height:36px;padding:6px 12px}</style><div data-sidebar="sidebar"><ul><li data-sidebar="menu-item" class="native-row"><div class="wrapper"><a href="/c/${id('1')}" class="native-link cs-chat-link cs-selected cs-dynamic" data-active="true" aria-expanded="true"><input class="cs-checkbox" checked><span>One</span></a><button>Menu</button></div></li></ul></div>`,{url:'https://grok.com/',runScripts:'outside-only'}),w=dom.window;
+ try{
+ w.fetch=async()=>({ok:true,json:async()=>({conversations:[{conversationId:id('2'),title:'Two'}]})});
+ w.eval(fs.readFileSync('src/core.js','utf8'));w.eval(fs.readFileSync('src/grok.js','utf8'));
+ const manager=w.ChatTidyGrok.create({changed:()=>{},error:e=>assert.fail(e)});await manager.setEnabled(true);
+ const extra=w.document.querySelector('[data-cs-extra]'),link=extra.querySelector('a'),native=w.document.querySelector('a');
+ assert.equal(w.getComputedStyle(extra).margin,'0px 4px');
+ for(const prop of ['height','padding'])assert.equal(w.getComputedStyle(link)[prop],w.getComputedStyle(native)[prop]);
+ assert.equal(link.parentElement.className,'wrapper');assert.equal(extra.dataset.sidebar,'menu-item');
+ assert.equal(extra.querySelector('button,input'),null);assert.equal(link.hasAttribute('data-active'),false);assert.equal(link.hasAttribute('aria-expanded'),false);assert.equal(link.classList.contains('cs-selected'),false);assert.equal(link.classList.contains('cs-dynamic'),false);
+ manager.render();assert.equal(w.document.querySelectorAll('[data-cs-extra]').length,1);
+ }finally{w.close()}
+});

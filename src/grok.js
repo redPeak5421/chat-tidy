@@ -9,16 +9,22 @@ globalThis.ChatTidyGrok={create({changed,error}){
   function render(){
     if(!enabled)return;
     const sidebar=document.querySelector('[data-sidebar="sidebar"]');
-    const first=[...sidebar?.querySelectorAll('a[href]')||[]].find(a=>ChatTidyCore.chatId(a.getAttribute('href'),'https://grok.com'));
-    const list=first?.closest('ul');if(!list)return;
+    const first=[...sidebar?.querySelectorAll('a[href]:not([data-cs-extra-link])')||[]].find(a=>ChatTidyCore.chatId(a.getAttribute('href'),'https://grok.com'));
+    const list=first?.closest('ul');if(!list||!first.closest('li'))return;
     const native=new Set([...sidebar.querySelectorAll('a[href]:not([data-cs-extra-link])')].map(a=>ChatTidyCore.chatId(a.getAttribute('href'),'https://grok.com')));
     for(const row of list.querySelectorAll('[data-cs-extra]'))if(native.has(row.dataset.csExtra))row.remove();
     const existing=new Set([...list.querySelectorAll('[data-cs-extra]')].map(n=>n.dataset.csExtra));
     for(const [id,title] of chats){
       if(native.has(id)||existing.has(id))continue;
-      const row=document.createElement('li');row.dataset.csOwned='true';row.dataset.csExtra=id;
-      const link=document.createElement('a');link.href='/c/'+id;link.dataset.csExtraLink='true';link.className='cs-grok-extra-link';link.title=title;
-      const text=document.createElement('span');text.textContent=title;link.append(text);row.append(link);list.append(row);
+      // Copy only presentation along the native row path, never its state or controls.
+      const shell=node=>{const copy=document.createElement(node.tagName);copy.className=[...node.classList].filter(c=>!c.startsWith('cs-')).join(' ');if(node.dataset.sidebar)copy.dataset.sidebar=node.dataset.sidebar;return copy;};
+      const nativeRow=first.closest('li');
+      const row=shell(nativeRow);row.dataset.csOwned='true';row.dataset.csExtra=id;
+      let parent=row;
+      const ancestors=[];for(let node=first.parentElement;node!==nativeRow;node=node.parentElement)ancestors.unshift(node);
+      for(const node of ancestors){const copy=shell(node);parent.append(copy);parent=copy;}
+      const link=shell(first);link.href='/c/'+id;link.dataset.csExtraLink='true';link.classList.add('cs-grok-extra-link');link.title=title;
+      const text=document.createElement('span');text.textContent=title;link.append(text);parent.append(link);list.append(row);
     }
     if(loaded)for(const button of sidebar.querySelectorAll('button'))if(/^(查看全部|檢視全部|View all|See all|Tout afficher|すべて表示|Показать все)$/i.test(button.textContent.trim()))button.classList.add('cs-grok-view-all');
   }
