@@ -47,9 +47,9 @@ Package `manifest.json`, `popup.html`, `src/`, `_locales/`, `icons/`, `LICENSE` 
 
 ## Support
 
-If Chat Tidy is useful to you, you can support its development on Ko-fi.
+If Chat Tidy is useful to you, you can support its development on Ko-fi or Afdian.
 
-[![Support on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/U2C326XLKJ)
+[![Support on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/U2C326XLKJ) &nbsp; [⚡ Support on Afdian](https://afdian.com/a/redPeak5421)
 
 ## License
 
