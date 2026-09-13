@@ -179,7 +179,7 @@
     "message": "Select and bulk-delete ChatGPT, Claude and Grok chats from the sidebar. Six languages."
   },
   "actionTitle": {
-    "message": "Chat Tidy — Manage chats"
+    "message": "Chat Tidy"
   },
   "repository": {
     "message": "View source on GitHub"

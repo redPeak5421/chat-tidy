@@ -179,7 +179,7 @@
     "message": "在側邊欄勾選並批次刪除 ChatGPT、Claude 和 Grok 聊天，支援六種語言。"
   },
   "actionTitle": {
-    "message": "Chat Tidy — 管理聊天"
+    "message": "Chat Tidy"
   },
   "repository": {
     "message": "在 GitHub 查看原始碼"

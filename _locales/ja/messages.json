@@ -179,7 +179,7 @@
     "message": "サイドバーからChatGPT、Claude、Grokのチャットを選択して一括削除。6言語対応。"
   },
   "actionTitle": {
-    "message": "Chat Tidy — チャットを管理"
+    "message": "Chat Tidy"
   },
   "repository": {
     "message": "GitHubでソースを見る"
