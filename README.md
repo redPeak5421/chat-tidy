@@ -1,5 +1,7 @@
 # Chat Tidy
 
+English | [简体中文](README.zh-CN.md)
+
 A browser extension for selecting and deleting ChatGPT, Claude and Grok conversations from the sidebar.
 
 ## Install
