@@ -49,7 +49,10 @@ npm test
 
 如果 Chat Tidy 对你有帮助，欢迎通过爱发电或 Ko-fi 支持项目开发。
 
-[![通过 Ko-fi 支持项目](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/U2C326XLKJ) &nbsp; [⚡ 通过爱发电支持项目](https://afdian.com/a/redPeak5421)
+<p>
+  <a href="https://ko-fi.com/U2C326XLKJ"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="通过 Ko-fi 支持项目" height="36" /></a>&nbsp;&nbsp;
+  <a href="https://afdian.com/a/redPeak5421"><img src="docs/assets/afdian-zh-CN.svg" alt="通过爱发电支持项目" width="220" height="36" /></a>
+</p>
 
 ## 许可证
 
