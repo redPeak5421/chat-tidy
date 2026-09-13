@@ -43,6 +43,12 @@ Translations are maintained in `_locales/*/messages.json`. Run `npm run build:i1
 
 Package `manifest.json`, `popup.html`, `src/`, `_locales/`, `icons/`, `LICENSE` for distribution.
 
+## Support
+
+If Chat Tidy is useful to you, you can support its development on Ko-fi.
+
+[![Support on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/U2C326XLKJ)
+
 ## License
 
 Licensed under the [Apache License 2.0](LICENSE). The GitHub logo is an official brand asset used to link to this repository, subject to [GitHub’s brand guidelines](https://brand.github.com/foundations/logo). It is not covered by this project’s Apache license.
