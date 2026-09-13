@@ -259,13 +259,25 @@
   "grokPeriodOlder": {
     "message": "更早"
   },
-  "supportWindow": {
-    "message": "在独立窗口支持"
-  },
   "afdianName": {
     "message": "爱发电"
   },
   "supportOpenError": {
-    "message": "无法打开窗口，请重试。"
+    "message": "无法打开页面，请重试。"
+  },
+  "supportTitle": {
+    "message": "支持项目"
+  },
+  "supportPanel": {
+    "message": "打开赞助面板"
+  },
+  "supportTab": {
+    "message": "在新标签页打开"
+  },
+  "supportOfficial": {
+    "message": "打开 Ko-fi 官网 ↗"
+  },
+  "supportHint": {
+    "message": "切换窗口后此页面仍会保留。如无法在面板付款，请打开 Ko-fi 官网。"
   }
 }

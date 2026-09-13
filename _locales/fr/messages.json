@@ -259,13 +259,25 @@
   "grokPeriodOlder": {
     "message": "Plus ancien"
   },
-  "supportWindow": {
-    "message": "Soutenir dans une fenêtre"
-  },
   "afdianName": {
     "message": "Afdian"
   },
   "supportOpenError": {
-    "message": "Impossible d’ouvrir la fenêtre. Réessayez."
+    "message": "Impossible d’ouvrir la page. Réessayez."
+  },
+  "supportTitle": {
+    "message": "Soutenir le projet"
+  },
+  "supportPanel": {
+    "message": "Ouvrir le panneau"
+  },
+  "supportTab": {
+    "message": "Ouvrir un nouvel onglet"
+  },
+  "supportOfficial": {
+    "message": "Ouvrir le site Ko-fi ↗"
+  },
+  "supportHint": {
+    "message": "Cette page reste ouverte lorsque vous changez de fenêtre. Si le paiement échoue ici, utilisez le site Ko-fi."
   }
 }

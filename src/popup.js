@@ -15,12 +15,13 @@
   }
   render();
   document.querySelectorAll('[data-support]').forEach(link=>link.addEventListener('click',async event=>{
-    if(!chrome.windows?.create)return;
+    if(!chrome.tabs?.create)return;
     event.preventDefault();
     if(link.dataset.opening)return;
     link.dataset.opening='true';
     try{
-      await chrome.windows.create({url:link.href,type:'popup',width:Math.min(560,screen.availWidth||560),height:Math.min(760,screen.availHeight||760),focused:true});
+      const url=link.dataset.support==='kofi'?chrome.runtime.getURL('src/support.html'):link.href;
+      await chrome.tabs.create({url,active:true});
     }catch{
       document.getElementById('saved').textContent=api.t(settings.language,'supportOpenError');
     }finally{delete link.dataset.opening;}
