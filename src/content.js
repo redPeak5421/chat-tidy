@@ -72,18 +72,19 @@
       if(!box){box=el('input','cs-checkbox');box.type='checkbox';box.dataset.csOwned='true';box.dataset.csId=item.id;
         box.addEventListener('click',event=>{event.stopPropagation();});
         box.addEventListener('change',()=>{if(busy)return;box.checked?selected.set(item.id,item.title):selected.delete(item.id);sync();});
-        item.link.prepend(box);item.link.classList.add('cs-chat-link');
+        item.link.prepend(box);
       }
+      item.link.classList.add('cs-chat-link');
       item.link.classList.toggle('cs-dynamic',settings.checkboxMode!=='always');
       box.setAttribute('aria-label',t('selectChat',{title:item.title}));
     }
     // One toolbar for each top-level visible sidebar; nested history containers do not duplicate it.
     const parents=roots().filter(root=>found.some(item=>root.contains(item.link)));
     for(const root of parents.filter(root=>!parents.some(other=>other!==root&&other.contains(root))))toolbar(root);
-    sync();watch();
+    sync();watch();queueWave();
   }
   function schedule(){if(scheduled)return;scheduled=true;setTimeout(()=>{scheduled=false;scan();},80);}
-  function watch(){observer?.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['href','hidden','aria-hidden']});}
+  function watch(){observer?.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['href','hidden','aria-hidden','class']});}
   function cleanup(){document.querySelectorAll('.cs-heading-hover').forEach(node=>node.classList.remove('cs-heading-hover'));document.querySelectorAll('[data-cs-owned]').forEach(node=>node.remove());document.querySelectorAll('.cs-chat-link').forEach(node=>{node.classList.remove('cs-chat-link','cs-dynamic','cs-selected','cs-wave-active');node.style.removeProperty('--cs-wave');});}
   function confirmDelete(){
     if(!selected.size||document.querySelector('.cs-confirm'))return;
@@ -148,7 +149,7 @@
     });
   }
   function queueWave(){if(!waveFrame)waveFrame=requestAnimationFrame(paintWave);}
-  document.addEventListener('pointermove',event=>{pointer={x:event.clientX,y:event.clientY};queueWave();},{passive:true});
+  document.addEventListener('pointermove',event=>{pointer={x:event.clientX,y:event.clientY};queueWave();},{passive:true,capture:true});
   document.addEventListener('pointerleave',()=>{pointer=null;queueWave();});
   window.addEventListener('blur',()=>{pointer=null;queueWave();});
   document.addEventListener('scroll',()=>{pointer=null;queueWave();},true);
@@ -157,7 +158,21 @@
   // Prevent parent React link handlers, while preserving the checkbox's native toggle.
   document.addEventListener('click',event=>{if(event.target.matches?.('.cs-checkbox')){event.stopPropagation();const box=event.target;if(!busy){box.checked?selected.set(box.dataset.csId,items().find(item=>item.id===box.dataset.csId)?.title||''):selected.delete(box.dataset.csId);sync();}}},true);
   chrome.storage.local.get(settings).then(saved=>{
-    settings={...settings,...saved};observer=new MutationObserver(records=>{if(records.some(record=>!own(record.target)&&[...record.addedNodes,...record.removedNodes].some(node=>!own(node))||record.type==='attributes'&&!own(record.target)))schedule();});scan();watch();
+    settings={...settings,...saved};
+    observer=new MutationObserver(records=>{
+      if(records.some(record=>{
+        if(own(record.target))return false;
+        if(record.type==='attributes'){
+          if(record.attributeName!=='class')return true;
+          // Ignore our wave/selection class updates; repair only missing row markers.
+          const link=record.target,box=link.matches?.('a')&&link.querySelector('.cs-checkbox');
+          return box && (!link.classList.contains('cs-chat-link') ||
+            link.classList.contains('cs-dynamic')!==(settings.checkboxMode!=='always') ||
+            link.classList.contains('cs-selected')!==selected.has(box.dataset.csId));
+        }
+        return [...record.addedNodes,...record.removedNodes].some(node=>!own(node));
+      }))schedule();
+    });scan();watch();
   }).catch(()=>{ /* Invalidated extension: refreshing the page re-injects it. */ });
   chrome.storage.onChanged.addListener((changes,area)=>{
     if(area!=='local')return;

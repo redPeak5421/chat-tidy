@@ -2,10 +2,12 @@ const {test}=require('node:test');const assert=require('node:assert/strict');con
 const id=n=>`${n.repeat(8)}-${n.repeat(4)}-4${n.repeat(3)}-8${n.repeat(3)}-${n.repeat(12)}`;
 const row=n=>`<div class="row"><a href="/c/${id(n)}"><span>Chat ${n}</span></a><button aria-haspopup="menu" data-owner="${n}">…</button></div>`;
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
-async function setup(){
+async function setup({beforeLoad,getSettings}={}){
  const dom=new JSDOM(`<nav><h2>聊天</h2><div id="history">${row('1')}${row('2')}</div></nav><main><a href="/c/${id('3')}">Reference link</a></main>`,{url:'https://chatgpt.com/',runScripts:'outside-only',pretendToBeVisual:true});const w=dom.window;
  w.HTMLElement.prototype.getClientRects=function(){return this.hidden?[]:[{width:100,height:30}]};w.HTMLElement.prototype.scrollIntoView=function(){};w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'))};
  let onChange;w.chrome={storage:{local:{get:async()=>({language:'en',enabled:true,layout:'menu'})},onChanged:{addListener:fn=>onChange=fn}},runtime:{id:'test',onMessage:{addListener:()=>{},removeListener:()=>{}},sendMessage:async message=>({completed:message.ids||[]})}};
+ if(getSettings)w.chrome.storage.local.get=getSettings;
+ beforeLoad?.(w);
  for(const f of ['core','i18n','content'])if(fs.existsSync(`src/${f}.js`))w.eval(fs.readFileSync(`src/${f}.js`,'utf8'));
  await wait(150);return {dom,w,d:w.document,change:async changes=>{onChange?.(changes,'local');await wait(150)}};
 }
@@ -78,5 +80,39 @@ test('wave is limited to left edge and fades with vertical distance; settings re
  links[0].querySelector('input').click();assert.ok(links[0].classList.contains('cs-selected'));
  await change({checkboxMode:{newValue:'always'}});assert.equal(d.querySelectorAll('.cs-dynamic').length,0);
  await change({checkboxMode:{newValue:'dynamic'}});assert.equal(d.querySelectorAll('.cs-dynamic').length,3);
+ }finally{dom.window.close()}
+});
+
+test('restores row classes after native class-only updates without another click',async()=>{
+ const {dom,w,d}=await setup();try{
+ const link=d.querySelector('#history a');
+ link.getBoundingClientRect=()=>({left:20,right:300,top:100,bottom:140,height:40,width:280});
+ link.dispatchEvent(new w.MouseEvent('pointermove',{bubbles:true,clientX:35,clientY:120}));await wait(40);
+ const box=link.querySelector('.cs-checkbox');link.className='native-row';
+ await wait(160);
+ assert.equal(link.querySelector('.cs-checkbox'),box);
+ assert.ok(link.classList.contains('cs-chat-link'));
+ assert.ok(link.classList.contains('cs-dynamic'));
+ assert.ok(link.classList.contains('cs-wave-active'));
+ assert.equal(link.style.getPropertyValue('--cs-wave'),'1.000');
+ }finally{dom.window.close()}
+});
+test('left-edge hover survives stopped pointer event bubbling',async()=>{
+ const {dom,w,d}=await setup();try{
+ const link=d.querySelector('#history a');link.getBoundingClientRect=()=>({left:20,right:300,top:100,bottom:140,height:40,width:280});
+ link.addEventListener('pointermove',event=>event.stopPropagation());
+ link.dispatchEvent(new w.MouseEvent('pointermove',{bubbles:true,clientX:35,clientY:120}));await wait(40);
+ assert.equal(link.style.getPropertyValue('--cs-wave'),'1.000');
+ }finally{dom.window.close()}
+});
+test('initialization paints an already observed pointer without another movement',async()=>{
+ let release;const ready=new Promise(resolve=>release=resolve);
+ const {dom,w,d}=await setup({getSettings:()=>ready});try{
+ const link=d.querySelector('#history a');link.getBoundingClientRect=()=>({left:20,right:300,top:100,bottom:140,height:40,width:280});
+ link.dispatchEvent(new w.MouseEvent('pointermove',{bubbles:true,clientX:35,clientY:120}));await wait(40);
+ assert.equal(link.querySelector('.cs-checkbox'),null);
+ release({enabled:true,language:'en',checkboxMode:'dynamic'});await wait(80);
+ assert.ok(link.querySelector('.cs-checkbox'));
+ assert.equal(link.style.getPropertyValue('--cs-wave'),'1.000');
  }finally{dom.window.close()}
 });
