@@ -1,0 +1,192 @@
+{
+  "subtitle": {
+    "message": "聊天记录，轻松整理"
+  },
+  "enabled": {
+    "message": "启用插件"
+  },
+  "language": {
+    "message": "语言"
+  },
+  "layout": {
+    "message": "页面操作方式"
+  },
+  "menuLayout": {
+    "message": "点击展示小菜单"
+  },
+  "buttonLayout": {
+    "message": "直接显示四个按钮"
+  },
+  "help": {
+    "message": "使用说明"
+  },
+  "step1": {
+    "message": "在聊天左侧勾选要处理的记录。"
+  },
+  "step2": {
+    "message": "点击“聊天”旁的菜单，可取消选择、反选择或全选。"
+  },
+  "step3": {
+    "message": "点击删除，核对列表后确认，随后在后台处理。"
+  },
+  "scope": {
+    "message": "全选和反选仅处理侧栏当前已加载的聊天。向下滚动可加载更多；页面刷新后选择会清空。"
+  },
+  "privacy": {
+    "message": "仅在 ChatGPT 页面运行。只保存设置，不保存聊天内容或登录凭据，不向第三方发送数据。"
+  },
+  "clear": {
+    "message": "取消选择"
+  },
+  "invert": {
+    "message": "反选择"
+  },
+  "all": {
+    "message": "全选"
+  },
+  "delete": {
+    "message": "删除"
+  },
+  "manage": {
+    "message": "管理聊天"
+  },
+  "selected": {
+    "message": "已选 $N$ 条",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "confirmTitle": {
+    "message": "删除所选聊天？"
+  },
+  "warning": {
+    "message": "将通过 ChatGPT 删除下面 $N$ 条聊天。删除后无法恢复。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "cancel": {
+    "message": "取消"
+  },
+  "confirm": {
+    "message": "确认删除 $N$ 条",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "stop": {
+    "message": "停止"
+  },
+  "progress": {
+    "message": "正在处理 $DONE$ / $TOTAL$",
+    "placeholders": {
+      "done": {
+        "content": "$1",
+        "example": "3"
+      },
+      "total": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
+  },
+  "done": {
+    "message": "已从聊天列表移除 $N$ 条。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "failed": {
+    "message": "已完成 $N$ 条，接口请求失败，剩余选择已保留。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "stopped": {
+    "message": "已停止，完成 $N$ 条。已发出的删除无法撤回。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "close": {
+    "message": "关闭"
+  },
+  "selectChat": {
+    "message": "选择聊天：$TITLE$",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Example chat"
+      }
+    }
+  },
+  "refresh": {
+    "message": "安装或更新插件后，请刷新 ChatGPT 页面。"
+  },
+  "saved": {
+    "message": "已保存"
+  },
+  "working": {
+    "message": "后台删除中，你可以继续操作页面。"
+  },
+  "empty": {
+    "message": "请先选择聊天。"
+  },
+  "apiError": {
+    "message": "请检查登录状态或稍后重试；结果不确定时请刷新页面核对。"
+  },
+  "checkboxMode": {
+    "message": "复选框"
+  },
+  "alwaysMode": {
+    "message": "显示"
+  },
+  "dynamicMode": {
+    "message": "隐藏"
+  },
+  "concurrency": {
+    "message": "并发删除"
+  },
+  "concurrencyHelp": {
+    "message": "默认 2；非官方限额。遇到限流停止并冷却，自动降为 1。"
+  },
+  "cooldown": {
+    "message": "限流冷却中，可在 $TIME$ 后重试。",
+    "placeholders": {
+      "time": {
+        "content": "$1",
+        "example": "12:30"
+      }
+    }
+  },
+  "modeHint": {
+    "message": "隐藏时，移到聊天左侧即可展开。"
+  },
+  "extensionName": {
+    "message": "Chat Tidy — ChatGPT"
+  },
+  "extensionDescription": {
+    "message": "从侧边栏选择并批量删除 ChatGPT 聊天。支持六种语言。"
+  },
+  "actionTitle": {
+    "message": "Chat Tidy — 管理聊天"
+  }
+}

@@ -1,0 +1,192 @@
+{
+  "subtitle": {
+    "message": "A little order for your chats"
+  },
+  "enabled": {
+    "message": "Enable extension"
+  },
+  "language": {
+    "message": "Language"
+  },
+  "layout": {
+    "message": "Page controls"
+  },
+  "menuLayout": {
+    "message": "Click to open a small menu"
+  },
+  "buttonLayout": {
+    "message": "Show four buttons"
+  },
+  "help": {
+    "message": "How to use"
+  },
+  "step1": {
+    "message": "Select the checkboxes beside your chats."
+  },
+  "step2": {
+    "message": "Use the menu beside Chats to clear, invert or select all."
+  },
+  "step3": {
+    "message": "Choose Delete, review and confirm once. Processing runs in the background."
+  },
+  "scope": {
+    "message": "Select all and invert affect only chats currently loaded in the sidebar. Scroll to load more. Refreshing clears your selection."
+  },
+  "privacy": {
+    "message": "Runs only on ChatGPT. Stores settings only, not chats or credentials. No data is sent to third parties."
+  },
+  "clear": {
+    "message": "Clear selection"
+  },
+  "invert": {
+    "message": "Invert selection"
+  },
+  "all": {
+    "message": "Select all"
+  },
+  "delete": {
+    "message": "Delete"
+  },
+  "manage": {
+    "message": "Manage chats"
+  },
+  "selected": {
+    "message": "$N$ selected",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "confirmTitle": {
+    "message": "Delete selected chats?"
+  },
+  "warning": {
+    "message": "ChatGPT will delete these $N$ chats. This cannot be undone.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "cancel": {
+    "message": "Cancel"
+  },
+  "confirm": {
+    "message": "Delete $N$ chats",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "stop": {
+    "message": "Stop"
+  },
+  "progress": {
+    "message": "Processing $DONE$ / $TOTAL$",
+    "placeholders": {
+      "done": {
+        "content": "$1",
+        "example": "3"
+      },
+      "total": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
+  },
+  "done": {
+    "message": "Removed $N$ chats from the list.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "failed": {
+    "message": "Completed $N$. The request failed; remaining selections were kept.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "stopped": {
+    "message": "Stopped after $N$. Deletions already sent cannot be undone.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "close": {
+    "message": "Close"
+  },
+  "selectChat": {
+    "message": "Select chat: $TITLE$",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Example chat"
+      }
+    }
+  },
+  "refresh": {
+    "message": "Refresh ChatGPT after installing or updating the extension."
+  },
+  "saved": {
+    "message": "Saved"
+  },
+  "working": {
+    "message": "Deleting in the background. You can continue using the page."
+  },
+  "empty": {
+    "message": "Select a chat first."
+  },
+  "apiError": {
+    "message": "Check your login or retry later. Refresh to verify uncertain results."
+  },
+  "checkboxMode": {
+    "message": "Checkboxes"
+  },
+  "alwaysMode": {
+    "message": "Show"
+  },
+  "dynamicMode": {
+    "message": "Hide"
+  },
+  "concurrency": {
+    "message": "Delete at once"
+  },
+  "concurrencyHelp": {
+    "message": "Default 2; not an official limit. Rate limits stop the batch and reduce concurrency to 1."
+  },
+  "cooldown": {
+    "message": "Rate-limit cooldown. Retry after $TIME$.",
+    "placeholders": {
+      "time": {
+        "content": "$1",
+        "example": "12:30"
+      }
+    }
+  },
+  "modeHint": {
+    "message": "When hidden, move to the left edge to reveal."
+  },
+  "extensionName": {
+    "message": "Chat Tidy — ChatGPT"
+  },
+  "extensionDescription": {
+    "message": "Select and bulk delete ChatGPT chats from the sidebar. Available in six languages."
+  },
+  "actionTitle": {
+    "message": "Chat Tidy — Manage chats"
+  }
+}

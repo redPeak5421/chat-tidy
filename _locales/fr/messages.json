@@ -1,0 +1,192 @@
+{
+  "subtitle": {
+    "message": "Mettez de l’ordre dans vos discussions"
+  },
+  "enabled": {
+    "message": "Activer"
+  },
+  "language": {
+    "message": "Langue"
+  },
+  "layout": {
+    "message": "Commandes sur la page"
+  },
+  "menuLayout": {
+    "message": "Ouvrir un petit menu au clic"
+  },
+  "buttonLayout": {
+    "message": "Afficher quatre boutons"
+  },
+  "help": {
+    "message": "Mode d’emploi"
+  },
+  "step1": {
+    "message": "Cochez les discussions à traiter."
+  },
+  "step2": {
+    "message": "Utilisez le menu à côté des discussions pour annuler, inverser ou tout sélectionner."
+  },
+  "step3": {
+    "message": "Cliquez sur Supprimer, vérifiez et confirmez une fois. Le traitement continue en arrière-plan."
+  },
+  "scope": {
+    "message": "Tout sélectionner et inverser concernent uniquement les discussions déjà chargées. Faites défiler pour en charger davantage. Actualiser efface la sélection."
+  },
+  "privacy": {
+    "message": "Fonctionne uniquement sur ChatGPT. Seuls les réglages sont enregistrés, sans discussions ni identifiants. Aucune donnée transmise à des tiers."
+  },
+  "clear": {
+    "message": "Désélectionner"
+  },
+  "invert": {
+    "message": "Inverser"
+  },
+  "all": {
+    "message": "Tout sélectionner"
+  },
+  "delete": {
+    "message": "Supprimer"
+  },
+  "manage": {
+    "message": "Gérer les discussions"
+  },
+  "selected": {
+    "message": "$N$ sélectionnées",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "confirmTitle": {
+    "message": "Supprimer la sélection ?"
+  },
+  "warning": {
+    "message": "ChatGPT supprimera ces $N$ discussions. Cette action est irréversible.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "cancel": {
+    "message": "Annuler"
+  },
+  "confirm": {
+    "message": "Supprimer $N$ discussions",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "stop": {
+    "message": "Arrêter"
+  },
+  "progress": {
+    "message": "Traitement $DONE$ / $TOTAL$",
+    "placeholders": {
+      "done": {
+        "content": "$1",
+        "example": "3"
+      },
+      "total": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
+  },
+  "done": {
+    "message": "$N$ discussions retirées de la liste.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "failed": {
+    "message": "$N$ terminées. Échec de la requête ; la sélection restante est conservée.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "stopped": {
+    "message": "Arrêt après $N$. Les suppressions déjà envoyées sont irréversibles.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "close": {
+    "message": "Fermer"
+  },
+  "selectChat": {
+    "message": "Sélectionner : $TITLE$",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Example chat"
+      }
+    }
+  },
+  "refresh": {
+    "message": "Actualisez ChatGPT après l’installation ou la mise à jour."
+  },
+  "saved": {
+    "message": "Enregistré"
+  },
+  "working": {
+    "message": "Suppression en arrière-plan. Vous pouvez utiliser la page."
+  },
+  "empty": {
+    "message": "Sélectionnez une discussion."
+  },
+  "apiError": {
+    "message": "Vérifiez votre connexion ou réessayez plus tard. Actualisez pour vérifier le résultat."
+  },
+  "checkboxMode": {
+    "message": "Cases"
+  },
+  "alwaysMode": {
+    "message": "Afficher"
+  },
+  "dynamicMode": {
+    "message": "Masquer"
+  },
+  "concurrency": {
+    "message": "Suppressions"
+  },
+  "concurrencyHelp": {
+    "message": "Par défaut 2, sans garantie officielle. En cas de limitation : arrêt et réduction à 1."
+  },
+  "cooldown": {
+    "message": "Limitation : réessayez après $TIME$.",
+    "placeholders": {
+      "time": {
+        "content": "$1",
+        "example": "12:30"
+      }
+    }
+  },
+  "modeHint": {
+    "message": "Pour les révéler, approchez le bord gauche."
+  },
+  "extensionName": {
+    "message": "Chat Tidy — ChatGPT"
+  },
+  "extensionDescription": {
+    "message": "Sélectionnez et supprimez plusieurs discussions ChatGPT depuis la barre latérale. Six langues."
+  },
+  "actionTitle": {
+    "message": "Chat Tidy — Gérer les discussions"
+  }
+}

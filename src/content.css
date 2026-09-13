@@ -1,0 +1,38 @@
+.cs-chat-link{gap:8px!important}.cs-checkbox{appearance:auto!important;display:inline-block!important;flex:0 0 16px!important;width:16px!important;height:16px!important;margin:0 7px 0 0!important;vertical-align:middle!important;accent-color:#6366f1!important;cursor:pointer;position:relative;z-index:1}
+.cs-toolbar,.cs-confirm,.cs-status{font-family:ui-sans-serif,system-ui,-apple-system,sans-serif;color:light-dark(#202321,#ecefed);color-scheme:light dark;font-size:13px;line-height:1.5}
+.cs-toolbar{display:flex;align-items:center;gap:8px;padding:4px 8px;flex-wrap:wrap;max-width:100%;box-sizing:border-box}.cs-at-heading{display:inline-flex;vertical-align:middle}.cs-count{font-size:11px;color:light-dark(#6e7671,#a3aca6);white-space:nowrap}
+.cs-button{appearance:none;font:inherit;line-height:1.4;border:1px solid transparent;border-radius:7px;background:transparent;color:inherit;padding:7px 10px;cursor:pointer;white-space:normal;text-align:start}.cs-button:hover{background:light-dark(#edf1ee,#303b34)}.cs-button:disabled{opacity:.38;cursor:default}.cs-button:focus-visible,.cs-checkbox:focus-visible{outline:2px solid #6366f1;outline-offset:2px}.cs-toggle{font-size:18px;padding:2px 8px}.cs-actions{position:fixed;z-index:2147483645;min-width:208px;padding:5px;background:light-dark(#fff,#222724);border:1px solid light-dark(#dce2dd,#455049);border-radius:12px;box-shadow:0 8px 28px #0003;display:flex;flex-direction:column}.cs-actions[hidden]{display:none!important}.cs-button[data-cs-action="delete"]{color:light-dark(#ba3333,#ff9393)}
+.cs-confirm{border:1px solid light-dark(#dce2dd,#455049);border-radius:18px;background:light-dark(#fff,#222724);padding:24px;width:min(460px,calc(100vw - 48px));max-height:85vh;box-sizing:border-box;box-shadow:0 20px 80px #0004;margin:auto}.cs-confirm::backdrop{background:#0006}.cs-confirm h2{font-size:20px;font-weight:650;margin:0 0 12px}.cs-confirm p{margin:10px 0}.cs-review{max-height:38vh;overflow:auto;padding:12px 12px 12px 30px;background:light-dark(#f4f6f4,#171c19);border-radius:10px;overflow-wrap:anywhere}.cs-review li{padding:5px 0}.cs-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}.cs-danger{background:#b93232!important;color:white!important}.cs-status{position:fixed;right:20px;bottom:20px;z-index:2147483646;max-width:min(380px,85vw);padding:16px 18px;background:light-dark(#fff,#222724);border:1px solid light-dark(#dce2dd,#455049);border-radius:14px;box-shadow:0 8px 30px #0003}.cs-status p{margin:0 0 10px}.cs-hint{font-size:12px;opacity:.7}
+
+.cs-toggle{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:5px;color:inherit}.cs-toggle svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+/* The header consumes one icon slot; the count lives inside the menu. */
+.cs-toolbar.cs-at-heading,.cs-toolbar{display:inline-flex;flex:0 0 30px;align-items:center;justify-content:center;flex-wrap:nowrap;width:30px;min-width:30px;height:30px;padding:0;margin:0 4px;vertical-align:middle;box-sizing:border-box}
+.cs-actions{box-sizing:border-box;width:220px;max-width:calc(100vw - 16px)}
+.cs-actions .cs-count{display:block;padding:7px 10px;border-bottom:1px solid light-dark(#e5e9e6,#455049);margin-bottom:4px}
+.cs-chat-link{display:flex!important;align-items:center!important;gap:8px!important;min-width:0}
+.cs-checkbox{margin:0!important;flex:0 0 16px!important}
+
+
+/* Reserve the icon slot to avoid shifting native header controls. */
+.cs-toolbar{opacity:0;transition:opacity .12s ease}
+.cs-toolbar.cs-has-selection,.cs-toolbar:hover,.cs-toolbar:focus-within,.cs-toolbar:has(.cs-toggle[aria-expanded="true"]),.cs-heading-hover:hover + .cs-toolbar{opacity:1}
+@media(prefers-reduced-motion:reduce){.cs-toolbar{transition:none}}
+
+/* Keep React-owned nodes intact while removing confirmed deleted rows visually. */
+.cs-deleted-row { display: none !important; }
+
+/* Collapse only the inserted checkbox slot; native title nodes remain untouched. */
+.cs-chat-link.cs-dynamic{--cs-wave:0;--cs-reveal:var(--cs-wave);gap:calc(8px * var(--cs-reveal))!important}
+.cs-chat-link.cs-dynamic.cs-selected,.cs-chat-link.cs-dynamic:focus-within{--cs-reveal:1}
+.cs-dynamic>.cs-checkbox{flex-basis:calc(16px * var(--cs-reveal))!important;width:calc(16px * var(--cs-reveal))!important;min-width:0!important;opacity:var(--cs-reveal);transform:translateX(calc(-5px * (1 - var(--cs-reveal)))) scale(calc(.75 + .25 * var(--cs-reveal)));pointer-events:none;transition:width .18s ease-out,flex-basis .18s ease-out,opacity .18s ease-out,transform .18s ease-out}
+.cs-chat-link.cs-dynamic{transition:gap .18s ease-out}
+.cs-dynamic.cs-wave-active>.cs-checkbox,.cs-dynamic.cs-selected>.cs-checkbox,.cs-dynamic:focus-within>.cs-checkbox{pointer-events:auto}
+@media(hover:none){.cs-chat-link.cs-dynamic{--cs-reveal:1}.cs-dynamic>.cs-checkbox{pointer-events:auto}}
+@media(prefers-reduced-motion:reduce){.cs-chat-link.cs-dynamic,.cs-dynamic>.cs-checkbox{transition:none!important;transform:none!important}}
+
+/* Fine checkbox outline, 14px glyph and a 20px total slot. */
+.cs-checkbox{appearance:none!important;-webkit-appearance:none!important;border:1.25px solid light-dark(#8995aa,#94a1b8)!important;border-radius:4px!important;background:light-dark(#ffffffa6,#25334b80)!important;width:14px!important;height:14px!important;flex-basis:14px!important;box-sizing:border-box!important;box-shadow:inset 0 1px 1px #ffffff40}
+.cs-checkbox:checked{background:#5969d8!important;border-color:#5969d8!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='m3 7 2.5 2.5L11 4' fill='none' stroke='white' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;background-size:12px 12px!important;background-position:center!important;background-repeat:no-repeat!important}
+.cs-chat-link{gap:6px!important}.cs-chat-link.cs-dynamic{gap:calc(6px * var(--cs-reveal))!important}.cs-dynamic>.cs-checkbox{flex-basis:calc(14px * var(--cs-reveal))!important;width:calc(14px * var(--cs-reveal))!important;border-width:calc(1.25px * var(--cs-reveal))!important}
+@media(forced-colors:active){.cs-checkbox{appearance:auto!important}.cs-checkbox:checked{background-image:none!important}}

@@ -1,0 +1,192 @@
+{
+  "subtitle": {
+    "message": "Порядок в истории чатов"
+  },
+  "enabled": {
+    "message": "Включить"
+  },
+  "language": {
+    "message": "Язык"
+  },
+  "layout": {
+    "message": "Управление на странице"
+  },
+  "menuLayout": {
+    "message": "Открывать небольшое меню"
+  },
+  "buttonLayout": {
+    "message": "Показывать четыре кнопки"
+  },
+  "help": {
+    "message": "Как пользоваться"
+  },
+  "step1": {
+    "message": "Отметьте нужные чаты слева."
+  },
+  "step2": {
+    "message": "В меню рядом с заголовком чатов можно снять, инвертировать или выделить всё."
+  },
+  "step3": {
+    "message": "Нажмите «Удалить», проверьте список и подтвердите один раз. Обработка идёт в фоне."
+  },
+  "scope": {
+    "message": "Выделение и инверсия затрагивают только загруженные чаты. Прокрутите список для загрузки остальных. Обновление страницы сбрасывает выбор."
+  },
+  "privacy": {
+    "message": "Работает только в ChatGPT. Сохраняет только настройки, без чатов и учётных данных. Ничего не отправляет третьим лицам."
+  },
+  "clear": {
+    "message": "Снять выбор"
+  },
+  "invert": {
+    "message": "Инвертировать"
+  },
+  "all": {
+    "message": "Выделить всё"
+  },
+  "delete": {
+    "message": "Удалить"
+  },
+  "manage": {
+    "message": "Управление чатами"
+  },
+  "selected": {
+    "message": "Выбрано: $N$",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "confirmTitle": {
+    "message": "Удалить выбранные чаты?"
+  },
+  "warning": {
+    "message": "ChatGPT удалит эти чаты ($N$). Отменить удаление нельзя.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "cancel": {
+    "message": "Отмена"
+  },
+  "confirm": {
+    "message": "Удалить чаты ($N$)",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "stop": {
+    "message": "Остановить"
+  },
+  "progress": {
+    "message": "Обработка $DONE$ / $TOTAL$",
+    "placeholders": {
+      "done": {
+        "content": "$1",
+        "example": "3"
+      },
+      "total": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
+  },
+  "done": {
+    "message": "Из списка удалено чатов: $N$.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "failed": {
+    "message": "Выполнено: $N$. Ошибка запроса; оставшиеся чаты сохраняют выделение.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "stopped": {
+    "message": "Остановлено после $N$. Уже отправленные удаления нельзя отменить.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "close": {
+    "message": "Закрыть"
+  },
+  "selectChat": {
+    "message": "Выбрать чат: $TITLE$",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Example chat"
+      }
+    }
+  },
+  "refresh": {
+    "message": "Обновите ChatGPT после установки или обновления расширения."
+  },
+  "saved": {
+    "message": "Сохранено"
+  },
+  "working": {
+    "message": "Удаление в фоне. Можно продолжать пользоваться страницей."
+  },
+  "empty": {
+    "message": "Сначала выберите чат."
+  },
+  "apiError": {
+    "message": "Проверьте вход или повторите позже. Обновите страницу для проверки результата."
+  },
+  "checkboxMode": {
+    "message": "Флажки"
+  },
+  "alwaysMode": {
+    "message": "Показать"
+  },
+  "dynamicMode": {
+    "message": "Скрыть"
+  },
+  "concurrency": {
+    "message": "Одновременно"
+  },
+  "concurrencyHelp": {
+    "message": "По умолчанию 2; это не официальный лимит. При ограничении остановка и снижение до 1."
+  },
+  "cooldown": {
+    "message": "Ограничение запросов. Повторите после $TIME$.",
+    "placeholders": {
+      "time": {
+        "content": "$1",
+        "example": "12:30"
+      }
+    }
+  },
+  "modeHint": {
+    "message": "Для показа наведите на левый край чата."
+  },
+  "extensionName": {
+    "message": "Chat Tidy — ChatGPT"
+  },
+  "extensionDescription": {
+    "message": "Выбирайте и удаляйте несколько чатов ChatGPT в боковой панели. Шесть языков."
+  },
+  "actionTitle": {
+    "message": "Chat Tidy — Управление чатами"
+  }
+}
