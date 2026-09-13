@@ -5,7 +5,7 @@
   const core = ChatTidyCore, i18n = ChatTidyI18n;
   const site=core.siteForUrl(location.href);
   if(!site)return;
-  let settings = {enabled:true,checkboxMode:'dynamic',language:i18n.browserLanguage()};
+  let settings = {enabled:true,grokShowAll:false,checkboxMode:'dynamic',language:i18n.browserLanguage()};
   function organizationId(){
     if(site.id!=='claude')return null;
     const value=document.cookie.split(';').map(part=>part.trim()).find(part=>part.startsWith('lastActiveOrg='))?.slice(14);
@@ -25,14 +25,16 @@
   const own = node => node?.nodeType === 1 && (node.matches('[data-cs-owned]') || node.closest('[data-cs-owned]'));
   function el(tag,className,text) { const node=document.createElement(tag); if(className)node.className=className; if(text!==undefined)node.textContent=text; return node; }
   function visible(node) { return node?.isConnected && !node.closest('[hidden],[aria-hidden="true"],.cs-deleted-row') && node.getClientRects().length > 0 && getComputedStyle(node).visibility !== 'hidden'; }
-  function roots() { return [...document.querySelectorAll(site.roots)].filter(node=>visible(node)&&!node.closest('main')); }
+  const searchSelector='[role="dialog"] [cmdk-list]';
+  function rootSelector(){return site.id==='grok'?site.roots+','+searchSelector:site.roots;}
+  function roots() { return [...document.querySelectorAll(rootSelector())].filter(node=>visible(node)&&!node.closest('main')); }
   function items() {
     const result=[],seen=new Set();
     for(const root of roots()) for(const link of root.querySelectorAll('a[href]')) {
       if(seen.has(link)||!visible(link))continue;
       seen.add(link);const id=core.chatId(link.getAttribute('href'),site.origin);if(!id)continue;
       const clone=link.cloneNode(true);clone.querySelectorAll('[data-cs-owned],button').forEach(n=>n.remove());
-      const title=(clone.textContent||link.getAttribute('title')||'').trim();
+      const title=(link.getAttribute('aria-label')||clone.textContent||link.getAttribute('title')||'').trim();
       if(title)result.push({id,title,link,root});
     }
     return result;
@@ -55,7 +57,11 @@
     core.select(selected,items(),action);sync();
   }
   function toolbar(root) {
-    if(root.querySelector('.cs-toolbar'))return;
+    if(root.querySelector('.cs-toolbar')||root.previousElementSibling?.classList.contains('cs-search-toolbar'))return;
+    if(site.id==='grok'&&root.matches('[cmdk-list]')){
+      const bar=el('div','cs-toolbar cs-search-toolbar');bar.dataset.csOwned='true';bar.setAttribute('role','group');bar.setAttribute('aria-label',t('manage'));
+      bar.append(el('span','cs-count'));for(const key of ['clear','invert','all','delete'])bar.append(button(key,key));root.before(bar);return;
+    }
     const bar=el('div','cs-toolbar');bar.dataset.csOwned='true';
     bar.setAttribute('role','group');bar.setAttribute('aria-label',t('manage'));
     const count=el('span','cs-count');count.setAttribute('aria-live','polite');
@@ -81,6 +87,7 @@
     if(!settings.enabled||busy)return;
     observer?.disconnect();
     sameWorkspace();
+    grokHistory?.render();
     hideDeleted();
     const found=items();
     for(const item of found) {
@@ -93,7 +100,10 @@
         item.link.prepend(box);
       }
       item.link.classList.add('cs-chat-link');
-      item.link.classList.toggle('cs-dynamic',settings.checkboxMode!=='always');
+      const search=site.id==='grok'&&!!item.link.closest('[cmdk-list]');
+      item.link.classList.toggle('cs-grok-search-link',search);
+      if(search)item.link.closest('[cmdk-item]')?.classList.add('cs-grok-result');
+      item.link.classList.toggle('cs-dynamic',!search&&settings.checkboxMode!=='always');
       box.setAttribute('aria-label',t('selectChat',{title:item.title}));
     }
     // One toolbar for each top-level visible sidebar; nested history containers do not duplicate it.
@@ -103,7 +113,7 @@
   }
   function schedule(){if(scheduled)return;scheduled=true;setTimeout(()=>{scheduled=false;scan();},80);}
   function watch(){observer?.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['href','hidden','aria-hidden','class']});}
-  function cleanup(){document.querySelectorAll('.cs-heading-hover').forEach(node=>node.classList.remove('cs-heading-hover'));document.querySelectorAll('[data-cs-owned]').forEach(node=>node.remove());document.querySelectorAll('.cs-chat-link').forEach(node=>{node.classList.remove('cs-chat-link','cs-dynamic','cs-selected','cs-wave-active');node.style.removeProperty('--cs-wave');});}
+  function cleanup(){document.querySelectorAll('.cs-grok-result').forEach(n=>n.classList.remove('cs-grok-result'));document.querySelectorAll('.cs-grok-search-link').forEach(n=>n.classList.remove('cs-grok-search-link'));document.querySelectorAll('.cs-heading-hover').forEach(node=>node.classList.remove('cs-heading-hover'));document.querySelectorAll('[data-cs-owned]').forEach(node=>node.remove());document.querySelectorAll('.cs-chat-link').forEach(node=>{node.classList.remove('cs-chat-link','cs-dynamic','cs-selected','cs-wave-active');node.style.removeProperty('--cs-wave');});}
   function confirmDelete(action='delete'){
     if(!selected.size||document.querySelector('.cs-confirm'))return;
     if(!sameWorkspace()){sync();return;}
@@ -117,15 +127,15 @@
     cancel.dataset.csCancel='true';confirm.dataset.csConfirm='true';cancel.type=confirm.type='button';
     const opener=document.activeElement;const close=()=>{dialog.close();dialog.remove();opener?.focus();};
     cancel.onclick=close;dialog.addEventListener('cancel',event=>{event.preventDefault();close();});
-    confirm.onclick=()=>{close();if(!sameWorkspace()){sync();return;}void deleteBatch(snapshot,approvedOrganization,action);};footer.append(cancel,confirm);dialog.append(footer);document.body.append(dialog);dialog.showModal();cancel.focus();
+    confirm.onclick=()=>{close();if(!sameWorkspace()){sync();return;}void deleteBatch(snapshot,approvedOrganization,action);};footer.append(cancel,confirm);dialog.append(footer);(site.id==='grok'?document.querySelector('[role="dialog"]:has([cmdk-list])')||document.body:document.body).append(dialog);dialog.showModal();cancel.focus();
   }
   const deleted = new Set();
   function hideDeleted() {
-    for(const link of document.querySelectorAll(site.roots.split(',').map(root=>root+' a[href]').join(','))) {
+    for(const link of document.querySelectorAll(rootSelector().split(',').map(root=>root+' a[href]').join(','))) {
       if(!deleted.has(core.chatId(link.getAttribute('href'),site.origin)))continue;
-      let row=link;
+      let row=link.closest('.cs-grok-result')||link;
       const parent=link.parentElement;
-      if(parent && !parent.matches('nav,aside,ul,ol,#history') && parent.querySelectorAll('a[href]').length===1 && !parent.querySelector('.cs-toolbar')) row=parent;
+      if(row===link&&parent && !parent.matches('nav,aside,ul,ol,#history') && parent.querySelectorAll('a[href]').length===1 && !parent.querySelector('.cs-toolbar')) row=parent;
       row.classList.add('cs-deleted-row');
     }
   }
@@ -136,8 +146,9 @@
     const message=el('p','',t('progress',{done:0,total:snapshot.length}));message.setAttribute('role','status');
     const hint=el('p','cs-hint',t(action==='archive'?'archiveWorking':'working')),stop=el('button','cs-button',t('stop'));stop.type='button';
     stop.onclick=()=>{stopped=true;stop.disabled=true;chrome.runtime.sendMessage({type:'cs-cancel',jobId}).catch(()=>{});};
-    status.append(message,hint,stop);document.body.append(status);
+    status.append(message,hint,stop);(site.id==='grok'?document.querySelector('[role="dialog"]:has([cmdk-list])')||document.body:document.body).append(status);
     const update=ids=>{
+      if(!status.isConnected)document.body.append(status);
       for(const id of ids||[])if(allowed.has(id)){completed.add(id);deleted.add(id);selected.delete(id);}
       hideDeleted();message.textContent=t('progress',{done:completed.size,total:snapshot.length});sync();
     };
@@ -178,7 +189,7 @@
     hint.textContent=result.retryAt ? t('cooldown',{time:new Date(result.retryAt).toLocaleTimeString(i18n.normalize(settings.language))}) : result.error ? t('apiError')+' ('+result.error+')' : '';if(!result.error)hint.remove();
     stop.disabled=false;stop.textContent=t('close');stop.onclick=()=>status.remove();
     if(!settings.enabled){selected.clear();document.querySelectorAll('.cs-checkbox,.cs-toolbar').forEach(node=>node.remove());}
-    else scan();sync();
+    else scan();sync();void grokHistory?.setEnabled(settings.enabled&&settings.grokShowAll);
   }
   // Measure unshifted row bounds so moving titles never move the trigger zone.
   let pointer=null,waveFrame=0;
@@ -205,6 +216,10 @@
   document.addEventListener('keydown',event=>{if(event.key==='Escape'){document.querySelectorAll('.cs-actions').forEach(n=>n.hidden=true);document.querySelectorAll('.cs-toggle[aria-expanded="true"]').forEach(n=>{n.setAttribute('aria-expanded','false');n.focus();});} });
   // Prevent parent React link handlers, while preserving the checkbox's native toggle.
   document.addEventListener('click',event=>{if(event.target.matches?.('.cs-checkbox')){event.stopPropagation();const box=event.target;if(!busy){box.checked?selected.set(box.dataset.csId,items().find(item=>item.id===box.dataset.csId)?.title||''):selected.delete(box.dataset.csId);sync();}}},true);
+  const grokHistory=site.id==='grok'&&globalThis.ChatTidyGrok?ChatTidyGrok.create({changed:schedule,error:code=>{const notice=el('section','cs-status',t('grokLoadError')+' ('+code+')');notice.dataset.csOwned='true';const close=el('button','cs-button',t('close'));close.onclick=()=>notice.remove();notice.append(close);document.body.append(notice);}}):null;
+  chrome.runtime.onMessage.addListener((message,sender,reply)=>{if(message?.type==='cs-site'&&sender.id===chrome.runtime.id){reply({site:site.id});}return false;});
+  document.addEventListener('pointerdown',event=>{if(event.target.matches?.('.cs-checkbox'))event.stopPropagation();},true);
+  document.addEventListener('keydown',event=>{if(event.target.matches?.('.cs-checkbox'))event.stopPropagation();},true);
   chrome.storage.local.get(settings).then(saved=>{
     settings={...settings,...saved};
     observer=new MutationObserver(records=>{
@@ -215,17 +230,17 @@
           // Ignore our wave/selection class updates; repair only missing row markers.
           const link=record.target,box=link.matches?.('a')&&link.querySelector('.cs-checkbox');
           return box && (!link.classList.contains('cs-chat-link') ||
-            link.classList.contains('cs-dynamic')!==(settings.checkboxMode!=='always') ||
+            link.classList.contains('cs-dynamic')!==(!link.classList.contains('cs-grok-search-link')&&settings.checkboxMode!=='always') ||
             link.classList.contains('cs-selected')!==selected.has(box.dataset.csId));
         }
         return [...record.addedNodes,...record.removedNodes].some(node=>!own(node));
       }))schedule();
-    });scan();watch();
+    });scan();watch();void grokHistory?.setEnabled(settings.enabled&&settings.grokShowAll);
   }).catch(()=>{ /* Invalidated extension: refreshing the page re-injects it. */ });
   chrome.storage.onChanged.addListener((changes,area)=>{
-    if(area!=='local'||!['enabled','language','checkboxMode'].some(key=>changes[key]))return;
-    for(const key of ['enabled','language','checkboxMode'])if(changes[key])settings[key]=changes[key].newValue;
+    if(area!=='local'||!['enabled','language','checkboxMode','grokShowAll'].some(key=>changes[key]))return;
+    for(const key of ['enabled','language','checkboxMode','grokShowAll'])if(changes[key])settings[key]=changes[key].newValue;
     if(busy)return;
-    cleanup();if(!settings.enabled)selected.clear();else scan();
+    cleanup();void grokHistory?.setEnabled(settings.enabled&&settings.grokShowAll);if(!settings.enabled)selected.clear();else scan();
   });
 })();

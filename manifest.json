@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "__MSG_extensionDescription__",
   "permissions": [
     "storage"
@@ -26,6 +26,7 @@
       "js": [
         "src/core.js",
         "src/i18n.js",
+        "src/grok.js",
         "src/content.js"
       ],
       "css": [

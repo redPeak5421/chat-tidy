@@ -231,5 +231,14 @@
   },
   "coworkArchiveOnly": {
     "message": "Claude 归档仅支持 Cowork 任务，请不要同时勾选普通聊天。"
+  },
+  "grokShowAll": {
+    "message": "展示全部"
+  },
+  "grokShowAllHint": {
+    "message": "在侧栏展示完整的 Grok 聊天列表。"
+  },
+  "grokLoadError": {
+    "message": "未能加载全部聊天，请关闭再开启“展示全部”重试。"
   }
 }

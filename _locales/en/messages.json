@@ -231,5 +231,14 @@
   },
   "coworkArchiveOnly": {
     "message": "Claude archive supports Cowork tasks only. Select tasks without ordinary chats."
+  },
+  "grokShowAll": {
+    "message": "Show all"
+  },
+  "grokShowAllHint": {
+    "message": "Show the complete Grok chat history in the sidebar."
+  },
+  "grokLoadError": {
+    "message": "Could not load all chats. Turn Show all off and on to retry."
   }
 }

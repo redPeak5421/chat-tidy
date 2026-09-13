@@ -18,6 +18,8 @@ ChatGPT also supports native bulk archiving, with restoration through its Archiv
 
 Cowork uses its native session endpoints, one task per request, independently of the concurrency setting. Some tasks require device attestation. This extension does not generate or copy device proofs; rejected operations stop and must be completed using Claude’s native controls. Successful responses are required before items disappear.
 
+Grok’s View all search dialog supports checkboxes and a top bulk-delete toolbar. The popup shows a Show all switch only on Grok: it reads the native paginated history and adds omitted chats to the sidebar. Disabling it restores the original list. History metadata stays in page memory and is discarded on reload; request failures stop loading.
+
 ## Privacy and compatibility
 
 Runs only on chatgpt.com, claude.ai and grok.com. Preferences and cooldown state are stored locally. Conversation titles, identifiers and session credentials are used temporarily for user-requested operations. No developer server, advertising or analytics. Website API changes may affect compatibility.

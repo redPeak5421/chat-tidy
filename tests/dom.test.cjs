@@ -227,3 +227,24 @@ for(const action of ['archive','delete'])test(`Cowork ${action} uses the native 
  finish({completed:[task]});await wait(30);
  }finally{dom.window.close()}
 });
+test('Grok search dialog recognizes empty overlay links, adds top delete and keeps selection in sync',async()=>{
+ const {dom,w,d}=await setup({url:'https://grok.com/',markup:`<div data-sidebar="sidebar"><h2>Chats</h2><ul><li><a href="/c/${id('1')}">One</a></li></ul></div><div role="dialog"><input role="combobox"><div cmdk-list role="listbox"><div cmdk-item role="option"><a aria-label="One" href="/c/${id('1')}"></a><div>One Yesterday</div></div><div cmdk-item role="option"><a aria-label="Two" href="/c/${id('2')}"></a><div>Two Last week</div></div></div><div class="preview"><a href="/c/${id('3')}">Preview link</a></div></div>`});
+ try{
+ const list=d.querySelector('[cmdk-list]');assert.equal(list.querySelectorAll('.cs-checkbox').length,2);assert.equal(d.querySelector('.preview input'),null);
+ assert.ok(list.previousElementSibling.classList.contains('cs-search-toolbar'));assert.equal(list.querySelector('.cs-dynamic'),null);
+ let native=0;list.addEventListener('click',()=>native++);list.addEventListener('pointerdown',()=>native++);
+ const box=list.querySelector('.cs-checkbox');box.dispatchEvent(new w.MouseEvent('pointerdown',{bubbles:true}));box.click();
+ assert.equal(native,0);assert.equal(d.querySelector('[data-sidebar] .cs-checkbox').checked,true);
+ const calls=[];w.chrome.runtime.sendMessage=async message=>{calls.push(message);return {completed:message.ids}};
+ d.querySelector('.cs-search-toolbar [data-cs-action="delete"]').click();assert.equal(d.querySelector('.cs-confirm').parentElement,d.querySelector('[role="dialog"]'));
+ d.querySelector('[data-cs-confirm]').click();await wait(80);assert.deepEqual(Array.from(calls[0].ids),[id('1')]);assert.ok(list.querySelector('[cmdk-item]').classList.contains('cs-deleted-row'));
+ }finally{dom.window.close()}
+});
+for(const site of ['grok','claude'])test(`popup show-all switch visibility follows active ${site} page`,async()=>{
+ const dom=new JSDOM(fs.readFileSync('popup.html','utf8'),{url:'https://extension.test/',runScripts:'outside-only'});const w=dom.window,d=w.document,saved={};
+ try{w.chrome={tabs:{query:async()=>[{id:1}],sendMessage:async()=>({site})},storage:{local:{get:async()=>({enabled:true,language:'en',grokShowAll:false}),set:async data=>Object.assign(saved,data)}}};
+ for(const name of ['i18n','popup'])w.eval(fs.readFileSync(`src/${name}.js`,'utf8'));await wait(10);
+ assert.equal(d.querySelector('#grok-options').hidden,site!=='grok');
+ if(site==='grok'){const input=d.querySelector('#grokShowAll');input.checked=true;input.dispatchEvent(new w.Event('change'));await wait(10);assert.equal(saved.grokShowAll,true);}
+ }finally{w.close()}
+});

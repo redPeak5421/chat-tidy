@@ -231,5 +231,14 @@
   },
   "coworkArchiveOnly": {
     "message": "Claudeのアーカイブ対象はCoworkタスクのみです。通常のチャットと同時に選択しないでください。"
+  },
+  "grokShowAll": {
+    "message": "すべて表示"
+  },
+  "grokShowAllHint": {
+    "message": "Grokの全チャット履歴をサイドバーに表示します。"
+  },
+  "grokLoadError": {
+    "message": "すべてを読み込めませんでした。すべて表示をオフにしてから再度オンにしてください。"
   }
 }

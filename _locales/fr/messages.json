@@ -231,5 +231,14 @@
   },
   "coworkArchiveOnly": {
     "message": "L’archivage Claude concerne uniquement les tâches Cowork, sans chats ordinaires."
+  },
+  "grokShowAll": {
+    "message": "Tout afficher"
+  },
+  "grokShowAllHint": {
+    "message": "Afficher tout l’historique Grok dans la barre latérale."
+  },
+  "grokLoadError": {
+    "message": "Chargement incomplet. Désactivez puis réactivez Tout afficher pour réessayer."
   }
 }

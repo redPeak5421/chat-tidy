@@ -231,5 +231,14 @@
   },
   "coworkArchiveOnly": {
     "message": "Claude 封存僅支援 Cowork 任務，請勿同時勾選一般聊天。"
+  },
+  "grokShowAll": {
+    "message": "顯示全部"
+  },
+  "grokShowAllHint": {
+    "message": "在側邊欄顯示完整的 Grok 聊天清單。"
+  },
+  "grokLoadError": {
+    "message": "無法載入全部聊天，請關閉再開啟「顯示全部」重試。"
   }
 }
