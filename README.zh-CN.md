@@ -51,15 +51,6 @@ Safari 工程直接引用 `manifest.json`、`popup.html`、`src/`、`_locales/`�
 
 此分支直接使用原生 `browser.*` API，不引入 polyfill、页面脚本消息桥、后台请求转发或 Swift 消息桥。安装应用使用 AppKit/UIKit 原生控件。
 
-## 支持项目
-
-如果 Chat Tidy 对你有帮助，欢迎通过爱发电或 Ko-fi 支持项目开发。
-
-<p>
-  <a href="https://ko-fi.com/U2C326XLKJ"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="通过 Ko-fi 支持项目" width="223" height="30" /></a>&nbsp;&nbsp;
-  <a href="https://afdian.com/a/redPeak5421"><img src="docs/assets/afdian-zh-CN.svg" alt="通过爱发电支持项目" width="223" height="30" /></a>
-</p>
-
 ## 许可证
 
 本项目采用 [Apache License 2.0](LICENSE)。GitHub 标志为官方品牌素材，用于链接本仓库，遵循 [GitHub 品牌规范](https://brand.github.com/foundations/logo)，不属于本项目 Apache 许可证的授权范围。

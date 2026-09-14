@@ -14,18 +14,6 @@
     for(const key of ['checkboxMode','concurrency'])document.querySelectorAll('input[name="'+key+'"]').forEach(input=>input.checked=input.value===String(settings[key]));
   }
   render();
-  document.querySelectorAll('[data-support]').forEach(link=>link.addEventListener('click',async event=>{
-    if(!browser.tabs?.create)return;
-    event.preventDefault();
-    if(link.dataset.opening)return;
-    link.dataset.opening='true';
-    try{
-      const url=link.dataset.support==='kofi'?browser.runtime.getURL('src/support.html'):link.href;
-      await browser.tabs.create({url,active:true});
-    }catch{
-      document.getElementById('saved').textContent=api.t(settings.language,'supportOpenError');
-    }finally{delete link.dataset.opening;}
-  }));
   if(browser.tabs){try{const [tab]=await browser.tabs.query({active:true,currentWindow:true});if(tab?.id){const result=await browser.tabs.sendMessage(tab.id,{type:'cs-site'});document.getElementById('grok-options').hidden=result?.site!=='grok';}}catch{}}
   for(const key of fields)document.getElementById(key).addEventListener('change',async event=>{
     const value=(key==='enabled'||key==='grokShowAll')?event.target.checked:key==='concurrency'?Number(event.target.value):event.target.value;

@@ -49,15 +49,6 @@ Translations are maintained in `_locales/*/messages.json`. Run `npm run build:i1
 
 The Safari project copies only `manifest.json`, `popup.html`, `src/`, `_locales/`, `icons/` and `LICENSE` into the extension. Use Xcode signing and Archive for distribution.
 
-## Support
-
-If Chat Tidy is useful to you, you can support its development on Ko-fi or Afdian.
-
-<p>
-  <a href="https://ko-fi.com/U2C326XLKJ"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" width="223" height="30" /></a>&nbsp;&nbsp;
-  <a href="https://afdian.com/a/redPeak5421"><img src="docs/assets/afdian-en.svg" alt="Support on Afdian" width="223" height="30" /></a>
-</p>
-
 ## License
 
 Licensed under the [Apache License 2.0](LICENSE). The GitHub logo is an official brand asset used to link to this repository, subject to [GitHub’s brand guidelines](https://brand.github.com/foundations/logo). It is not covered by this project’s Apache license.

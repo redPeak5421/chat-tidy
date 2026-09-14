@@ -258,26 +258,5 @@
   },
   "grokPeriodOlder": {
     "message": "Older"
-  },
-  "afdianName": {
-    "message": "Afdian"
-  },
-  "supportOpenError": {
-    "message": "Could not open the page. Please try again."
-  },
-  "supportTitle": {
-    "message": "Support the project"
-  },
-  "supportPanel": {
-    "message": "Open support panel"
-  },
-  "supportTab": {
-    "message": "Open in a new tab"
-  },
-  "supportOfficial": {
-    "message": "Open Ko-fi website ↗"
-  },
-  "supportHint": {
-    "message": "This page stays open when you switch windows. If payment does not work here, use the Ko-fi website."
   }
 }

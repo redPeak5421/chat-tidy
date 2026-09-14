@@ -258,26 +258,5 @@
   },
   "grokPeriodOlder": {
     "message": "それ以前"
-  },
-  "afdianName": {
-    "message": "愛発電"
-  },
-  "supportOpenError": {
-    "message": "ページを開けませんでした。再試行してください。"
-  },
-  "supportTitle": {
-    "message": "プロジェクトを支援"
-  },
-  "supportPanel": {
-    "message": "支援パネルを開く"
-  },
-  "supportTab": {
-    "message": "新しいタブで開く"
-  },
-  "supportOfficial": {
-    "message": "Ko-fi 公式サイト ↗"
-  },
-  "supportHint": {
-    "message": "ウィンドウを切り替えてもページは閉じません。支払いができない場合は公式サイトをご利用ください。"
   }
 }

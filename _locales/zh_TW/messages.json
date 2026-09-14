@@ -258,26 +258,5 @@
   },
   "grokPeriodOlder": {
     "message": "更早"
-  },
-  "afdianName": {
-    "message": "愛發電"
-  },
-  "supportOpenError": {
-    "message": "無法開啟頁面，請重試。"
-  },
-  "supportTitle": {
-    "message": "支持專案"
-  },
-  "supportPanel": {
-    "message": "開啟贊助面板"
-  },
-  "supportTab": {
-    "message": "在新分頁開啟"
-  },
-  "supportOfficial": {
-    "message": "開啟 Ko-fi 官網 ↗"
-  },
-  "supportHint": {
-    "message": "切換視窗後此頁面仍會保留。如無法在面板付款，請開啟 Ko-fi 官網。"
   }
 }
