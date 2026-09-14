@@ -7,7 +7,7 @@
 - 目标：Safari 16.4+；macOS 13.3+，iOS/iPadOS 16.4+。最低版本由原生 Web Locks、`:has()`、`dialog`、动态视口单位等 API 要求决定，不包含旧版本 polyfill。
 - 本次构建：Xcode 26.6，macOS 和 iOS Simulator Debug 均通过。
 - Xcode 打开 `Chat Tidy/Chat Tidy.xcodeproj`，选择 `Chat Tidy (macOS)` 或 `Chat Tidy (iOS)`。
-- 本地安装需为应用及扩展 target 配置适当签名。当前 Bundle ID 为 `com.redpeak5421.ChatTidy` / `com.redpeak5421.ChatTidy.Extension`；如果修改，同步修改 `Shared (App)/ViewController.swift` 中设置按钮使用的扩展标识。
+- 本地安装需为应用及扩展 target 配置适当签名。当前 Bundle ID 为 `com.canonforge.ChatTidy` / `com.canonforge.ChatTidy.Extension`；如果修改，同步修改 `Shared (App)/ViewController.swift` 中设置按钮使用的扩展标识。
 - macOS 开发调试可在 Safari 的开发设置中允许未签名扩展；该设置可能在重启 Safari 后恢复。正式分发需要 Apple 签名流程。
 - 运行应用后，在 Safari 设置的扩展页面启用 Chat Tidy，并给 chatgpt.com、claude.ai、grok.com 网站权限。iPhone/iPad 在系统设置的 Safari 扩展页面启用。刷新已打开的网站页面。
 
@@ -35,12 +35,12 @@ npm run build:safari:ios
 - `browser.storage.local`：偏好和各站点冷却状态。429 后收集已发出请求的结果、停止后续批次并降低并发；下一次运行重新读取冷却状态。
 - 页面关闭/离开会阻止后续批次；已经发出的请求不能撤回。不会恢复未完成的删除。Claude 工作区每波重新检查。
 - `manifest.json`：MV3，无后台 worker、nativeMessaging、cookies 或额外注入权限。
-- AppKit/UIKit 安装应用只显示启用说明和原生设置按钮；无 WebView、JavaScript 转发或 native-message echo。必要的 extension handler 不处理数据。
+- AppKit/UIKit 安装应用显示启用说明；macOS 还提供原生设置按钮和隐私政策链接；无 WebView、JavaScript 转发或 native-message echo。必要的 extension handler 不处理数据。
 - CSS 使用媒体查询和变量适配深色、触屏、窄弹窗与安全区域，无 JavaScript 样式兼容层。
 
 ## 验证证据与边界
 
-2026-09-14：68 项 Node/DOM 测试通过；6 项 WebKit 26.6 测试通过（桌面与 iPhone 尺寸各 3 项），覆盖原生确认框、触屏入口、同源精确删除、弹窗设置以及两个独立页面的原生锁竞争与释放。macOS 和 iOS Simulator 工程构建通过。截图输出在忽略的 `artifacts/webkit/`。
+2026-09-15：70 项 Node/DOM 测试通过；7 项 WebKit 26.6 测试通过，桌面专属弹窗宽度用例在 iPhone 项目跳过。覆盖原生确认框、触屏入口、同源精确删除、弹窗设置以及两个独立页面的原生锁竞争与释放。macOS 发布归档已构建并上传；iOS Simulator 工程此前构建通过。截图输出在忽略的 `artifacts/webkit/`。
 
 测试均使用虚构聊天和模拟网站响应；WebKit 测试用替身提供扩展存储 API，不能替代 Safari 已安装扩展的权限与隔离世界实测。未执行真实账户删除、真机 iOS 测试、Safari 16.4 旧版实机测试或 App Store 分发验证。支持最低版本是源码目标，不表示每个 Safari 版本均已实测。三个网站的私有接口仍可能变化。
 
@@ -60,8 +60,8 @@ Safari 的桌面扩展弹窗首次布局可能从极窄视口开始。1.8.9 的 
 
 安装时应使用签名构建并替换“应用程序”中的旧版；同时确认 Safari 注册路径指向 `/Applications/Chat Tidy.app`，而非旧构建目录。1.8.10 已在本机 Safari 26.6.2 中验证弹窗正常显示。68 项 Node/DOM 测试和 7 项 WebKit 测试通过；桌面专属回归测试在 iPhone 项目跳过。
 
-真实 Safari 26.6.2 安装后检查：新版弹窗可见且显示 1.8.10；Claude 已登录页面正常注入“管理聊天”菜单；全选识别 11 条当前记录，随后取消选择恢复 0 条。此检查未执行删除或归档。
+## App Store 分发
 
-## App Store 打赏入口评估
+1.8.12 已移除应用内的第三方打赏入口及配套资源。公开的[隐私政策](app-store/PRIVACY.md)与[中文商店说明](app-store/STORE-zh-CN.md)保存在仓库内。
 
-1.8.12 已移除应用内的第三方打赏入口及配套资源。适用范围、规则依据及验证记录见 [第三方打赏入口排查](DONATION-REVIEW.zh-CN.md)。
+通过 Xcode Archive 上传 macOS 应用及其扩展。签名证书、描述文件、审核联系方式与本机归档不提交到 Git。应用和扩展的版本号、构建号应保持一致；同一版本再次上传时递增构建号。

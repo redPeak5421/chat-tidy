@@ -42,7 +42,8 @@ final class ViewController: PlatformViewController {
         let detail = NSTextField(wrappingLabelWithString: instructions)
         detail.font = .systemFont(ofSize: 14)
         let button = NSButton(title: chinese ? "打开 Safari 扩展设置" : "Open Safari Extension Settings", target: self, action: #selector(openSettings))
-        let stack = NSStackView(views: [title, detail, button])
+        let privacyButton = NSButton(title: chinese ? "隐私政策" : "Privacy Policy", target: self, action: #selector(openPrivacyPolicy))
+        let stack = NSStackView(views: [title, detail, button, privacyButton])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 20
@@ -57,8 +58,13 @@ final class ViewController: PlatformViewController {
 #endif
     }
 #if os(macOS)
+    @objc private func openPrivacyPolicy() {
+        guard let url = URL(string: "https://github.com/redPeak5421/chat-tidy/blob/app-store-info/safari/app-store/PRIVACY.md") else { return }
+        NSWorkspace.shared.open(url)
+    }
+
     @objc private func openSettings() {
-        SFSafariApplication.showPreferencesForExtension(withIdentifier: "com.redpeak5421.ChatTidy.Extension") { error in
+        SFSafariApplication.showPreferencesForExtension(withIdentifier: "com.canonforge.ChatTidy.Extension") { error in
             if let error = error {
                 DispatchQueue.main.async { NSAlert(error: error).runModal() }
             }

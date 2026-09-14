@@ -19,6 +19,11 @@ artifacts/
 *.key
 *.p12
 *.pfx
+*.mobileprovision
+*.provisionprofile
+*.xcarchive/
+*.xcdistributionlogs/
+*.pkg
 *.keystore
 *credentials*.json
 *secrets*.json
