@@ -88,7 +88,7 @@
       bar.append(toggle);
     }
     bar.append(actions);
-    const headings=[...root.querySelectorAll('h2,h3,[role="heading"],button')].filter(node=> /^(聊天|聊天記錄|聊天记录|Chats|Chats and tasks|Recents|Your chats|Discussions|Vos discussions|チャット|チャット履歴|Чаты|Ваши чаты)$/i.test((node.querySelector('[data-group-name]')?.textContent||node.textContent).trim()));
+    const headings=[...root.querySelectorAll('h2,h3,[role="heading"],button')].filter(node=> /^(聊天|聊天記錄|聊天记录|最近|最近使用|最近的聊天|Recent|Recent chats|Chats|Chats and tasks|Recents|Your chats|Discussions|Vos discussions|チャット|チャット履歴|Чаты|Ваши чаты)$/i.test((node.querySelector('[data-group-name]')?.textContent||node.textContent).trim()));
     const heading=headings.find(node=>!own(node));
     if(heading) { const host=heading.closest('button,a')||heading;host.classList.add('cs-heading-hover');host.insertAdjacentElement('afterend',bar);bar.classList.add('cs-at-heading'); }
     else { const first=items().find(item=>root.contains(item.link));if(first){let container=first.link.closest('ol,ul');if(!container||!root.contains(container))container=first.link.parentElement;container.before(bar);}else root.prepend(bar); }

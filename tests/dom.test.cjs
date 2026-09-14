@@ -252,3 +252,8 @@ test('extension reload disconnects stale sidebar controls and requests a page re
  assert.equal(d.querySelectorAll('.cs-context-expired').length,1);
  }finally{dom.window.close()}
 });
+
+test('ChatGPT Recent heading keeps the management icon in the native heading row',async()=>{
+ const {dom,d}=await setup({markup:`<nav><div class="recent-header"><button id="recent">最近<svg aria-hidden="true"></svg></button><button aria-label="New chat">+</button><button aria-label="More">…</button></div><div id="history">${row('1')}</div></nav>`});
+ try{assert.equal(d.querySelector('.cs-toolbar').parentElement,d.querySelector('.recent-header'));assert.equal(d.querySelector('#recent').nextElementSibling,d.querySelector('.cs-toolbar'));}finally{dom.window.close()}
+});
