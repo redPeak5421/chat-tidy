@@ -51,3 +51,11 @@ test('popup fits a compact Safari viewport and saves translated settings',async(
  await expect(page.locator('#concurrency')).toBeVisible();
  await page.screenshot({path:`artifacts/webkit/${info.project.name}-popup.png`});
 });
+
+test('desktop popup has an intrinsic width before Safari sizes its viewport',async({page},info)=>{
+ test.skip(info.project.name!=='desktop','Safari desktop popover sizing');
+ await page.setViewportSize({width:1,height:1});
+ await page.setContent(fs.readFileSync('popup.html','utf8'));
+ await page.addStyleTag({path:'src/popup.css'});
+ expect(await page.evaluate(()=>document.body.getBoundingClientRect().width)).toBe(440);
+});

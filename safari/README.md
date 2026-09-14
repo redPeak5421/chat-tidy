@@ -53,3 +53,11 @@ npm run build:safari:ios
 - [Apple：网站权限](https://developer.apple.com/documentation/safariservices/managing-safari-web-extension-permissions)
 - [WebKit：扩展后台请求的 Origin 限制](https://bugs.webkit.org/show_bug.cgi?id=244576)
 - [WebKit：后台 fetch 携带 Cookie 的兼容问题](https://bugs.webkit.org/show_bug.cgi?id=260676)
+
+## 1.8.10 安装后修复
+
+Safari 的桌面扩展弹窗首次布局可能从极窄视口开始。1.8.9 的 `max-width:100vw` 配合窄屏 `width:100%` 会把弹窗压缩到近乎不可见，即使内容和设置已正常加载。1.8.10 为桌面弹窗保留 440px 固有宽度，仅对触屏窗口应用视口布局。增加了 1px 初始视口的回归测试（修复前宽度为 1，修复后为 440）。
+
+安装时应使用签名构建并替换“应用程序”中的旧版；同时确认 Safari 注册路径指向 `/Applications/Chat Tidy.app`，而非旧构建目录。1.8.10 已在本机 Safari 26.6.2 中验证弹窗正常显示。68 项 Node/DOM 测试和 7 项 WebKit 测试通过；桌面专属回归测试在 iPhone 项目跳过。
+
+真实 Safari 26.6.2 安装后检查：新版弹窗可见且显示 1.8.10；Claude 已登录页面正常注入“管理聊天”菜单；全选识别 11 条当前记录，随后取消选择恢复 0 条。此检查未执行删除或归档。
