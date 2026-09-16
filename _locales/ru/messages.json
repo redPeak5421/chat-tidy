@@ -302,7 +302,7 @@
     "message": "Скрыть Bots"
   },
   "grokCollapseBots": {
-    "message": "Свернуть Bots"
+    "message": "Сворачивать Bots по умолчанию"
   },
   "archiveManager": {
     "message": "Архив чатов"

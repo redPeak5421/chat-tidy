@@ -28,7 +28,7 @@ Cowork uses its native session endpoints, one task per request, independently of
 
 Grok’s View all search dialog supports checkboxes and a top bulk-delete toolbar. The popup shows a Show all switch only on Grok: it reads the native paginated history and adds omitted chats to the sidebar. Disabling it restores the original list. History metadata stays in page memory and is discarded on reload; request failures stop loading.
 
-The bottom Settings page saves System (default), Light or Dark appearance locally. On Grok, Hide Bots and Collapse Bots are available and default to off; hiding takes precedence. The Chrome version also offers Hide support to remove the entire support section.
+The bottom Settings page saves System (default), Light or Dark appearance locally. On Grok, Hide Bots and Collapse Bots by default are available and default to off; hiding takes precedence, and the collapse is only the state after a reload, so you can still expand the section by hand. The Chrome version also offers Hide support to remove the entire support section.
 
 ## Privacy and compatibility
 

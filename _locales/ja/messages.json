@@ -302,7 +302,7 @@
     "message": "Botsを非表示"
   },
   "grokCollapseBots": {
-    "message": "Botsを折りたたむ"
+    "message": "Bots をデフォルトで折りたたむ"
   },
   "archiveManager": {
     "message": "アーカイブ管理"

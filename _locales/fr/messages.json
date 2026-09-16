@@ -302,7 +302,7 @@
     "message": "Masquer les Bots"
   },
   "grokCollapseBots": {
-    "message": "Replier les Bots"
+    "message": "Replier Bots par défaut"
   },
   "archiveManager": {
     "message": "Conversations archivées"
