@@ -24,7 +24,7 @@
     "message": "全选和反选仅处理侧栏当前已加载的聊天。向下滚动可加载更多；页面刷新后选择会清空。"
   },
   "privacy": {
-    "message": "在 ChatGPT、Claude 和 Grok 页面运行。只保存设置，不保存聊天或登录凭据，不向第三方发送数据。"
+    "message": "在 ChatGPT、Claude、Grok、Gemini、Kimi 和 Qwen 页面运行。只保存设置，不保存聊天或登录凭据，不向第三方发送数据。"
   },
   "clear": {
     "message": "取消选择"
@@ -158,7 +158,7 @@
     "message": "并发删除"
   },
   "concurrencyHelp": {
-    "message": "ChatGPT / Grok 默认并发 2，非官方限额；Claude 原生批量每组 20 条。遇限流停止。"
+    "message": "ChatGPT / Grok / Gemini / Kimi / Qwen 默认并发 2，非官方限额；Claude 原生批量每组 20 条。遇限流停止。"
   },
   "cooldown": {
     "message": "限流冷却中，可在 $TIME$ 后重试。",
@@ -176,7 +176,7 @@
     "message": "Chat Tidy"
   },
   "extensionDescription": {
-    "message": "在侧边栏勾选并批量删除 ChatGPT、Claude 和 Grok 聊天，支持六种语言。"
+    "message": "在侧边栏勾选并批量删除 ChatGPT、Claude、Grok、Gemini、Kimi 和 Qwen 聊天，支持六种语言。"
   },
   "actionTitle": {
     "message": "Chat Tidy"
@@ -258,5 +258,146 @@
   },
   "grokPeriodOlder": {
     "message": "更早"
+  },
+  "settings": {
+    "message": "设置"
+  },
+  "back": {
+    "message": "返回"
+  },
+  "theme": {
+    "message": "主题"
+  },
+  "themeSystem": {
+    "message": "跟随系统"
+  },
+  "themeLight": {
+    "message": "白天"
+  },
+  "themeDark": {
+    "message": "黑夜"
+  },
+  "grokHideBots": {
+    "message": "隐藏 Bots"
+  },
+  "grokCollapseBots": {
+    "message": "折叠 Bots"
+  },
+  "archiveManager": {
+    "message": "归档管理"
+  },
+  "restore": {
+    "message": "恢复"
+  },
+  "loadMore": {
+    "message": "加载更多"
+  },
+  "archiveNative": {
+    "message": "打开原生归档管理"
+  },
+  "archiveEmpty": {
+    "message": "暂无归档对话"
+  },
+  "archiveUntitled": {
+    "message": "未命名对话"
+  },
+  "aboutTitle": {
+    "message": "支持 ChatGPT、Claude、Grok、Gemini、Kimi、Qwen 的浏览器页面增强："
+  },
+  "aboutChatgpt": {
+    "message": "ChatGPT：批量删除、批量归档、归档管理（恢复 / 删除）、批量移动至项目或新项目。"
+  },
+  "aboutClaude": {
+    "message": "Claude：批量删除、批量移动至组或新组；Cowork 任务支持归档。"
+  },
+  "aboutGrok": {
+    "message": "Grok：批量删除（含搜索结果）、展示全部历史、隐藏 / 折叠 Bots。"
+  },
+  "aboutGemini": {
+    "message": "Gemini：批量删除。"
+  },
+  "aboutKimi": {
+    "message": "Kimi：批量删除。"
+  },
+  "aboutQwen": {
+    "message": "Qwen：批量删除、批量归档、归档管理（恢复 / 删除）、批量移动至项目或新项目。"
+  },
+  "moveProject": {
+    "message": "移动至项目"
+  },
+  "moveGroup": {
+    "message": "移动至组"
+  },
+  "moveTitle": {
+    "message": "将 $N$ 条聊天移动至…",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveHint": {
+    "message": "选择已有目标，或新建一个。使用网站原生的移动方式，之后可以再次移动。"
+  },
+  "newProject": {
+    "message": "新项目"
+  },
+  "newGroup": {
+    "message": "新组"
+  },
+  "destinationName": {
+    "message": "名称"
+  },
+  "moveConfirm": {
+    "message": "移动 $N$ 条",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveWorking": {
+    "message": "正在后台移动，你可以继续操作页面。"
+  },
+  "moveDone": {
+    "message": "已移动 $N$ 条。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveStopped": {
+    "message": "已处理 $N$ 条后停止。已移动的聊天保留在目标中。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "destinationsEmpty": {
+    "message": "还没有可选目标，请在下方新建。"
+  },
+  "destinationsLoading": {
+    "message": "加载中…"
+  },
+  "destinationsError": {
+    "message": "无法加载列表，请检查登录状态或稍后重试。"
+  },
+  "createError": {
+    "message": "创建失败，未移动任何聊天。"
+  },
+  "qwenArchiveWarning": {
+    "message": "将这 $N$ 条聊天归档到 Qwen。可在归档管理中恢复。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   }
 }

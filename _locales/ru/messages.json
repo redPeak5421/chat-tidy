@@ -24,7 +24,7 @@
     "message": "Выделение и инверсия затрагивают только загруженные чаты. Прокрутите список для загрузки остальных. Обновление страницы сбрасывает выбор."
   },
   "privacy": {
-    "message": "Работает в ChatGPT, Claude и Grok. Сохраняет только настройки, без чатов и учётных данных. Без передачи третьим лицам."
+    "message": "Работает на страницах ChatGPT, Claude, Grok, Gemini, Kimi и Qwen. Сохраняются только настройки; чаты и учётные данные не сохраняются и не передаются третьим лицам."
   },
   "clear": {
     "message": "Снять выбор"
@@ -158,7 +158,7 @@
     "message": "Одновременно"
   },
   "concurrencyHelp": {
-    "message": "ChatGPT / Grok: обычно 2, не официальный лимит. Claude: штатные пакеты по 20. При ограничении — остановка."
+    "message": "ChatGPT / Grok / Gemini / Kimi / Qwen: по умолчанию 2; это не официальный лимит. Claude использует штатные пакеты по 20. При ограничении частоты обработка останавливается."
   },
   "cooldown": {
     "message": "Ограничение запросов. Повторите после $TIME$.",
@@ -176,7 +176,7 @@
     "message": "Chat Tidy"
   },
   "extensionDescription": {
-    "message": "Выбирайте и удаляйте чаты ChatGPT, Claude и Grok в боковой панели. Шесть языков."
+    "message": "Выбирайте и массово удаляйте чаты ChatGPT, Claude, Grok, Gemini, Kimi и Qwen из боковой панели. Шесть языков."
   },
   "actionTitle": {
     "message": "Chat Tidy"
@@ -258,5 +258,146 @@
   },
   "grokPeriodOlder": {
     "message": "Ранее"
+  },
+  "settings": {
+    "message": "Настройки"
+  },
+  "back": {
+    "message": "Назад"
+  },
+  "theme": {
+    "message": "Тема"
+  },
+  "themeSystem": {
+    "message": "Как в системе"
+  },
+  "themeLight": {
+    "message": "Светлая"
+  },
+  "themeDark": {
+    "message": "Тёмная"
+  },
+  "grokHideBots": {
+    "message": "Скрыть Bots"
+  },
+  "grokCollapseBots": {
+    "message": "Свернуть Bots"
+  },
+  "archiveManager": {
+    "message": "Архив чатов"
+  },
+  "restore": {
+    "message": "Восстановить"
+  },
+  "loadMore": {
+    "message": "Загрузить ещё"
+  },
+  "archiveNative": {
+    "message": "Открыть архив ChatGPT"
+  },
+  "archiveEmpty": {
+    "message": "Архив пуст"
+  },
+  "archiveUntitled": {
+    "message": "Чат без названия"
+  },
+  "aboutTitle": {
+    "message": "Улучшения страниц ChatGPT, Claude, Grok, Gemini, Kimi и Qwen:"
+  },
+  "aboutChatgpt": {
+    "message": "ChatGPT: массовое удаление и архивирование, управление архивом (восстановить / удалить), перенос в проект или новый проект."
+  },
+  "aboutClaude": {
+    "message": "Claude: массовое удаление, перенос в группу или новую группу; задачи Cowork можно архивировать."
+  },
+  "aboutGrok": {
+    "message": "Grok: массовое удаление (включая результаты поиска), показ всей истории, скрытие или сворачивание Bots."
+  },
+  "aboutGemini": {
+    "message": "Gemini: массовое удаление."
+  },
+  "aboutKimi": {
+    "message": "Kimi: массовое удаление."
+  },
+  "aboutQwen": {
+    "message": "Qwen: массовое удаление и архивирование, управление архивом (восстановить / удалить), перенос в проект или новый проект."
+  },
+  "moveProject": {
+    "message": "Переместить в проект"
+  },
+  "moveGroup": {
+    "message": "Переместить в группу"
+  },
+  "moveTitle": {
+    "message": "Переместить $N$ чатов в…",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveHint": {
+    "message": "Выберите существующее место назначения или создайте новое. Используется штатный перенос сайта; позже чаты можно переместить снова."
+  },
+  "newProject": {
+    "message": "Новый проект"
+  },
+  "newGroup": {
+    "message": "Новая группа"
+  },
+  "destinationName": {
+    "message": "Название"
+  },
+  "moveConfirm": {
+    "message": "Переместить $N$ чатов",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveWorking": {
+    "message": "Перенос выполняется в фоне. Можно продолжать работу со страницей."
+  },
+  "moveDone": {
+    "message": "Перемещено чатов: $N$.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveStopped": {
+    "message": "Остановлено после $N$. Уже перемещённые чаты остаются в выбранном месте.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "destinationsEmpty": {
+    "message": "Пока нет мест назначения. Создайте новое ниже."
+  },
+  "destinationsLoading": {
+    "message": "Загрузка…"
+  },
+  "destinationsError": {
+    "message": "Не удалось загрузить список. Проверьте вход или повторите позже."
+  },
+  "createError": {
+    "message": "Не удалось создать. Ничего не перемещено."
+  },
+  "qwenArchiveWarning": {
+    "message": "Архивировать эти $N$ чатов в Qwen. Их можно восстановить в разделе архивных чатов.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   }
 }

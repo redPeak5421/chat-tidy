@@ -169,3 +169,48 @@ test('workspace changes after a Claude wave stop all later groups',async()=>{
  const result=await s.context.ChatTidyBatch.run({ids:many,organizationId:ids[0],canRun:()=>valid,onProgress:()=>{valid=false;}});
  assert.equal(result.error,'workspace-changed');assert.equal(result.completed.length,20);assert.equal(s.calls.length,1);
 });
+test('restore only clears archive flag and is rejected on other sites',async()=>{
+ const s=setup([{body:{accessToken:'t'}},{body:{success:true}}]);const result=await s.context.ChatTidyBatch.run({ids:[ids[0]],action:'restore'});assert.equal(result.completed.length,1);assert.deepEqual(JSON.parse(s.calls[1].options.body),{is_archived:false});
+ const other=setup([]);await other.send({ids:[]},{url:'https://grok.com/'});assert.equal((await other.context.ChatTidyBatch.run({ids,action:'restore'})).error,'unsupported-action');assert.equal(other.calls.length,0);
+});
+test('archive operations stop if authenticated user changes between waves',async()=>{
+ const s=setup([{body:{accessToken:'t',user:{id:'a'}}},{body:{accessToken:'t',user:{id:'a'}}},{body:{success:true}},{body:{accessToken:'u',user:{id:'b'}}}],{concurrency:1});
+ const result=await s.context.ChatTidyBatch.run({ids,action:'restore',expectedUserId:'a'});assert.equal(result.error,'account-changed');assert.equal(s.calls.filter(c=>c.options.method==='PATCH').length,1);
+});
+
+test('ChatGPT move patches gizmo_id with the chosen project and validates the target',async()=>{
+ const s=setup([{body:{accessToken:'t'}},{body:{success:true}},{body:{success:true}}]);
+ const result=await s.context.ChatTidyBatch.run({ids,action:'move',target:'g-p-abc123'});
+ assert.equal(result.completed.length,2);
+ for(const call of s.calls.slice(1)){assert.equal(call.options.method,'PATCH');assert.deepEqual(JSON.parse(call.options.body),{gizmo_id:'g-p-abc123'});}
+ const bad=setup([]);assert.equal((await bad.context.ChatTidyBatch.run({ids,action:'move',target:'../g-p-x'})).error,'invalid-request');assert.equal((await bad.context.ChatTidyBatch.run({ids,action:'move'})).error,'invalid-request');assert.equal(bad.calls.length,0);
+});
+test('Claude move updates each conversation record with project_uuid and accepts an empty 202',async()=>{
+ const org='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',project='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+ const s=setup([{status:202,body:undefined},{status:202,body:undefined}],{concurrency:1});await s.send({ids:[]},{url:'https://claude.ai/'});
+ const result=await s.context.ChatTidyBatch.run({ids,action:'move',target:project,organizationId:org});
+ assert.equal(result.completed.length,2);assert.equal(s.calls.length,2);
+ assert.equal(s.calls[0].url,'https://claude.ai/api/organizations/'+org+'/chat_conversations/'+ids[0]);assert.equal(s.calls[0].options.method,'PUT');assert.deepEqual(JSON.parse(s.calls[0].options.body),{project_uuid:project});
+ const task='cse_01AAAAAAAAAAAAAAAAAAAAAA';const mixed=setup([]);mixed.context.location={href:'https://claude.ai/'};
+ assert.equal((await mixed.context.ChatTidyBatch.run({ids:[ids[0],task],action:'move',target:project,organizationId:org})).error,'unsupported-action');assert.equal(mixed.calls.length,0);
+});
+test('move and archive stay unavailable on Grok, Gemini and Kimi',async()=>{
+ for(const url of ['https://grok.com/','https://www.kimi.com/']){
+ const s=setup([]);s.context.location={href:url};
+ assert.equal((await s.context.ChatTidyBatch.run({ids,action:'move',target:'x'})).error,'unsupported-action');
+ assert.equal((await s.context.ChatTidyBatch.run({ids,action:'archive'})).error,'unsupported-action');assert.equal(s.calls.length,0);
+ }
+});
+test('Qwen deletes, toggles archive per chat and moves in native groups through the site module',async()=>{
+ const s=setup([]);s.context.location={href:'https://chat.qwen.ai/'};
+ const log=[];s.context.ChatTidyQwen={session:async()=>'user-a',api:{remove:async id=>log.push(['remove',id]),toggleArchive:async id=>log.push(['archive',id]),addToProject:async(project,group)=>log.push(['move',project,group.slice()])}};
+ const many=Array.from({length:21},(_,i)=>String(i).padStart(8,'0')+'-1111-4111-8111-111111111111');
+ let result=await s.context.ChatTidyBatch.run({ids,action:'delete',expectedUserId:'user-a'});assert.equal(result.completed.length,2);
+ result=await s.context.ChatTidyBatch.run({ids:[ids[0]],action:'archive'});assert.equal(result.completed.length,1);
+ result=await s.context.ChatTidyBatch.run({ids:[ids[0]],action:'restore'});assert.equal(result.completed.length,1);
+ result=await s.context.ChatTidyBatch.run({ids:many,action:'move',target:'proj-1'});assert.equal(result.completed.length,21);
+ assert.deepEqual(log.map(entry=>entry[0]),['remove','remove','archive','archive','move','move']);
+ assert.equal(log[4][2].length,20);assert.equal(log[5][2].length,1);assert.equal(log[4][1],'proj-1');
+ assert.equal((await s.context.ChatTidyBatch.run({ids,action:'delete',expectedUserId:'user-b'})).error,'account-changed');
+ assert.equal(s.calls.length,0,'no raw fetches bypass the site module');
+});

@@ -14,8 +14,8 @@ final class ViewController: PlatformViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         let instructions = chinese
-            ? "在 Safari 的扩展设置中启用 Chat Tidy，并允许访问 ChatGPT、Claude 和 Grok。然后刷新网站页面，在侧边栏勾选聊天进行管理。\n\n需要 Safari 16.4 或更新版本。处理期间请保持网页打开。"
-            : "Enable Chat Tidy in Safari extension settings and allow access to ChatGPT, Claude and Grok. Reload the website, then select chats in the sidebar.\n\nRequires Safari 16.4 or later. Keep the website open while processing."
+            ? "在 Safari 的扩展设置中启用 Chat Tidy，并允许访问 ChatGPT、Claude、Grok、Gemini、Kimi 和 Qwen。然后刷新网站页面，在侧边栏勾选聊天进行管理。\n\n需要 Safari 16.4 或更新版本。处理期间请保持网页打开。"
+            : "Enable Chat Tidy in Safari extension settings and allow access to ChatGPT, Claude, Grok, Gemini, Kimi and Qwen. Reload the website, then select chats in the sidebar.\n\nRequires Safari 16.4 or later. Keep the website open while processing."
 #if os(iOS)
         view.backgroundColor = .systemBackground
         let title = UILabel()

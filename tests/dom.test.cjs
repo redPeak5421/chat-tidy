@@ -203,7 +203,19 @@ test('ChatGPT archive reviews selection then sends archive only and preserves fa
 for(const site of ['claude','grok'])test(`${site} does not offer local or unverified archive`,async()=>{
  const attr=site==='claude'?'data-testid="sidebar"':'data-sidebar="sidebar"';const route=site==='claude'?'chat':'c';
  const {dom,d}=await setup({url:site==='claude'?'https://claude.ai/':'https://grok.com/',markup:`<div ${attr}><h2>Chats</h2><a href="/${route}/${id('1')}">Example</a></div>`});
- try{if(site==='grok')assert.equal(d.querySelector('[data-cs-action="archive"]'),null);else{d.querySelector('.cs-checkbox').click();assert.equal(d.querySelector('[data-cs-action="archive"]').disabled,true);}}finally{dom.window.close()}
+ try{if(site==='grok')assert.equal(d.querySelector('[data-cs-action="archive"]'),null);else{const archive=d.querySelector('[data-cs-action="archive"]');assert.equal(archive.hidden,true);d.querySelector('.cs-checkbox').click();assert.equal(archive.disabled,true);assert.equal(archive.hidden,true,'ordinary Claude chats never show Archive');}}finally{dom.window.close()}
+});
+test('Claude shows Archive only while the selection is Cowork tasks only',async()=>{
+ const task='cse_01AAAAAAAAAAAAAAAAAAAAAA';
+ const {dom,d}=await setup({url:'https://claude.ai/',markup:`<div data-testid="sidebar"><h2>Chats</h2><a href="/chat/${id('1')}">Chat</a><a href="/cowork/${task}">Task</a></div>`});
+ try{
+ const archive=d.querySelector('[data-cs-action="archive"]');const boxes=[...d.querySelectorAll('.cs-checkbox')];const taskBox=boxes.find(box=>box.dataset.csId===task),chatBox=boxes.find(box=>box.dataset.csId===id('1'));
+ assert.equal(archive.hidden,true);
+ taskBox.click();assert.equal(archive.hidden,false);assert.equal(archive.disabled,false);
+ chatBox.click();assert.equal(archive.hidden,true);
+ chatBox.click();assert.equal(archive.hidden,false);
+ taskBox.click();assert.equal(archive.hidden,true);
+ }finally{dom.window.close()}
 });
 for(const action of ['archive','delete'])test(`Cowork ${action} uses the native endpoint and accepts an empty successful response`,async()=>{
  const task='cse_01AAAAAAAAAAAAAAAAAAAAAA';const calls=[];
@@ -256,4 +268,122 @@ test('extension reload disconnects stale sidebar controls and requests a page re
 test('ChatGPT Recent heading keeps the management icon in the native heading row',async()=>{
  const {dom,d}=await setup({markup:`<nav><div class="recent-header"><button id="recent">最近<svg aria-hidden="true"></svg></button><button aria-label="New chat">+</button><button aria-label="More">…</button></div><div id="history">${row('1')}</div></nav>`});
  try{assert.equal(d.querySelector('.cs-toolbar').parentElement,d.querySelector('.recent-header'));assert.equal(d.querySelector('#recent').nextElementSibling,d.querySelector('.cs-toolbar'));}finally{dom.window.close()}
+});
+test('theme preference reaches injected controls and resets on disable',async()=>{
+ const {dom,d,change}=await setup();try{await change({theme:{newValue:'dark'}});assert.equal(d.documentElement.dataset.csTheme,'dark');await change({theme:{newValue:'light'}});assert.equal(d.documentElement.dataset.csTheme,'light');await change({theme:{newValue:'system'}});assert.equal(d.documentElement.dataset.csTheme,'system');await change({enabled:{newValue:false}});assert.equal(d.documentElement.dataset.csTheme,undefined);}finally{dom.window.close();}
+});
+
+// Kimi renders RouterLink anchors inside the history and pinned sections.
+const kimiId=n=>`${n.repeat(8)}-dfe2-88b1-8000-${n.repeat(12)}`;
+const kimiRow=(n,title)=>`<div class="next-sidebar-history-item"><a href="/chat/${kimiId(n)}?chat_enter_method=history" class="next-sidebar-history-item__link"><div class="next-sidebar-history-item__main"><span class="next-sidebar-history-item__title">${title}</span></div></a><button type="button" class="next-sidebar-history-item__more" aria-label="更多">…</button></div>`;
+async function kimiSetup(extra){
+ const markup=`<aside class="next-sidebar"><section class="next-sidebar-section"><div class="next-sidebar-section__header"><button type="button" class="next-sidebar-section__title is-collapsible" aria-expanded="true"><span class="next-sidebar-section__title-text">对话</span><span class="next-sidebar-section__toggle-icon" aria-hidden="true"></span></button><div class="next-sidebar-section__action is-hover-only"><button type="button">查看全部</button></div></div><div class="next-sidebar-section__content"><div class="next-sidebar-history-list"><div class="next-sidebar-history-list__items">${kimiRow('1','Trip plan')}${kimiRow('2','Reading list')}</div></div></div></section><ul class="next-sidebar-pinned-list"><li class="next-sidebar-pinned-list__item">${kimiRow('3','Pinned chat')}</li></ul></aside><main><a href="/chat/${kimiId('4')}">Related chat</a></main>`;
+ return setup({url:'https://www.kimi.com/chat/'+kimiId('1'),markup,beforeLoad:w=>{w.localStorage.setItem('access_token','t');w.localStorage.setItem('msh_user_id','u');extra?.(w);}});
+}
+test('Kimi sidebar rows get checkboxes, the icon sits beside the history heading and the menu offers delete only',async()=>{
+ const {dom,d}=await kimiSetup();try{
+ assert.equal(d.querySelectorAll('.cs-checkbox').length,3);assert.equal(d.querySelector('main .cs-checkbox'),null);
+ assert.equal(d.querySelector('.cs-toolbar').previousElementSibling,d.querySelector('.next-sidebar-section__title'));assert.equal(d.querySelector('.cs-toolbar').nextElementSibling,d.querySelector('.next-sidebar-section__action'));assert.ok(d.querySelector('.next-sidebar-section__header').classList.contains('cs-heading-row'));
+ assert.equal(d.querySelector('[data-cs-action="archive"]'),null);assert.equal(d.querySelector('[data-cs-action="move"]'),null);assert.equal(d.querySelector('[data-cs-action="archiveManager"]'),null);
+ assert.ok(d.querySelector('[data-cs-action="delete"]'));
+ }finally{dom.window.close()}
+});
+test('Kimi deletion confirms once, sends selected IDs to the executor and hides the native row wrapper',async()=>{
+ const {dom,w,d}=await kimiSetup();try{
+ const calls=[];w.ChatTidyBatch.run=async message=>{calls.push(message);return {completed:message.ids}};
+ d.querySelector(`.cs-checkbox[data-cs-id="${kimiId('2')}"]`).click();d.querySelector('[data-cs-action="delete"]').click();
+ assert.match(d.querySelector('.cs-confirm').textContent,/Reading list/);assert.match(d.querySelector('.cs-confirm').textContent,/Kimi/);
+ d.querySelector('[data-cs-confirm]').click();await wait(100);
+ assert.deepEqual(Array.from(calls[0].ids),[kimiId('2')]);assert.equal(calls[0].action,'delete');
+ const row=d.querySelector(`a[href^="/chat/${kimiId('2')}"]`).closest('.next-sidebar-history-item');
+ assert.ok(row.classList.contains('cs-deleted-row'));assert.equal(d.querySelectorAll('.cs-deleted-row').length,1);
+ }finally{dom.window.close()}
+});
+// Qwen rows have no href; the site module maps them from the website's own list.
+const qwenId=n=>`${n.repeat(8)}-${n.repeat(4)}-4${n.repeat(3)}-8${n.repeat(3)}-${n.repeat(12)}`;
+const qwenRow=title=>`<div class="chat-item-drag"><a aria-label="chat-item" class="chat-item-drag-link"><div class="chat-item-drag-link-content"><span class="chat-item-title-text">${title}</span></div></a></div>`;
+const qwenSection=inner=>`<div class="list-folder"><div class="collapsible-full"><div class="collapsible-full"><div><div class="collapsible-full"><div class="folder-button"><div class="folder-name">所有对话</div><div class="folder-button-icon-container"><span aria-hidden="true">▾</span></div></div></div></div></div><div><div class="folder-content">${inner}</div></div></div></div>`;
+async function qwenSetup(){
+ const markup=`<div id="sidebar"><div class="session-list">${qwenSection(`<div class="list-folder-pt"><div class="list-folder-chats">Today</div>${qwenRow('Alpha')}${qwenRow('Beta')}</div>`)}</div></div>`;
+ return setup({url:'https://chat.qwen.ai/',markup,beforeLoad:w=>{
+  w.AbortSignal=AbortSignal;
+  w.fetch=async url=>{const path=url.split('?')[0];const body=path==='/api/v2/chats/pinned'?{success:true,data:[]}:path==='/api/v2/chats/'?{success:true,data:[{id:qwenId('1'),title:'Alpha'},{id:qwenId('2'),title:'Beta'}]}:path==='/api/v1/auths/'?{id:'user-a',email:'a@example.test'}:{success:false,data:{code:'missing'}};return {ok:true,status:200,headers:{get:()=>null},json:async()=>body};};
+  for(const f of ['qwen','projects'])w.eval(fs.readFileSync('src/'+f+'.js','utf8'));
+ }});
+}
+test('Qwen rows receive IDs from the site list, offer archive, move and the manager, and hide the row wrapper after deletion',async()=>{
+ const {dom,w,d}=await qwenSetup();try{
+ await wait(200);
+ const boxes=[...d.querySelectorAll('.cs-checkbox')];assert.equal(boxes.length,2);assert.deepEqual(boxes.map(box=>box.dataset.csId),[qwenId('1'),qwenId('2')]);
+ assert.ok(d.querySelector('[data-cs-action="archive"]'));assert.ok(d.querySelector('[data-cs-action="move"]'));assert.ok(d.querySelector('[data-cs-action="archiveManager"]'));
+ const header=d.querySelector('.folder-button');assert.equal(d.querySelector('.cs-toolbar').parentElement,header,'the icon lives in the All chats header row');assert.equal(d.querySelector('.cs-toolbar').previousElementSibling,header.querySelector('.folder-name'),'right after the section name');assert.equal(d.querySelector('.cs-toolbar').nextElementSibling,header.querySelector('.folder-button-icon-container'),'before the chevron');assert.ok(header.classList.contains('cs-heading-row'));assert.equal(header.querySelector('.folder-name').textContent,'所有对话');
+ assert.equal(d.querySelector('[data-cs-action="move"]').textContent,'Move to project');
+ const calls=[];w.ChatTidyBatch.run=async message=>{calls.push(message);return {completed:message.ids}};
+ boxes[1].click();d.querySelector('[data-cs-action="archive"]').click();assert.match(d.querySelector('.cs-confirm').textContent,/Qwen/);d.querySelector('[data-cs-confirm]').click();await wait(100);
+ assert.equal(calls[0].action,'archive');assert.deepEqual(Array.from(calls[0].ids),[qwenId('2')]);assert.equal(calls[0].expectedUserId,'user-a');
+ assert.ok(d.querySelectorAll('.chat-item-drag')[1].classList.contains('cs-deleted-row'));assert.equal(d.querySelectorAll('.chat-item-drag')[0].classList.contains('cs-deleted-row'),false);
+ }finally{dom.window.close()}
+});
+test('ChatGPT move picker lists projects, moves into an existing one and hides moved rows',async()=>{
+ const {dom,w,d}=await setup({beforeLoad:w=>{w.AbortSignal=AbortSignal;w.fetch=async url=>{const path=url.split('?')[0];const body=path==='/api/auth/session'?{accessToken:'t',user:{id:'a'}}:path==='/backend-api/gizmos/snorlax/sidebar'?{cursor:null,items:[{gizmo:{gizmo:{id:'g-p-one',display:{name:'Research'}}},conversations:{items:[]}}]}:{};return {ok:true,status:200,json:async()=>body};};w.eval(fs.readFileSync('src/projects.js','utf8'));}});
+ try{
+ const calls=[];w.ChatTidyBatch.run=async message=>{calls.push(message);return {completed:message.ids}};
+ const move=d.querySelector('[data-cs-action="move"]');assert.ok(move);assert.equal(move.disabled,true);assert.equal(move.textContent,'Move to project');
+ d.querySelector('[data-cs-action="all"]').click();assert.equal(move.disabled,false);move.click();await wait(50);
+ const dialog=d.querySelector('.cs-move');assert.ok(dialog);assert.match(dialog.textContent,/Research/);assert.equal(calls.length,0);
+ const confirm=dialog.querySelector('[data-cs-move-confirm]');assert.equal(confirm.disabled,true);
+ dialog.querySelector('input[value="g-p-one"]').click();dialog.dispatchEvent(new w.Event('change'));assert.equal(confirm.disabled,false);
+ confirm.click();await wait(100);
+ assert.equal(calls.length,1);assert.equal(calls[0].action,'move');assert.equal(calls[0].target,'g-p-one');assert.equal(calls[0].ids.length,2);
+ assert.equal(d.querySelector('.cs-move'),null);assert.equal(d.querySelectorAll('.cs-deleted-row').length,2);assert.match(d.querySelector('.cs-status').textContent,/Moved 2/);
+ }finally{dom.window.close()}
+});
+test('ChatGPT move picker creates a new project first and moves nothing when creation fails',async()=>{
+ let fail=true;const posts=[];
+ const {dom,w,d}=await setup({beforeLoad:w=>{w.AbortSignal=AbortSignal;w.fetch=async(url,options={})=>{const path=url.split('?')[0];if(path==='/backend-api/gizmos/snorlax/upsert'){posts.push(JSON.parse(options.body));return {ok:!fail,status:fail?500:200,json:async()=>({resource:{gizmo:{id:'g-p-new',display:{name:'Fresh'}}}})};}const body=path==='/api/auth/session'?{accessToken:'t',user:{id:'a'}}:{cursor:null,items:[]};return {ok:true,status:200,json:async()=>body};};w.eval(fs.readFileSync('src/projects.js','utf8'));}});
+ try{
+ const calls=[];w.ChatTidyBatch.run=async message=>{calls.push(message);return {completed:message.ids}};
+ d.querySelector('.cs-checkbox').click();d.querySelector('[data-cs-action="move"]').click();await wait(50);
+ const dialog=d.querySelector('.cs-move');assert.match(dialog.textContent,/No destinations yet/);
+ const name=dialog.querySelector('.cs-move-name');name.value='Fresh';name.dispatchEvent(new w.Event('input'));
+ const confirm=dialog.querySelector('[data-cs-move-confirm]');assert.equal(confirm.disabled,false);
+ confirm.click();await wait(50);
+ assert.equal(posts.length,1);assert.equal(posts[0].display.name,'Fresh');assert.equal(calls.length,0);assert.match(dialog.querySelector('.cs-move-error').textContent,/Nothing was moved/);assert.ok(d.querySelector('.cs-move'));
+ fail=false;confirm.click();await wait(100);
+ assert.equal(calls.length,1);assert.equal(calls[0].target,'g-p-new');assert.equal(d.querySelector('.cs-move'),null);
+ }finally{dom.window.close()}
+});
+test('Claude move uses group wording, targets the workspace and keeps moved chats visible; Cowork tasks hide it',async()=>{
+ const task='cse_01AAAAAAAAAAAAAAAAAAAAAA';
+ const {dom,w,d}=await setup({url:'https://claude.ai/',markup:`<div data-testid="sidebar"><h2>Chats</h2><a href="/chat/${id('1')}">Chat</a><a href="/cowork/${task}">Task</a></div>`,beforeLoad:w=>{w.document.cookie=`lastActiveOrg=${id('9')};path=/`;w.AbortSignal=AbortSignal;w.fetch=async url=>{assert.equal(url,`/api/organizations/${id('9')}/projects`);return {ok:true,status:200,json:async()=>[{uuid:id('5'),name:'Group A'},{uuid:id('6'),name:'Old',archived_at:'2026-01-01'}]};};w.eval(fs.readFileSync('src/projects.js','utf8'));}});
+ try{
+ const move=d.querySelector('[data-cs-action="move"]');assert.equal(move.textContent,'Move to group');
+ const boxes=[...d.querySelectorAll('.cs-checkbox')];const taskBox=boxes.find(box=>box.dataset.csId===task),chatBox=boxes.find(box=>box.dataset.csId===id('1'));
+ taskBox.click();assert.equal(move.hidden,true);taskBox.click();chatBox.click();assert.equal(move.hidden,false);
+ const calls=[];w.ChatTidyBatch.run=async message=>{calls.push(message);return {completed:message.ids}};
+ move.click();await wait(50);const dialog=d.querySelector('.cs-move');assert.match(dialog.textContent,/Group A/);assert.doesNotMatch(dialog.textContent,/Old/);assert.match(dialog.textContent,/New group/);
+ dialog.querySelector(`input[value="${id('5')}"]`).click();dialog.dispatchEvent(new w.Event('change'));dialog.querySelector('[data-cs-move-confirm]').click();await wait(100);
+ assert.equal(calls[0].organizationId,id('9'));assert.equal(calls[0].target,id('5'));assert.equal(d.querySelectorAll('.cs-deleted-row').length,0,'grouped Claude chats stay in the recents list');assert.equal(d.querySelectorAll('.cs-checkbox:checked').length,0);
+ }finally{dom.window.close()}
+});
+test('Gemini and Grok never offer move or the archive manager',async()=>{
+ for(const [url,markup] of [['https://grok.com/',`<div data-sidebar="sidebar"><h2>Chats</h2><a href="/c/${id('1')}">One</a></div>`]]){
+ const {dom,d}=await setup({url,markup,beforeLoad:w=>{w.eval(fs.readFileSync('src/projects.js','utf8'));}});
+ try{assert.equal(d.querySelector('[data-cs-action="move"]'),null);assert.equal(d.querySelector('[data-cs-action="archiveManager"]'),null);}finally{dom.window.close()}
+ }
+});
+test('ChatGPT project creation sends the private sharing shape and falls back to the projects route on 422',async()=>{
+ const posts=[];
+ const {dom,w,d}=await setup({beforeLoad:w=>{w.AbortSignal=AbortSignal;w.fetch=async(url,options={})=>{const path=url.split('?')[0];
+  if(path==='/backend-api/gizmos/snorlax/upsert'){posts.push({path,body:JSON.parse(options.body)});return {ok:false,status:422,json:async()=>({detail:'invalid'})};}
+  if(path==='/backend-api/projects'){posts.push({path,body:JSON.parse(options.body)});return {ok:true,status:200,json:async()=>({resource:{gizmo:{id:'g-p-fallback',display:{name:'Fresh'}}}})};}
+  const body=path==='/api/auth/session'?{accessToken:'t',user:{id:'a'}}:{cursor:null,items:[]};return {ok:true,status:200,json:async()=>body};};w.eval(fs.readFileSync('src/projects.js','utf8'));}});
+ try{
+ const calls=[];w.ChatTidyBatch.run=async message=>{calls.push(message);return {completed:message.ids}};
+ d.querySelector('.cs-checkbox').click();d.querySelector('[data-cs-action="move"]').click();await wait(50);
+ const dialog=d.querySelector('.cs-move');const name=dialog.querySelector('.cs-move-name');name.value='Fresh';name.dispatchEvent(new w.Event('input'));dialog.querySelector('[data-cs-move-confirm]').click();await wait(100);
+ assert.deepEqual(posts.map(p=>p.path),['/backend-api/gizmos/snorlax/upsert','/backend-api/projects']);
+ assert.equal(posts[0].body.sharing[0].type,'private');assert.equal(posts[0].body.sharing[0].capabilities.can_read,true);assert.equal(posts[0].body.display.name,'Fresh');
+ assert.equal(calls.length,1);assert.equal(calls[0].target,'g-p-fallback');
+ }finally{dom.window.close()}
 });

@@ -6,7 +6,7 @@ This policy covers the Chat Tidy Safari extension and its containing macOS appli
 
 ## Local processing
 
-Chat Tidy operates on chatgpt.com, claude.ai and grok.com after you grant Safari website permission. To identify selected conversations and carry out your requested actions, the extension temporarily processes conversation titles, identifiers, workspace identifiers and the website session credentials required by that service. Grok's optional Show all feature reads conversation history metadata into page memory. Chat Tidy does not maintain a separate archive of your conversations.
+Chat Tidy operates on chatgpt.com, claude.ai, grok.com, gemini.google.com, www.kimi.com and chat.qwen.ai after you grant Safari website permission. To identify selected conversations and carry out your requested actions, the extension temporarily processes conversation titles, identifiers, workspace identifiers and the website session credentials required by that service. Grok's optional Show all feature reads conversation history metadata into page memory. Chat Tidy does not maintain a separate archive of your conversations.
 
 Preferences, including language, enabled state, checkbox visibility and concurrency, and website cooldown timestamps are saved in local extension storage. They are not uploaded to a Chat Tidy server. Temporary conversation information is discarded when the page is unloaded. You can remove local extension data by uninstalling the extension; browser-managed data retention follows Safari's behavior.
 
@@ -32,7 +32,7 @@ For privacy questions, use https://github.com/redPeak5421/chat-tidy/issues witho
 
 本政策适用于 Chat Tidy Safari 扩展及其 macOS 容器应用。
 
-在你授权后，扩展仅在 chatgpt.com、claude.ai 和 grok.com 上工作。为识别所选会话并执行你的操作，扩展临时处理会话标题、标识符、工作区标识符及对应网站所需的登录凭据。Grok 的“展示全部”功能会把历史会话元数据加载到页面内存。Chat Tidy 不建立独立的聊天内容档案。
+在你授权后，扩展仅在 chatgpt.com、claude.ai、grok.com、gemini.google.com、www.kimi.com 和 chat.qwen.ai 上工作。为识别所选会话并执行你的操作，扩展临时处理会话标题、标识符、工作区标识符及对应网站所需的登录凭据。Grok 的“展示全部”功能会把历史会话元数据加载到页面内存。Chat Tidy 不建立独立的聊天内容档案。
 
 语言、启用状态、复选框显示方式、并发设置和网站冷却时间戳保存在扩展本地存储中。临时会话信息在页面卸载时丢弃。本地扩展数据可通过卸载扩展清理；浏览器管理的数据保留遵循 Safari 的行为。
 

@@ -24,7 +24,7 @@
     "message": "全選択・反転の対象は読み込み済みのチャットのみです。スクロールで追加読み込みできます。再読み込みで選択は解除されます。"
   },
   "privacy": {
-    "message": "ChatGPT、Claude、Grokで動作します。設定のみ保存し、チャットや認証情報の保存、第三者への送信は行いません。"
+    "message": "ChatGPT、Claude、Grok、Gemini、Kimi、Qwen のページで動作します。保存するのは設定のみで、チャットや認証情報は保存せず、第三者にも送信しません。"
   },
   "clear": {
     "message": "選択解除"
@@ -158,7 +158,7 @@
     "message": "同時削除"
   },
   "concurrencyHelp": {
-    "message": "ChatGPT / Grok：初期値2、公式上限ではありません。Claude：標準の20件一括処理。制限時は停止します。"
+    "message": "ChatGPT / Grok / Gemini / Kimi / Qwen は既定で 2 並列（公式上限ではありません）。Claude はネイティブの 20 件バッチ。レート制限で停止します。"
   },
   "cooldown": {
     "message": "制限の待機中です。$TIME$以降に再試行してください。",
@@ -176,7 +176,7 @@
     "message": "Chat Tidy"
   },
   "extensionDescription": {
-    "message": "サイドバーからChatGPT、Claude、Grokのチャットを選択して一括削除。6言語対応。"
+    "message": "サイドバーで ChatGPT、Claude、Grok、Gemini、Kimi、Qwen のチャットを選択して一括削除。6 言語対応。"
   },
   "actionTitle": {
     "message": "Chat Tidy"
@@ -258,5 +258,146 @@
   },
   "grokPeriodOlder": {
     "message": "それ以前"
+  },
+  "settings": {
+    "message": "設定"
+  },
+  "back": {
+    "message": "戻る"
+  },
+  "theme": {
+    "message": "テーマ"
+  },
+  "themeSystem": {
+    "message": "システムに合わせる"
+  },
+  "themeLight": {
+    "message": "ライト"
+  },
+  "themeDark": {
+    "message": "ダーク"
+  },
+  "grokHideBots": {
+    "message": "Botsを非表示"
+  },
+  "grokCollapseBots": {
+    "message": "Botsを折りたたむ"
+  },
+  "archiveManager": {
+    "message": "アーカイブ管理"
+  },
+  "restore": {
+    "message": "復元"
+  },
+  "loadMore": {
+    "message": "さらに読み込む"
+  },
+  "archiveNative": {
+    "message": "標準のアーカイブ管理を開く"
+  },
+  "archiveEmpty": {
+    "message": "アーカイブはありません"
+  },
+  "archiveUntitled": {
+    "message": "無題のチャット"
+  },
+  "aboutTitle": {
+    "message": "ChatGPT、Claude、Grok、Gemini、Kimi、Qwen のページ拡張機能："
+  },
+  "aboutChatgpt": {
+    "message": "ChatGPT：一括削除、一括アーカイブ、アーカイブ管理（復元 / 削除）、プロジェクトまたは新規プロジェクトへの一括移動。"
+  },
+  "aboutClaude": {
+    "message": "Claude：一括削除、グループまたは新規グループへの一括移動。Cowork タスクはアーカイブ可能。"
+  },
+  "aboutGrok": {
+    "message": "Grok：一括削除（検索結果を含む）、履歴をすべて表示、Bots の非表示 / 折りたたみ。"
+  },
+  "aboutGemini": {
+    "message": "Gemini：一括削除。"
+  },
+  "aboutKimi": {
+    "message": "Kimi：一括削除。"
+  },
+  "aboutQwen": {
+    "message": "Qwen：一括削除、一括アーカイブ、アーカイブ管理（復元 / 削除）、プロジェクトまたは新規プロジェクトへの一括移動。"
+  },
+  "moveProject": {
+    "message": "プロジェクトへ移動"
+  },
+  "moveGroup": {
+    "message": "グループへ移動"
+  },
+  "moveTitle": {
+    "message": "$N$ 件のチャットの移動先…",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveHint": {
+    "message": "既存の移動先を選ぶか、新しく作成します。サイトのネイティブな移動機能を使い、後から再移動できます。"
+  },
+  "newProject": {
+    "message": "新規プロジェクト"
+  },
+  "newGroup": {
+    "message": "新規グループ"
+  },
+  "destinationName": {
+    "message": "名前"
+  },
+  "moveConfirm": {
+    "message": "$N$ 件を移動",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveWorking": {
+    "message": "バックグラウンドで移動中です。ページの操作を続けられます。"
+  },
+  "moveDone": {
+    "message": "$N$ 件を移動しました。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveStopped": {
+    "message": "$N$ 件で停止しました。移動済みのチャットは移動先に残ります。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "destinationsEmpty": {
+    "message": "移動先がまだありません。下で新規作成してください。"
+  },
+  "destinationsLoading": {
+    "message": "読み込み中…"
+  },
+  "destinationsError": {
+    "message": "リストを読み込めません。ログイン状態を確認するか、後で再試行してください。"
+  },
+  "createError": {
+    "message": "作成できませんでした。何も移動していません。"
+  },
+  "qwenArchiveWarning": {
+    "message": "この $N$ 件のチャットを Qwen でアーカイブします。アーカイブ管理から復元できます。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   }
 }

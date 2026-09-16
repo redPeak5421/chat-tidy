@@ -9,7 +9,7 @@
 - Xcode 打开 `Chat Tidy/Chat Tidy.xcodeproj`，选择 `Chat Tidy (macOS)` 或 `Chat Tidy (iOS)`。
 - 本地安装需为应用及扩展 target 配置适当签名。当前 Bundle ID 为 `com.canonforge.ChatTidy` / `com.canonforge.ChatTidy.Extension`；如果修改，同步修改 `Shared (App)/ViewController.swift` 中设置按钮使用的扩展标识。
 - macOS 开发调试可在 Safari 的开发设置中允许未签名扩展；该设置可能在重启 Safari 后恢复。正式分发需要 Apple 签名流程。
-- 运行应用后，在 Safari 设置的扩展页面启用 Chat Tidy，并给 chatgpt.com、claude.ai、grok.com 网站权限。iPhone/iPad 在系统设置的 Safari 扩展页面启用。刷新已打开的网站页面。
+- 运行应用后，在 Safari 设置的扩展页面启用 Chat Tidy，并给 chatgpt.com、claude.ai、grok.com、gemini.google.com、www.kimi.com、chat.qwen.ai 网站权限。iPhone/iPad 在系统设置的 Safari 扩展页面启用。刷新已打开的网站页面。
 
 ## 构建与测试
 
@@ -29,7 +29,8 @@ npm run build:safari:ios
 
 ## 源码架构
 
-- `src/batch.js`：三个网站直接同源请求，登录 token 仅保留在当前批次闭包。固定接口和校验过的 ID 决定请求路径，不提供任意 URL 调用接口。
+- `src/batch.js`：各网站直接同源请求，登录 token 仅保留在当前批次闭包。固定接口和校验过的 ID 决定请求路径，不提供任意 URL 调用接口。
+- `src/kimi.js`：Kimi 的 Connect RPC 删除调用，登录令牌只在页面存储与内存中读取。`src/qwen.js`：Qwen 的 `/api/v2` 调用与侧栏行到聊天 ID 的标题顺序映射（行本身没有 href）。`src/projects.js`：ChatGPT / Qwen 项目与 Claude 组的选择对话框和新建调用。
 - `src/content.js`：原生 DOM 选择、确认框、进度和停止，直接调用执行器。扩展消息仅用于弹窗查询当前网站，不传递删除请求或凭据。
 - `navigator.locks`：按网站存储分区跨标签页互斥，不轮询、不保活、不经过后台。锁不可用时拒绝操作。同一页面只允许一个批次。锁不是跨网站、跨隐私浏览或跨配置文件的全局锁。
 - `browser.storage.local`：偏好和各站点冷却状态。429 后收集已发出请求的结果、停止后续批次并降低并发；下一次运行重新读取冷却状态。

@@ -1,10 +1,10 @@
 {
   "name": "chat-tidy",
-  "version": "1.8.12",
+  "version": "1.10.0",
   "private": true,
   "scripts": {
     "test": "node --test tests/*.test.cjs",
-    "check": "node scripts/build-i18n.cjs --check && node --check src/core.js && node --check src/i18n.js && node --check src/content.js && node --check src/popup.js && node --check src/batch.js && node --check src/grok.js",
+    "check": "node scripts/build-i18n.cjs --check && node --check src/core.js && node --check src/i18n.js && node --check src/content.js && node --check src/popup.js && node --check src/batch.js && node --check src/grok.js && node --check src/archive.js && node --check src/bots.js && node --check src/gemini.js && node --check src/kimi.js && node --check src/qwen.js && node --check src/projects.js",
     "build:i18n": "node scripts/build-i18n.cjs",
     "test:webkit": "playwright test",
     "build:safari:macos": "xcodebuild -project \"safari/Chat Tidy/Chat Tidy.xcodeproj\" -scheme \"Chat Tidy (macOS)\" -configuration Debug -derivedDataPath build/safari-macos CODE_SIGNING_ALLOWED=NO build",

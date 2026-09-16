@@ -5,7 +5,7 @@
 关键词：聊天,记录,批量,删除,整理,侧边栏,归档,ChatGPT,Claude,Grok,Safari
 技术支持：https://github.com/redPeak5421/chat-tidy/issues
 
-Chat Tidy 帮助你在 Safari 中整理 ChatGPT、Claude 和 Grok 的聊天记录。
+Chat Tidy 帮助你在 Safari 中整理 ChatGPT、Claude、Grok、Gemini、Kimi 和 Qwen 的聊天记录。
 
 直接在网站侧边栏选择会话，支持全选已加载会话、清空和反选。删除前查看并确认所选内容。ChatGPT 会话还支持归档；Claude Cowork 任务支持原生归档。
 

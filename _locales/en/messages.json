@@ -24,7 +24,7 @@
     "message": "Select all and invert affect only chats currently loaded in the sidebar. Scroll to load more. Refreshing clears your selection."
   },
   "privacy": {
-    "message": "Runs on ChatGPT, Claude and Grok. Only settings are stored; no chats or credentials are saved or sent to third parties."
+    "message": "Runs on ChatGPT, Claude, Grok, Gemini, Kimi and Qwen. Only settings are stored; no chats or credentials are saved or sent to third parties."
   },
   "clear": {
     "message": "Clear selection"
@@ -158,7 +158,7 @@
     "message": "Delete at once"
   },
   "concurrencyHelp": {
-    "message": "ChatGPT / Grok: default 2; not an official limit. Claude uses native batches of 20. Rate limits stop processing."
+    "message": "ChatGPT / Grok / Gemini / Kimi / Qwen: default 2; not an official limit. Claude uses native batches of 20. Rate limits stop processing."
   },
   "cooldown": {
     "message": "Rate-limit cooldown. Retry after $TIME$.",
@@ -176,7 +176,7 @@
     "message": "Chat Tidy"
   },
   "extensionDescription": {
-    "message": "Select and bulk-delete ChatGPT, Claude and Grok chats from the sidebar. Six languages."
+    "message": "Select and bulk-delete ChatGPT, Claude, Grok, Gemini, Kimi and Qwen chats from the sidebar. Six languages."
   },
   "actionTitle": {
     "message": "Chat Tidy"
@@ -258,5 +258,146 @@
   },
   "grokPeriodOlder": {
     "message": "Older"
+  },
+  "settings": {
+    "message": "Settings"
+  },
+  "back": {
+    "message": "Back"
+  },
+  "theme": {
+    "message": "Theme"
+  },
+  "themeSystem": {
+    "message": "Follow system"
+  },
+  "themeLight": {
+    "message": "Light"
+  },
+  "themeDark": {
+    "message": "Dark"
+  },
+  "grokHideBots": {
+    "message": "Hide Bots"
+  },
+  "grokCollapseBots": {
+    "message": "Collapse Bots"
+  },
+  "archiveManager": {
+    "message": "Archived chats"
+  },
+  "restore": {
+    "message": "Restore"
+  },
+  "loadMore": {
+    "message": "Load more"
+  },
+  "archiveNative": {
+    "message": "Open native archive manager"
+  },
+  "archiveEmpty": {
+    "message": "No archived chats"
+  },
+  "archiveUntitled": {
+    "message": "Untitled chat"
+  },
+  "aboutTitle": {
+    "message": "Page enhancements for ChatGPT, Claude, Grok, Gemini, Kimi and Qwen:"
+  },
+  "aboutChatgpt": {
+    "message": "ChatGPT: bulk delete, bulk archive, archive manager (restore / delete), move to a project or a new project."
+  },
+  "aboutClaude": {
+    "message": "Claude: bulk delete, move to a group or a new group; Cowork tasks can be archived."
+  },
+  "aboutGrok": {
+    "message": "Grok: bulk delete (including search results), show all history, hide or collapse Bots."
+  },
+  "aboutGemini": {
+    "message": "Gemini: bulk delete."
+  },
+  "aboutKimi": {
+    "message": "Kimi: bulk delete."
+  },
+  "aboutQwen": {
+    "message": "Qwen: bulk delete, bulk archive, archive manager (restore / delete), move to a project or a new project."
+  },
+  "moveProject": {
+    "message": "Move to project"
+  },
+  "moveGroup": {
+    "message": "Move to group"
+  },
+  "moveTitle": {
+    "message": "Move $N$ chats to…",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveHint": {
+    "message": "Choose an existing destination or create a new one. The website’s native move behavior is used; you can move chats again afterwards."
+  },
+  "newProject": {
+    "message": "New project"
+  },
+  "newGroup": {
+    "message": "New group"
+  },
+  "destinationName": {
+    "message": "Name"
+  },
+  "moveConfirm": {
+    "message": "Move $N$ chats",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveWorking": {
+    "message": "Moving in the background. You can continue using the page."
+  },
+  "moveDone": {
+    "message": "Moved $N$ chats.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveStopped": {
+    "message": "Stopped after $N$. Moved chats stay in the chosen destination.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "destinationsEmpty": {
+    "message": "No destinations yet. Create a new one below."
+  },
+  "destinationsLoading": {
+    "message": "Loading…"
+  },
+  "destinationsError": {
+    "message": "Could not load the list. Check your login or retry later."
+  },
+  "createError": {
+    "message": "Could not create it. Nothing was moved."
+  },
+  "qwenArchiveWarning": {
+    "message": "Archive these $N$ chats in Qwen. You can restore them from Archived chats.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   }
 }

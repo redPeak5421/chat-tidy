@@ -2,12 +2,18 @@
 'use strict';
 globalThis.ChatTidyBatch = (() => {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const PROJECT = /^g-p-[a-z0-9]{1,64}$/i;
 let active=null;
 async function request(path, {emptySuccess,...options} = {}) {
   let response;
   try { response = await fetch(path, {...options, credentials:'same-origin', mode:'same-origin', redirect:'error', signal:AbortSignal.timeout(20000)}); }
   catch { throw Error('network'); }
-  if(emptySuccess&&response.ok)return {deleted:emptySuccess};
+  if(emptySuccess&&response.ok){
+    // Native endpoints answer 202/204 without a body; a JSON error envelope on a 2xx still means failure.
+    let text='';try{text=typeof response.text==='function'?await response.text():'';}catch{text='';}
+    if(text.trim()){let body;try{body=JSON.parse(text);}catch{throw Error('unexpected-response');}if(body&&typeof body==='object'&&(body.error||body.success===false))throw Error('unexpected-response');}
+    return {deleted:emptySuccess};
+  }
   return decodeResponse(response);
 }
 async function decodeResponse(response) {
@@ -22,6 +28,26 @@ async function decodeResponse(response) {
   }
   try { return await response.json(); } catch { throw Error('unexpected-response'); }
 }
+function validId(site,id){
+  if(typeof id!=='string')return false;
+  if(site.id==='gemini')return /^[0-9a-f]{1,16}$/.test(id);
+  if(site.id==='claude'&&ChatTidyCore.isCoworkId(id))return true;
+  return UUID.test(id);
+}
+function supported(site,action,ids){
+  if(action==='delete')return true;
+  if(action==='restore')return ['chatgpt','qwen'].includes(site.id);
+  if(action==='archive')return site.id==='chatgpt'||site.id==='qwen'||(site.id==='claude'&&ids.every(id=>ChatTidyCore.isCoworkId(id)));
+  // Moving is only offered where the website has a native container for chats; Cowork tasks cannot be moved.
+  if(action==='move')return site.id==='chatgpt'||site.id==='qwen'||(site.id==='claude'&&ids.every(id=>!ChatTidyCore.isCoworkId(id)));
+  return false;
+}
+function validTarget(site,target){
+  if(typeof target!=='string'||!target)return false;
+  if(site.id==='chatgpt')return PROJECT.test(target);
+  if(site.id==='claude')return UUID.test(target);
+  return /^[A-Za-z0-9_-]{1,64}$/.test(target);
+}
 async function execute(job) {
   const completed = [];
   let error;
@@ -29,16 +55,21 @@ async function execute(job) {
     const cooldownKey=job.site.id==='chatgpt'?'deleteCooldownUntil':job.site.id+'DeleteCooldownUntil';
     const settings=await browser.storage.local.get({concurrency:2,[cooldownKey]:0});
     if(settings[cooldownKey]>Date.now())return {completed,error:'cooldown',retryAt:settings[cooldownKey]};
-    const concurrency=job.site.id==='claude'?1:[1,2,3].includes(Number(settings.concurrency))?Number(settings.concurrency):2;
+    const concurrency=['claude','gemini'].includes(job.site.id)?1:[1,2,3].includes(Number(settings.concurrency))?Number(settings.concurrency):2;
     if(job.cancelled)return {completed,cancelled:true};
     if(!job.canRun())throw Error('workspace-changed');
-    let token;
+    let token;let geminiSession;let kimiSession;
+    if(job.site.id==='gemini')geminiSession=await ChatTidyGemini.prepare(ChatTidyGemini.session());
+    if(job.site.id==='kimi')kimiSession=ChatTidyKimi.session();
     if(job.site.id==='chatgpt'){
       const session=await request('/api/auth/session');
       if(typeof session?.accessToken!=='string'||!session.accessToken)throw Error('login');
+      if(job.expectedUserId&&session.user?.id!==job.expectedUserId)throw Error('account-changed');
       token=session.accessToken;
     }
-    const groupSize=job.site.id==='claude'?20:1;
+    if(job.site.id==='qwen'&&job.expectedUserId&&await ChatTidyQwen.session()!==job.expectedUserId)throw Error('account-changed');
+    // Native bulk endpoints take groups: Claude chat deletion and Qwen project moves.
+    const groupSize=job.site.id==='claude'&&job.action==='delete'?20:job.site.id==='qwen'&&job.action==='move'?20:1;
     const groups=[];
     for(const id of job.ids){
       const last=groups.at(-1);
@@ -49,6 +80,7 @@ async function execute(job) {
     for(let offset=0;offset<groups.length;offset+=concurrency){
       if(job.cancelled)break;
       if(!job.canRun())throw Error('workspace-changed');
+      if(job.expectedUserId&&job.site.id==='chatgpt'){const current=await request('/api/auth/session');if(current.user?.id!==job.expectedUserId)throw Error('account-changed');if(job.cancelled)break;if(!job.canRun())throw Error('workspace-changed');}
       const outcomes=await Promise.all(groups.slice(offset,offset+concurrency).map(async group=>{
         const id=group[0];
         let acknowledged=group;
@@ -57,9 +89,23 @@ async function execute(job) {
           if(job.site.id==='chatgpt'){
             result=await request('/backend-api/conversation/'+id,{
               method:'PATCH',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
-              body:JSON.stringify(job.action==='archive'?{is_archived:true}:{is_visible:false})
+              body:JSON.stringify(job.action==='restore'?{is_archived:false}:job.action==='archive'?{is_archived:true}:job.action==='move'?{gizmo_id:job.target}:{is_visible:false})
             });
             if(result?.success!==true)throw Error('unexpected-response');
+          }else if(job.site.id==='gemini'){
+            await ChatTidyGemini.remove(id,geminiSession,()=>job.canRun()&&!job.cancelled);
+          }else if(job.site.id==='kimi'){
+            await ChatTidyKimi.remove(id,kimiSession,()=>job.canRun()&&!job.cancelled);
+          }else if(job.site.id==='qwen'){
+            if(job.action==='delete')await ChatTidyQwen.api.remove(id);
+            else if(job.action==='move')await ChatTidyQwen.api.addToProject(job.target,group);
+            else await ChatTidyQwen.api.toggleArchive(id);
+          }else if(job.site.id==='claude'&&job.action==='move'){
+            // The website assigns a chat to a project by updating the conversation record; 202 carries no body.
+            result=await request('/api/organizations/'+job.organizationId+'/chat_conversations/'+id,{
+              method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_uuid:job.target}),emptySuccess:group
+            });
+            if(!Array.isArray(result?.deleted))throw Error('unexpected-response');
           }else if(job.site.id==='claude'){
             const task=ChatTidyCore.isCoworkId(id);
             const path=task?'/v1/code/sessions/'+id+(job.action==='archive'?'/archive':''):'/api/organizations/'+job.organizationId+'/chat_conversations/delete_many';
@@ -93,13 +139,13 @@ async function execute(job) {
   return {completed,error,cancelled:job.cancelled,retryAt:job.retryAt};
 }
 
-async function run({ids,action='delete',organizationId,onProgress,canRun=()=>true}) {
+async function run({ids,action='delete',target,organizationId,expectedUserId,onProgress,canRun=()=>true}) {
   const site=ChatTidyCore.siteForUrl(location.href);
   if(!site)return {completed:[],error:'unsupported-site'};
-  if(!['delete','archive'].includes(action)||action==='archive'&&(site.id==='grok'||site.id==='claude'&&Array.isArray(ids)&&ids.some(id=>!ChatTidyCore.isCoworkId(id))))return {completed:[],error:'unsupported-action'};
-  if(!Array.isArray(ids)||!ids.length||ids.length>1000||new Set(ids).size!==ids.length||ids.some(id=>typeof id!=='string'||(!UUID.test(id)&&!(site.id==='claude'&&ChatTidyCore.isCoworkId(id))))||site.id==='claude'&&(typeof organizationId!=='string'||!UUID.test(organizationId)))return {completed:[],error:'invalid-request'};
+  if(!['delete','archive','restore','move'].includes(action)||!Array.isArray(ids)||!supported(site,action,ids))return {completed:[],error:'unsupported-action'};
+  if(!ids.length||ids.length>1000||new Set(ids).size!==ids.length||ids.some(id=>!validId(site,id))||site.id==='claude'&&(typeof organizationId!=='string'||!UUID.test(organizationId))||action==='move'&&!validTarget(site,target))return {completed:[],error:'invalid-request'};
   if(active)return {completed:[],error:'busy'};
-  const job={site,action,organizationId,ids:[...ids],onProgress,canRun,cancelled:false};
+  const job={site,action,target,organizationId,expectedUserId,ids:[...ids],onProgress,canRun,cancelled:false};
   active=job;
   try {
     // Native origin-scoped mutual exclusion across tabs; no polling or background relay.
