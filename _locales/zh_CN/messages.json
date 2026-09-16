@@ -281,7 +281,7 @@
     "message": "隐藏 Bots"
   },
   "grokCollapseBots": {
-    "message": "折叠 Bots"
+    "message": "默认折叠 Bots"
   },
   "archiveManager": {
     "message": "归档管理"

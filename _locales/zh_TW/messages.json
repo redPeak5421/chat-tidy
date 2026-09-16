@@ -281,7 +281,7 @@
     "message": "隱藏 Bots"
   },
   "grokCollapseBots": {
-    "message": "摺疊 Bots"
+    "message": "預設摺疊 Bots"
   },
   "archiveManager": {
     "message": "封存管理"

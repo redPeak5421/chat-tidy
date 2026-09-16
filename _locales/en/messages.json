@@ -281,7 +281,7 @@
     "message": "Hide Bots"
   },
   "grokCollapseBots": {
-    "message": "Collapse Bots"
+    "message": "Collapse Bots by default"
   },
   "archiveManager": {
     "message": "Archived chats"
