@@ -17,3 +17,7 @@ test('settings page describes per-site capabilities as a translated list',async(
 test('archive button only appears on ChatGPT and Qwen',async()=>{
  for(const site of ['chatgpt','claude','grok','gemini','kimi','qwen']){const {w,d}=await popup(site);try{assert.equal(d.querySelector('#open-archive').hidden,!['chatgpt','qwen'].includes(site));}finally{w.close();}}
 });
+test('support cards keep their two-column card layout styles',()=>{
+ if(!fs.readFileSync('popup.html','utf8').includes('support-section'))return; // the Safari build ships no support cards
+ const css=fs.readFileSync('src/popup.css','utf8');assert.match(css,/\.support-cards\{[^}]*display:grid;grid-template-columns:repeat\(2,/,'two-column grid');assert.match(css,/\.support-card\{[^}]*display:flex[^}]*text-decoration:none/,'card link styled as a card');assert.match(css,/\.support-arrow\{[^}]*margin-left:auto/,'arrow pushed right');
+});
