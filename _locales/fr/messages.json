@@ -24,7 +24,7 @@
     "message": "Tout sélectionner et inverser concernent uniquement les discussions déjà chargées. Faites défiler pour en charger davantage. Actualiser efface la sélection."
   },
   "privacy": {
-    "message": "Fonctionne sur ChatGPT, Claude et Grok. Seuls les réglages sont enregistrés, sans chats ni identifiants ni envoi à des tiers."
+    "message": "Fonctionne sur ChatGPT, Claude, Grok, Gemini, Kimi et Qwen. Seuls les réglages sont enregistrés ; aucune conversation ni identifiant n’est conservé ou transmis à des tiers."
   },
   "clear": {
     "message": "Désélectionner"
@@ -158,7 +158,7 @@
     "message": "Suppressions"
   },
   "concurrencyHelp": {
-    "message": "ChatGPT / Grok : 2 par défaut, sans limite officielle. Claude : lots natifs de 20. Arrêt en cas de limitation."
+    "message": "ChatGPT / Grok / Gemini / Kimi / Qwen : 2 par défaut ; ce n’est pas une limite officielle. Claude utilise des lots natifs de 20. Les limitations de débit arrêtent le traitement."
   },
   "cooldown": {
     "message": "Limitation : réessayez après $TIME$.",
@@ -176,7 +176,7 @@
     "message": "Chat Tidy"
   },
   "extensionDescription": {
-    "message": "Sélectionnez et supprimez les chats ChatGPT, Claude et Grok depuis la barre latérale. Six langues."
+    "message": "Supprimez en lot les chats ChatGPT, Claude, Grok, Gemini, Kimi et Qwen depuis la barre latérale. Six langues."
   },
   "actionTitle": {
     "message": "Chat Tidy"
@@ -279,5 +279,149 @@
   },
   "supportHint": {
     "message": "Cette page reste ouverte lorsque vous changez de fenêtre. Si le paiement échoue ici, utilisez le site Ko-fi."
+  },
+  "settings": {
+    "message": "Paramètres"
+  },
+  "back": {
+    "message": "Retour"
+  },
+  "theme": {
+    "message": "Thème"
+  },
+  "themeSystem": {
+    "message": "Selon le système"
+  },
+  "themeLight": {
+    "message": "Clair"
+  },
+  "themeDark": {
+    "message": "Sombre"
+  },
+  "grokHideBots": {
+    "message": "Masquer les Bots"
+  },
+  "grokCollapseBots": {
+    "message": "Replier les Bots"
+  },
+  "archiveManager": {
+    "message": "Conversations archivées"
+  },
+  "restore": {
+    "message": "Restaurer"
+  },
+  "loadMore": {
+    "message": "Charger plus"
+  },
+  "archiveNative": {
+    "message": "Ouvrir la gestion native"
+  },
+  "archiveEmpty": {
+    "message": "Aucune conversation archivée"
+  },
+  "archiveUntitled": {
+    "message": "Conversation sans titre"
+  },
+  "hideSupport": {
+    "message": "Masquer le menu de soutien"
+  },
+  "aboutTitle": {
+    "message": "Améliorations de page pour ChatGPT, Claude, Grok, Gemini, Kimi et Qwen :"
+  },
+  "aboutChatgpt": {
+    "message": "ChatGPT : suppression et archivage groupés, gestion des archives (restaurer / supprimer), déplacement vers un projet ou un nouveau projet."
+  },
+  "aboutClaude": {
+    "message": "Claude : suppression groupée, déplacement vers un groupe ou un nouveau groupe ; les tâches Cowork peuvent être archivées."
+  },
+  "aboutGrok": {
+    "message": "Grok : suppression groupée (y compris les résultats de recherche), affichage de tout l’historique, masquer ou replier les Bots."
+  },
+  "aboutGemini": {
+    "message": "Gemini : suppression groupée."
+  },
+  "aboutKimi": {
+    "message": "Kimi : suppression groupée."
+  },
+  "aboutQwen": {
+    "message": "Qwen : suppression et archivage groupés, gestion des archives (restaurer / supprimer), déplacement vers un projet ou un nouveau projet."
+  },
+  "moveProject": {
+    "message": "Déplacer vers un projet"
+  },
+  "moveGroup": {
+    "message": "Déplacer vers un groupe"
+  },
+  "moveTitle": {
+    "message": "Déplacer $N$ discussions vers…",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveHint": {
+    "message": "Choisissez une destination existante ou créez-en une. Le déplacement natif du site est utilisé ; vous pourrez déplacer à nouveau ensuite."
+  },
+  "newProject": {
+    "message": "Nouveau projet"
+  },
+  "newGroup": {
+    "message": "Nouveau groupe"
+  },
+  "destinationName": {
+    "message": "Nom"
+  },
+  "moveConfirm": {
+    "message": "Déplacer $N$ discussions",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveWorking": {
+    "message": "Déplacement en arrière-plan. Vous pouvez continuer à utiliser la page."
+  },
+  "moveDone": {
+    "message": "$N$ discussions déplacées.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveStopped": {
+    "message": "Arrêté après $N$. Les discussions déjà déplacées restent dans la destination.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "destinationsEmpty": {
+    "message": "Aucune destination pour l’instant. Créez-en une ci-dessous."
+  },
+  "destinationsLoading": {
+    "message": "Chargement…"
+  },
+  "destinationsError": {
+    "message": "Impossible de charger la liste. Vérifiez votre connexion ou réessayez plus tard."
+  },
+  "createError": {
+    "message": "Création impossible. Rien n’a été déplacé."
+  },
+  "qwenArchiveWarning": {
+    "message": "Archiver ces $N$ discussions dans Qwen. Vous pourrez les restaurer depuis les discussions archivées.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   }
 }

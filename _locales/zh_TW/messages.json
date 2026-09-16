@@ -24,7 +24,7 @@
     "message": "全選與反向選擇只處理側欄已載入的聊天。向下捲動可載入更多；重新整理會清空選擇。"
   },
   "privacy": {
-    "message": "在 ChatGPT、Claude 和 Grok 頁面執行。只儲存設定，不儲存聊天或登入憑證，不向第三方傳送資料。"
+    "message": "在 ChatGPT、Claude、Grok、Gemini、Kimi 和 Qwen 頁面執行。只儲存設定，不儲存聊天或登入憑證，不向第三方傳送資料。"
   },
   "clear": {
     "message": "取消選擇"
@@ -158,7 +158,7 @@
     "message": "同時刪除"
   },
   "concurrencyHelp": {
-    "message": "ChatGPT / Grok 預設同時 2 筆，非官方限制；Claude 原生批次每組 20 筆。遇限流停止。"
+    "message": "ChatGPT / Grok / Gemini / Kimi / Qwen 預設並行 2，非官方限額；Claude 原生批次每組 20 則。遇到限流即停止。"
   },
   "cooldown": {
     "message": "限流冷卻中，請於 $TIME$ 後重試。",
@@ -176,7 +176,7 @@
     "message": "Chat Tidy"
   },
   "extensionDescription": {
-    "message": "在側邊欄勾選並批次刪除 ChatGPT、Claude 和 Grok 聊天，支援六種語言。"
+    "message": "在側邊欄勾選並批次刪除 ChatGPT、Claude、Grok、Gemini、Kimi 和 Qwen 聊天，支援六種語言。"
   },
   "actionTitle": {
     "message": "Chat Tidy"
@@ -279,5 +279,149 @@
   },
   "supportHint": {
     "message": "切換視窗後此頁面仍會保留。如無法在面板付款，請開啟 Ko-fi 官網。"
+  },
+  "settings": {
+    "message": "設定"
+  },
+  "back": {
+    "message": "返回"
+  },
+  "theme": {
+    "message": "主題"
+  },
+  "themeSystem": {
+    "message": "跟隨系統"
+  },
+  "themeLight": {
+    "message": "淺色"
+  },
+  "themeDark": {
+    "message": "深色"
+  },
+  "grokHideBots": {
+    "message": "隱藏 Bots"
+  },
+  "grokCollapseBots": {
+    "message": "摺疊 Bots"
+  },
+  "archiveManager": {
+    "message": "封存管理"
+  },
+  "restore": {
+    "message": "還原"
+  },
+  "loadMore": {
+    "message": "載入更多"
+  },
+  "archiveNative": {
+    "message": "開啟原生封存管理"
+  },
+  "archiveEmpty": {
+    "message": "沒有封存對話"
+  },
+  "archiveUntitled": {
+    "message": "未命名對話"
+  },
+  "hideSupport": {
+    "message": "隱藏支持選單"
+  },
+  "aboutTitle": {
+    "message": "支援 ChatGPT、Claude、Grok、Gemini、Kimi、Qwen 的瀏覽器頁面增強："
+  },
+  "aboutChatgpt": {
+    "message": "ChatGPT：批次刪除、批次封存、封存管理（還原 / 刪除）、批次移至專案或新專案。"
+  },
+  "aboutClaude": {
+    "message": "Claude：批次刪除、批次移至群組或新群組；Cowork 任務支援封存。"
+  },
+  "aboutGrok": {
+    "message": "Grok：批次刪除（含搜尋結果）、顯示全部記錄、隱藏 / 收合 Bots。"
+  },
+  "aboutGemini": {
+    "message": "Gemini：批次刪除。"
+  },
+  "aboutKimi": {
+    "message": "Kimi：批次刪除。"
+  },
+  "aboutQwen": {
+    "message": "Qwen：批次刪除、批次封存、封存管理（還原 / 刪除）、批次移至專案或新專案。"
+  },
+  "moveProject": {
+    "message": "移至專案"
+  },
+  "moveGroup": {
+    "message": "移至群組"
+  },
+  "moveTitle": {
+    "message": "將 $N$ 則聊天移至…",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveHint": {
+    "message": "選擇既有目標，或建立新的。使用網站原生的移動方式，之後可再次移動。"
+  },
+  "newProject": {
+    "message": "新專案"
+  },
+  "newGroup": {
+    "message": "新群組"
+  },
+  "destinationName": {
+    "message": "名稱"
+  },
+  "moveConfirm": {
+    "message": "移動 $N$ 則",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveWorking": {
+    "message": "正在背景移動，你可以繼續操作頁面。"
+  },
+  "moveDone": {
+    "message": "已移動 $N$ 則。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveStopped": {
+    "message": "已處理 $N$ 則後停止。已移動的聊天保留在目標中。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "destinationsEmpty": {
+    "message": "還沒有可選目標，請在下方建立。"
+  },
+  "destinationsLoading": {
+    "message": "載入中…"
+  },
+  "destinationsError": {
+    "message": "無法載入列表，請檢查登入狀態或稍後重試。"
+  },
+  "createError": {
+    "message": "建立失敗，未移動任何聊天。"
+  },
+  "qwenArchiveWarning": {
+    "message": "將這 $N$ 則聊天封存到 Qwen。可在封存管理中還原。",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   }
 }

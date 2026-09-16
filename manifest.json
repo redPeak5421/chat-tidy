@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
-  "version": "1.8.9",
+  "version": "1.10.0",
   "description": "__MSG_extensionDescription__",
   "permissions": [
     "storage"
@@ -21,12 +21,22 @@
       "matches": [
         "https://chatgpt.com/*",
         "https://claude.ai/*",
-        "https://grok.com/*"
+        "https://grok.com/*",
+        "https://gemini.google.com/*",
+        "https://www.kimi.com/*",
+        "https://chat.qwen.ai/*"
       ],
       "js": [
         "src/core.js",
+        "src/gemini.js",
+        "src/kimi.js",
+        "src/qwen.js",
+        "src/batch.js",
         "src/i18n.js",
         "src/grok.js",
+        "src/archive.js",
+        "src/bots.js",
+        "src/projects.js",
         "src/content.js"
       ],
       "css": [
@@ -44,10 +54,10 @@
   "host_permissions": [
     "https://chatgpt.com/*",
     "https://claude.ai/*",
-    "https://grok.com/*"
+    "https://grok.com/*",
+    "https://gemini.google.com/*",
+    "https://www.kimi.com/*",
+    "https://chat.qwen.ai/*"
   ],
-  "background": {
-    "service_worker": "src/background.js"
-  },
   "default_locale": "en"
 }

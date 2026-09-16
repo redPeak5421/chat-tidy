@@ -29,6 +29,16 @@ test('provider routes accept only chats on the selected origin',()=>{
  assert.equal(api.siteForUrl('https://grok.com/').id,'grok');
  assert.equal(api.siteForUrl('http://grok.com/'),null);
 });
+test('Kimi and Qwen origins resolve to their own sites and chat routes',()=>{
+ const id='19e5dd98-dfe2-88b1-8000-09dfc2e50343';
+ assert.equal(api.siteForUrl('https://www.kimi.com/chat/'+id).id,'kimi');
+ assert.equal(api.siteForUrl('https://chat.qwen.ai/').id,'qwen');
+ assert.equal(api.siteForUrl('https://kimi.com/'),null);
+ assert.equal(api.chatId('/chat/'+id+'?chat_enter_method=history','https://www.kimi.com'),id);
+ assert.equal(api.chatId('/c/'+id,'https://chat.qwen.ai'),id);
+ assert.equal(api.chatId('/chat/'+id,'https://chat.qwen.ai'),null);
+ assert.equal(api.chatId('/c/'+id,'https://www.kimi.com'),null);
+});
 test('Claude Cowork IDs are case-sensitive and scoped to Cowork routes',()=>{
  const id='cse_01AAAAAAAAAAAAAAAAAAAAAA';
  assert.equal(api.chatId('/cowork/'+id,'https://claude.ai'),id);

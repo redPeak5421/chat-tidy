@@ -9,6 +9,9 @@ for (const [lang, catalog] of Object.entries(catalogs)) {
     if (!entry?.message) throw new Error(`${lang}: missing ${key}`);
     const placeholders = value => Object.keys(value.placeholders || {}).sort().join(',');
     if (placeholders(entry) !== placeholders(base)) throw new Error(`${lang}: mismatched placeholders in ${key}`);
+    // Store limits on the manifest strings: Safari rejects descriptions over 112 characters (App Store export error 90862); Chrome allows 132 and names up to 45.
+    if (key === 'extensionDescription' && [...entry.message].length > 112) throw new Error(`${lang}: extensionDescription has ${[...entry.message].length} characters; Safari allows at most 112`);
+    if (key === 'extensionName' && [...entry.message].length > 45) throw new Error(`${lang}: extensionName has ${[...entry.message].length} characters; the stores allow at most 45`);
     for (const match of entry.message.matchAll(/\$([A-Za-z_]+)\$/g)) {
       if (!entry.placeholders?.[match[1].toLowerCase()]) throw new Error(`${lang}: undefined placeholder ${match[1]}`);
     }
