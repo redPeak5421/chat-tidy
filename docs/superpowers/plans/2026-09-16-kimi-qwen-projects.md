@@ -47,7 +47,8 @@ macOS Debug（无签名）编译通过；打包的扩展 `src/` 含 kimi.js、qw
 
 ## 发布（2026-09-16）
 
-- Chrome：`chat-tidy-main/release/chat-tidy-chrome-1.10.0.zip`（34 个文件，按 manifest 引用校验）。本机无法自动登录 Chrome Web Store 后台（主 Chrome 未开启“允许 Apple 事件中的 JavaScript”，且不另开浏览器），需人工上传该 zip 并提交审核。
+- Chrome：`chat-tidy-main/release/chat-tidy-chrome-1.10.0.zip`（34 个文件，按 manifest 引用校验）已于 2026-09-16 17:44 CST 通过开发者信息中心上传并提交审核（条目 pinmjlibamcaggmjlphibcmbfogdmmhc，状态“待审核”，通过后自动发布；商店之前的公开版本是 1.8.9，1.9.1 从未上架）。英文商店说明同步改为六站点 + 归档管理 + 移动至项目 / 组的新文案。
+- 操作方式备注：Chrome 禁止扩展（含 Claude in Chrome）在 `chrome.google.com/webstore/*` 上运行脚本，开发者信息中心也在禁区；“允许 Apple 事件中的 JavaScript”菜单项在该页面激活时整组置灰，且本机点击后也未生效。最终用系统辅助功能 + CGEvent 真实鼠标事件操作页面；文件选择面板里任何回车都会被网页的“选择文件”按钮吃掉并关闭面板，所以把 zip 临时复制到桌面，用鼠标点“Desktop › 文件 › 打开”完成选择，事后删除副本。
 - Safari：1.10.0 build 8 归档、云签名并上传成功（13:52 CST）。第一次导出被 App Store Connect 拒绝（错误 90862）：法语 `extensionDescription` 118 字符，超过 Safari 对 manifest description 的 112 字符上限（Chrome 上限 132）。已缩短为 109 字符，并在两棵树的 `scripts/build-i18n.cjs --check` 中加入 ≤112 / name ≤45 的校验。
 - App Store Connect：撤回待审的 1.9.1（reviewSubmission b2c43b22…），版本记录改为 1.10.0、挂 build 8、商店描述与审核备注补充 Kimi / Qwen，再建新的 reviewSubmission 提审。已完成：1.9.1 提交 b2c43b22… 于 13:54 CST 撤回（版本先变 DEVELOPER_REJECTED，挂 build 8 后回到 PREPARE_FOR_SUBMISSION），新提交 dd2da354-c917-4e36-8d9e-66e454a53d44 于 13:55 CST（05:55 UTC）进入 WAITING_FOR_REVIEW，版本 1.10.0 + build 8。
 - 提审前核对已挂 build 要用 `GET /appStoreVersions/{id}/build`；`GET /appStoreVersions/{id}?include=build` 不返回 included，会误判为未挂。
