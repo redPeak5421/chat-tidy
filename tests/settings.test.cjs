@@ -20,3 +20,7 @@ test('archive button only appears on ChatGPT and Qwen',async()=>{
 test('hide support removes the whole section including its collapsed heading',async()=>{
  const {w,d,saved}=await popup();try{const section=d.querySelector('.support-section');assert.ok(section);assert.equal(section.hidden,false);const input=d.getElementById('hideSupport');assert.equal(input.checked,false);input.checked=true;input.dispatchEvent(new w.Event('change'));await new Promise(r=>setTimeout(r,0));assert.equal(section.hidden,true);assert.equal(saved.hideSupport,true);const again=await popup('chatgpt',saved);assert.equal(again.d.querySelector('.support-section').hidden,true);again.w.close();}finally{w.close();}
 });
+test('support cards keep their two-column card layout styles',()=>{
+ if(!fs.readFileSync('popup.html','utf8').includes('support-section'))return; // the Safari build ships no support cards
+ const css=fs.readFileSync('src/popup.css','utf8');assert.match(css,/\.support-cards\{[^}]*display:grid;grid-template-columns:repeat\(2,/,'two-column grid');assert.match(css,/\.support-card\{[^}]*display:flex[^}]*text-decoration:none/,'card link styled as a card');assert.match(css,/\.support-arrow\{[^}]*margin-left:auto/,'arrow pushed right');
+});
