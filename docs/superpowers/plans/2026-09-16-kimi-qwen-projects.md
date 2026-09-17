@@ -53,3 +53,10 @@ macOS Debug（无签名）编译通过；打包的扩展 `src/` 含 kimi.js、qw
 - App Store Connect：撤回待审的 1.9.1（reviewSubmission b2c43b22…），版本记录改为 1.10.0、挂 build 8、商店描述与审核备注补充 Kimi / Qwen，再建新的 reviewSubmission 提审。已完成：1.9.1 提交 b2c43b22… 于 13:54 CST 撤回（版本先变 DEVELOPER_REJECTED，挂 build 8 后回到 PREPARE_FOR_SUBMISSION），新提交 dd2da354-c917-4e36-8d9e-66e454a53d44 于 13:55 CST（05:55 UTC）进入 WAITING_FOR_REVIEW，版本 1.10.0 + build 8。
 - 提审前核对已挂 build 要用 `GET /appStoreVersions/{id}/build`；`GET /appStoreVersions/{id}?include=build` 不返回 included，会误判为未挂。
 
+
+## 1.10.1 与 App 审核资料（2026-09-17）
+
+- 1.10.0（build 8，提交 dd2da354…）被 App Review 以 Guideline 2.1「Information Needed – New App Submission」退回：不是功能问题，而是新开发者账号例行索要六项资料（真机录屏、用途与目标用户、安装使用说明、外部服务清单、地区差异、受监管行业/受保护素材），要求回复解决中心并写入 App Review Information 的 Notes。提交撤回后留言只在“所有提交/历史”里可见，API 读不到。
+- 1.10.1（build 9，Grok Bots 折叠改为仅默认状态 + 支持卡片样式恢复）于 2026-09-17 01:56 CST 重新提审（reviewSubmission 7ef9f414-d844-46f5-aa0f-fea20cb9f0ad）。六项答复已通过 `PATCH /appStoreReviewDetails/{id}` 写入 Notes（等待审核状态下仍可改，3568 字符）；真机录屏 `build/app-store/chat-tidy-1.10.1-macos-demo.mp4`（macOS 26.6.2 / Safari 26.6.2，2.5 分钟：启动 App → Safari 设置 › 扩展 → chatgpt.com 创建测试对话 → 勾选 → 菜单删除 → 先取消再确认 → 结果；无关对话标题与账号区域已打码）经 `POST /appStoreReviewAttachments` 分片上传为附件（id 637026e2…，状态 COMPLETE）。
+- 录屏中发现：Safari 运行期间替换/重新登记 App 后，App 内“打开 Safari 扩展设置”按钮会报 `SFErrorDomain error 1`（NoExtensionFound），Safari「退出并保留窗口」重启后一度恢复，但本机开发签名版仍不稳定；商店签名版未验证。录屏因此改走 Safari › 设置 › 扩展 的手动路径。建议后续版本给该按钮增加失败回退（激活 Safari 并提示手动路径），避免审核人员看到原始错误框。另外 build 目录里的多份 Chat Tidy.app 会让 Safari 扩展列表出现重复条目，需 `lsregister -u` 注销。
+- Chrome Web Store 的 1.10.1 替换（撤回待审 1.10.0 → 上传 `chat-tidy-main/release/chat-tidy-chrome-1.10.1.zip` → 提审）仍待执行。
