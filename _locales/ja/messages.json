@@ -176,7 +176,7 @@
     "message": "Chat Tidy"
   },
   "extensionDescription": {
-    "message": "サイドバーで ChatGPT、Claude、Grok、Gemini、Kimi、Qwen のチャットを選択して一括削除。6 言語対応。"
+    "message": "AI チャットサイトのサイドバーでチャットを選び、一括で削除・アーカイブ・移動できます。6 言語対応。"
   },
   "actionTitle": {
     "message": "Chat Tidy"

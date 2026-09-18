@@ -176,7 +176,7 @@
     "message": "Chat Tidy"
   },
   "extensionDescription": {
-    "message": "在側邊欄勾選並批次刪除 ChatGPT、Claude、Grok、Gemini、Kimi 和 Qwen 聊天，支援六種語言。"
+    "message": "在 AI 聊天網站的側邊欄勾選聊天，批次刪除、封存或移動，支援六種語言。"
   },
   "actionTitle": {
     "message": "Chat Tidy"

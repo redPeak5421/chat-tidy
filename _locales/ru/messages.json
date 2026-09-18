@@ -176,7 +176,7 @@
     "message": "Chat Tidy"
   },
   "extensionDescription": {
-    "message": "Выбирайте и массово удаляйте чаты ChatGPT, Claude, Grok, Gemini, Kimi и Qwen из боковой панели. Шесть языков."
+    "message": "Отмечайте чаты ИИ-сайтов в боковой панели и массово удаляйте, архивируйте или перемещайте их. Шесть языков."
   },
   "actionTitle": {
     "message": "Chat Tidy"

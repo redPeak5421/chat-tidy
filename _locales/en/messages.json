@@ -176,7 +176,7 @@
     "message": "Chat Tidy"
   },
   "extensionDescription": {
-    "message": "Select and bulk-delete ChatGPT, Claude, Grok, Gemini, Kimi and Qwen chats from the sidebar. Six languages."
+    "message": "Tick chats in the sidebar of AI chat websites and delete, archive or move them in bulk. Six languages."
   },
   "actionTitle": {
     "message": "Chat Tidy"

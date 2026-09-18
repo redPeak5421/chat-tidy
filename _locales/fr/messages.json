@@ -176,7 +176,7 @@
     "message": "Chat Tidy"
   },
   "extensionDescription": {
-    "message": "Supprimez en lot les chats ChatGPT, Claude, Grok, Gemini, Kimi et Qwen depuis la barre latérale. Six langues."
+    "message": "Cochez vos chats d’IA dans la barre latérale pour les supprimer, archiver ou déplacer en lot. Six langues."
   },
   "actionTitle": {
     "message": "Chat Tidy"
