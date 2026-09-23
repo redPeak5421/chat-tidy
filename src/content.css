@@ -18,7 +18,7 @@
 
 /* Reserve the icon slot to avoid shifting native header controls. */
 .cs-toolbar{opacity:0;transition:opacity .12s ease}
-.cs-toolbar.cs-has-selection,.cs-toolbar:hover,.cs-toolbar:focus-within,.cs-toolbar:has(.cs-toggle[aria-expanded="true"]),.cs-heading-hover:hover + .cs-toolbar{opacity:1}
+.cs-toolbar.cs-always,.cs-toolbar.cs-has-selection,.cs-toolbar:hover,.cs-toolbar:focus-within,.cs-toolbar:has(.cs-toggle[aria-expanded="true"]),.cs-heading-hover:hover + .cs-toolbar{opacity:1}
 @media(prefers-reduced-motion:reduce){.cs-toolbar{transition:none}}
 
 /* Keep React-owned nodes intact while removing confirmed deleted rows visually. */

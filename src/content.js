@@ -60,11 +60,33 @@
     const close=el('button','cs-button',t('close'));close.onclick=()=>notice.remove();notice.append(close);document.body.append(notice);
     return false;
   }
-  function applyTheme(){if(settings.enabled)document.documentElement.dataset.csTheme=['light','dark'].includes(settings.theme)?settings.theme:'system';else delete document.documentElement.dataset.csTheme;}
+  // Returns true/false for an opaque enough background, or null when the color is transparent or unknown.
+  function darkColor(value){
+    const m=/^(rgba?|oklch|oklab|lch|lab|color)\((.*)\)$/.exec(String(value).trim());if(!m)return null;
+    let [channels,alpha='1']=m[2].split('/');let parts=channels.trim().split(/[\s,]+/);
+    if(m[1]==='color'){if(parts.shift()!=='srgb')return null;parts=parts.map(v=>parseFloat(v)*255);}
+    if(m[1].startsWith('rgb')&&parts.length>3)alpha=parts[3];
+    const num=v=>String(v).endsWith('%')?parseFloat(v)/100:parseFloat(v);
+    if(num(alpha)<.5)return null;
+    if(m[1].startsWith('rgb')||m[1]==='color'){const [r,g,b]=parts.map(v=>String(v).endsWith('%')?parseFloat(v)*2.55:parseFloat(v));return (.2126*r+.7152*g+.0722*b)/255<.5;}
+    const l=num(parts[0]);return m[1].startsWith('ok')?l<.6:(String(parts[0]).endsWith('%')?l:l/100)<.5;
+  }
+  // "System" follows the site's rendered theme; the OS preference is only a fallback because sites have their own switch.
+  function pageTheme(){
+    for(let node=document.querySelector('.cs-toolbar')?.parentElement||document.body;node;node=node.parentElement){
+      const dark=darkColor(getComputedStyle(node).backgroundColor);if(dark!==null)return dark?'dark':'light';
+    }
+    return getComputedStyle(document.documentElement).colorScheme==='dark'?'dark':'system';
+  }
+  function applyTheme(){
+    if(!settings.enabled){delete document.documentElement.dataset.csTheme;return;}
+    const theme=['light','dark'].includes(settings.theme)?settings.theme:pageTheme();
+    if(document.documentElement.dataset.csTheme!==theme)document.documentElement.dataset.csTheme=theme;
+  }
   function coworkState(){const ids=[...selected.keys()];return {coworkOnly:site.id==='claude'&&ids.length>0&&ids.every(id=>core.isCoworkId(id)),mixed:site.id==='claude'&&ids.some(id=>core.isCoworkId(id))};}
   function sync() {
     const count=t('selected',{n:selected.size});
-    document.querySelectorAll('.cs-toolbar').forEach(bar=>bar.classList.toggle('cs-has-selection',selected.size>0));
+    document.querySelectorAll('.cs-toolbar').forEach(bar=>{bar.classList.toggle('cs-has-selection',selected.size>0);bar.classList.toggle('cs-always',settings.checkboxMode==='always');});
     document.querySelectorAll('.cs-count').forEach(node=>{if(node.textContent!==count)node.textContent=count;});
     document.querySelectorAll('.cs-checkbox').forEach(box=>{box.checked=selected.has(box.dataset.csId);box.disabled=busy;box.closest('a')?.classList.toggle('cs-selected',box.checked);});
     const {coworkOnly,mixed}=coworkState();
@@ -157,7 +179,7 @@
     const parents=roots().filter(root=>found.some(item=>root.contains(item.link)));
     for(const root of parents.filter(root=>!parents.some(other=>other!==root&&other.contains(root))))toolbar(root);
     grokHistory?.render();
-    sync();watch();queueWave();
+    sync();applyTheme();watch();queueWave();
   }
   function schedule(){if(expired||scheduled)return;scheduled=true;setTimeout(()=>{scheduled=false;scan();},80);}
   function watch(){if(expired)return;observer?.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['href','hidden','aria-hidden','aria-expanded','class']});}
@@ -275,6 +297,10 @@
   document.addEventListener('keydown',event=>{if(event.target.matches?.('.cs-checkbox'))event.stopPropagation();},true);
   chrome.storage.local.get(settings).then(saved=>{
     settings={...settings,...saved};applyTheme();
+    // Sites switch themes by toggling attributes on <html>/<body> or following the OS.
+    new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:['class','style','data-theme','data-mode','data-color-mode','theme']});
+    if(document.body)new MutationObserver(applyTheme).observe(document.body,{attributes:true,attributeFilter:['class','style','data-theme','data-mode','data-color-mode','theme']});
+    globalThis.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change',()=>setTimeout(applyTheme,50));
     observer=new MutationObserver(records=>{
       if(records.some(record=>{
         if(own(record.target) || (record.target.closest?.('main')&&!record.target.closest?.('[data-testid="modal-archived-conversations"]')&&!(scopedRoots&&record.target.closest?.(site.roots))))return false;

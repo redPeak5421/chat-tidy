@@ -387,3 +387,13 @@ test('ChatGPT project creation sends the private sharing shape and falls back to
  assert.equal(calls.length,1);assert.equal(calls[0].target,'g-p-fallback');
  }finally{dom.window.close()}
 });
+test('system theme follows the rendered page instead of the OS and the always mode keeps the icon visible',async()=>{
+ const {dom,d,change}=await setup({markup:`<nav style="background-color: rgb(30, 31, 32)"><h2>聊天</h2><div id="history">${row('1')}${row('2')}</div></nav>`});try{
+ assert.equal(d.documentElement.dataset.csTheme,'dark');
+ d.querySelector('nav').style.backgroundColor='rgb(250, 250, 250)';d.body.className='light-theme';await wait(20);assert.equal(d.documentElement.dataset.csTheme,'light');
+ await change({theme:{newValue:'dark'}});assert.equal(d.documentElement.dataset.csTheme,'dark');
+ assert.equal(d.querySelector('.cs-toolbar').classList.contains('cs-always'),false);
+ await change({checkboxMode:{newValue:'always'}});assert.equal(d.querySelector('.cs-toolbar').classList.contains('cs-always'),true);
+ await change({checkboxMode:{newValue:'dynamic'}});assert.equal(d.querySelector('.cs-toolbar').classList.contains('cs-always'),false);
+ }finally{dom.window.close()}
+});
