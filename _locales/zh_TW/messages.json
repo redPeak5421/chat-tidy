@@ -423,5 +423,20 @@
         "example": "3"
       }
     }
+  },
+  "filterPlaceholder": {
+    "message": "依標題篩選…"
+  },
+  "selectMatches": {
+    "message": "選取 $N$",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveShort": {
+    "message": "移動"
   }
 }

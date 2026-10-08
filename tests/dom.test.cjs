@@ -2,6 +2,7 @@ const {test}=require('node:test');const assert=require('node:assert/strict');con
 const id=n=>`${n.repeat(8)}-${n.repeat(4)}-4${n.repeat(3)}-8${n.repeat(3)}-${n.repeat(12)}`;
 const row=n=>`<div class="row"><a href="/c/${id(n)}"><span>Chat ${n}</span></a><button aria-haspopup="menu" data-owner="${n}">…</button></div>`;
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
+const {modernRow,modernSidebar,modernRail}=require('./fixtures/chatgpt-sidebar.cjs');
 async function setup({realBatch=false,beforeLoad,getSettings,url='https://chatgpt.com/',markup}={}){
  const dom=new JSDOM(markup??`<nav><h2>聊天</h2><div id="history">${row('1')}${row('2')}</div></nav><main><a href="/c/${id('3')}">Reference link</a></main>`,{url,runScripts:'outside-only',pretendToBeVisual:true});const w=dom.window;
  w.HTMLElement.prototype.getClientRects=function(){return this.hidden?[]:[{width:100,height:30}]};w.HTMLElement.prototype.scrollIntoView=function(){};w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'))};
@@ -21,6 +22,77 @@ test('injects sidebar checkboxes, leaves main alone, survives new rows and reren
  d.querySelector('#history').insertAdjacentHTML('beforeend',row('4'));await wait(150);assert.equal(d.querySelectorAll('.cs-checkbox').length,3);
  d.querySelector('#history').innerHTML=row('1')+row('2');await wait(150);assert.equal(d.querySelector('.cs-checkbox').checked,true);
  assert.equal(d.querySelectorAll('.cs-toolbar').length,1);
+ }finally{dom.window.close()}
+});
+test('ChatGPT app-shell button rows expose exact IDs, one header menu and safe selection',async()=>{
+ const {dom,w,d}=await setup({markup:modernSidebar()});try{
+ assert.equal(d.querySelectorAll('.cs-checkbox').length,2);
+ assert.equal(d.querySelector('main .cs-checkbox'),null);
+ assert.equal(d.querySelectorAll('.cs-toolbar').length,1);
+ assert.equal(d.querySelector('[data-app-action-sidebar-section-heading="Recents"] [data-app-action-sidebar-section-toggle]').nextElementSibling,d.querySelector('.cs-toolbar'));
+ let navigation=0;d.querySelector('nav').addEventListener('click',()=>navigation++);
+ const box=d.querySelector('.cs-checkbox');box.click();assert.equal(navigation,0);
+ assert.ok(box.closest('[role="button"]').classList.contains('cs-selected'));
+ d.querySelector('[data-cs-action="delete"]').click();assert.deepEqual([...d.querySelectorAll('.cs-review li')].map(n=>n.textContent),['Chat 1']);
+ d.querySelector('[data-cs-cancel]').click();
+ d.querySelector('nav [role="list"]').innerHTML=modernRow('1')+modernRow('2');await wait(150);
+ assert.equal(d.querySelector('.cs-checkbox').checked,true);
+ const link=d.querySelector('.cs-chat-link');link.className='native-row';await wait(150);
+ assert.ok(link.classList.contains('cs-selected'));assert.ok(link.classList.contains('cs-chat-link'));
+ }finally{dom.window.close()}
+});
+test('ChatGPT app-shell recycled rows update identity and hide only confirmed records',async()=>{
+ const {dom,w,d}=await setup({markup:modernSidebar()});try{
+ const row=d.querySelector('[data-sidebar-chatgpt-conversation-key]');
+ row.setAttribute('data-sidebar-chatgpt-conversation-key','chatgpt:conversation:'+id('7'));
+ row.querySelector('[role="button"]').setAttribute('aria-label','Replacement');await wait(150);
+ assert.equal(row.querySelector('.cs-checkbox')?.dataset.csId,id('7'));
+ const calls=[];w.ChatTidyBatch.run=async job=>{calls.push(job);return {completed:[id('7')],error:'rate-limit'}};
+ d.querySelector('[data-cs-action="all"]').click();d.querySelector('[data-cs-action="delete"]').click();d.querySelector('[data-cs-confirm]').click();await wait(150);
+ assert.deepEqual(Array.from(calls[0].ids),[id('7'),id('2')]);
+ assert.ok(row.classList.contains('cs-deleted-row'));
+ assert.equal(d.querySelectorAll('.cs-checkbox:checked').length,1);
+ assert.equal(d.querySelector('nav [role="list"]').classList.contains('cs-deleted-row'),false);
+ row.setAttribute('data-sidebar-chatgpt-conversation-key','chatgpt:conversation:'+id('8'));await wait(150);
+ assert.equal(row.classList.contains('cs-deleted-row'),false,'a recycled container must not hide an unrelated chat');
+ assert.equal(row.querySelector('.cs-checkbox')?.dataset.csId,id('8'));
+ row.setAttribute('data-sidebar-chatgpt-conversation-key','work:task:'+id('8'));await wait(150);
+ assert.equal(row.querySelector('.cs-checkbox'),null,'recycled non-chat rows must not keep a stale checkbox');
+ }finally{dom.window.close()}
+});
+test('ChatGPT app-shell archived rows can be restored through the archive manager',async()=>{
+ let manager;
+ const {dom,d}=await setup({markup:modernSidebar(),beforeLoad:w=>{w.ChatTidyArchive={create:options=>{manager=options;return {scan(){},destroy(){}}}};}});
+ try{
+ d.querySelector('.cs-checkbox').click();d.querySelector('[data-cs-action="archive"]').click();d.querySelector('[data-cs-confirm]').click();await wait(150);
+ assert.equal(d.querySelectorAll('.cs-deleted-row').length,1);
+ manager.onCompleted([id('1')],'restore');await wait(150);
+ assert.equal(d.querySelectorAll('.cs-deleted-row').length,0);
+ assert.equal(d.querySelectorAll('.cs-checkbox').length,2);
+ assert.equal(d.querySelectorAll('.cs-checkbox:checked').length,0);
+ }finally{dom.window.close()}
+});
+test('ChatGPT rail menu follows selection-only visibility and survives rail replacement',async()=>{
+ const {dom,d,change}=await setup({markup:modernRail()+modernSidebar()});try{
+ let bar=d.querySelector('.cs-toolbar');
+ assert.equal(bar.parentElement,d.querySelector('.rail-items'));
+ assert.equal(bar.previousElementSibling.textContent,'Explore');
+ assert.equal(bar.hidden,true);
+ assert.equal(d.querySelector('#app-shell-sidebar .cs-toolbar'),null);
+ d.querySelector('.cs-checkbox').click();assert.equal(bar.hidden,false);
+ d.querySelector('[data-cs-action="clear"]').click();assert.equal(bar.hidden,true);
+ await change({checkboxMode:{newValue:'always'}});bar=d.querySelector('.cs-toolbar');assert.equal(bar.hidden,false);
+ await change({checkboxMode:{newValue:'dynamic'}});bar=d.querySelector('.cs-toolbar');assert.equal(bar.hidden,true);
+ d.querySelector('.cs-checkbox').click();
+ d.querySelector('[data-app-navigation-rail]').outerHTML=modernRail();await wait(150);
+ bar=d.querySelector('.cs-toolbar');assert.equal(d.querySelectorAll('.cs-toolbar').length,1);assert.equal(bar.parentElement,d.querySelector('.rail-items'));assert.equal(bar.hidden,false);
+ await change({enabled:{newValue:false}});assert.equal(d.querySelectorAll('.cs-toolbar,.cs-actions').length,0);
+ }finally{dom.window.close()}
+});
+test('ChatGPT moves the existing header menu when the navigation rail loads late',async()=>{
+ const {dom,d}=await setup({markup:modernSidebar()});try{
+ const bar=d.querySelector('.cs-toolbar');d.body.insertAdjacentHTML('afterbegin',modernRail());await wait(150);
+ assert.equal(d.querySelectorAll('.cs-toolbar').length,1);assert.equal(bar.parentElement,d.querySelector('.rail-items'));assert.equal(bar.hidden,true);
  }finally{dom.window.close()}
 });
 test('all, invert, clear and cancellation never invoke native delete',async()=>{
@@ -173,6 +245,23 @@ test('Claude title icon glyph does not move toolbar into first conversation',asy
  const {dom,d}=await setup({url:'https://claude.ai/new',markup:`<div data-testid="sidebar"><div class="labelrow"><button data-group-toggle><span data-group-name>Chats and tasks</span><span data-cds="Icon">\ue02a</span></button><button>View all</button></div><div><a href="/chat/${id('1')}">Example</a></div></div>`});
  try{assert.equal(d.querySelector('.cs-toolbar').parentElement,d.querySelector('.labelrow'));assert.equal(d.querySelector('[data-group-toggle]').nextElementSibling,d.querySelector('.cs-toolbar'));}finally{dom.window.close()}
 });
+test('Claude management entry shares the top-level collapse row, above dated chat groups',async()=>{
+ const {dom,d}=await setup({url:'https://claude.ai/new',markup:`<div data-testid="sidebar"><div><button data-group-toggle aria-expanded="false"><span data-group-name>已置顶</span></button></div><section><div data-row-key="label:day-0"><div class="labelrow"><button data-group-toggle aria-expanded="true"><span data-group-name>今天</span><span data-cds="Icon">\ue02a</span></button><button>View all</button><button aria-label="筛选和分组最近对话">Filter</button></div></div><div><a href="/chat/${id('1')}">Example</a></div><div data-row-key="label:day-3"><button data-group-toggle><span data-group-name>10月5日</span></button></div><div><a href="/chat/${id('2')}">Other</a></div></section></div>`});
+ try{let bar=d.querySelector('.cs-toolbar');assert.equal(bar.parentElement,d.querySelector('.labelrow'));assert.equal(d.querySelector('.labelrow [data-group-toggle]').nextElementSibling,bar);assert.equal(d.querySelectorAll('.cs-toolbar').length,1);
+ d.querySelector('[data-row-key="label:day-0"]').remove();await wait(150);bar=d.querySelector('.cs-toolbar');assert.equal(d.querySelector('[data-row-key="label:day-3"] [data-group-toggle]').nextElementSibling,bar);assert.equal(d.querySelectorAll('.cs-toolbar').length,1);
+ }finally{dom.window.close()}
+});
+test('selection controls keep the menu open so deletion is available immediately',async()=>{
+ const {dom,d}=await setup();try{
+ d.querySelector('.cs-toggle').click();
+ for(const action of ['all','invert','all','clear','all']){
+ d.querySelector(`[data-cs-action="${action}"]`).click();assert.equal(d.querySelector('.cs-actions').hidden,false,action);assert.equal(d.querySelector('.cs-toggle').getAttribute('aria-expanded'),'true');
+ }
+ d.querySelector('[data-cs-action="delete"]').click();assert.ok(d.querySelector('.cs-confirm'));assert.equal(d.querySelector('.cs-actions').hidden,false);
+ d.querySelector('[data-cs-cancel]').click();assert.equal(d.querySelector('.cs-actions').hidden,false);
+ d.body.click();assert.equal(d.querySelector('.cs-actions').hidden,true);
+ }finally{dom.window.close()}
+});
 test('Claude executes only confirmed IDs directly with no runtime relay',async()=>{
  const calls=[];
  const {dom,w,d}=await setup({realBatch:true,url:'https://claude.ai/new',markup:`<div data-testid="sidebar"><h2>Chats</h2><a href="/chat/${id('1')}">Example</a></div>`,beforeLoad:w=>{
@@ -317,7 +406,7 @@ test('Qwen rows receive IDs from the site list, offer archive, move and the mana
  const boxes=[...d.querySelectorAll('.cs-checkbox')];assert.equal(boxes.length,2);assert.deepEqual(boxes.map(box=>box.dataset.csId),[qwenId('1'),qwenId('2')]);
  assert.ok(d.querySelector('[data-cs-action="archive"]'));assert.ok(d.querySelector('[data-cs-action="move"]'));assert.ok(d.querySelector('[data-cs-action="archiveManager"]'));
  const header=d.querySelector('.folder-button');assert.equal(d.querySelector('.cs-toolbar').parentElement,header,'the icon lives in the All chats header row');assert.equal(d.querySelector('.cs-toolbar').previousElementSibling,header.querySelector('.folder-name'),'right after the section name');assert.equal(d.querySelector('.cs-toolbar').nextElementSibling,header.querySelector('.folder-button-icon-container'),'before the chevron');assert.ok(header.classList.contains('cs-heading-row'));assert.equal(header.querySelector('.folder-name').textContent,'所有对话');
- assert.equal(d.querySelector('[data-cs-action="move"]').textContent,'Move to project');
+ assert.equal(d.querySelector('[data-cs-action="move"]').title,'Move to project');
  const calls=[];w.ChatTidyBatch.run=async message=>{calls.push(message);return {completed:message.ids}};
  boxes[1].click();d.querySelector('[data-cs-action="archive"]').click();assert.match(d.querySelector('.cs-confirm').textContent,/Qwen/);d.querySelector('[data-cs-confirm]').click();await wait(100);
  assert.equal(calls[0].action,'archive');assert.deepEqual(Array.from(calls[0].ids),[qwenId('2')]);assert.equal(calls[0].expectedUserId,'user-a');
@@ -328,7 +417,7 @@ test('ChatGPT move picker lists projects, moves into an existing one and hides m
  const {dom,w,d}=await setup({beforeLoad:w=>{w.AbortSignal=AbortSignal;w.fetch=async url=>{const path=url.split('?')[0];const body=path==='/api/auth/session'?{accessToken:'t',user:{id:'a'}}:path==='/backend-api/gizmos/snorlax/sidebar'?{cursor:null,items:[{gizmo:{gizmo:{id:'g-p-one',display:{name:'Research'}}},conversations:{items:[]}}]}:{};return {ok:true,status:200,json:async()=>body};};w.eval(fs.readFileSync('src/projects.js','utf8'));}});
  try{
  const calls=[];w.ChatTidyBatch.run=async message=>{calls.push(message);return {completed:message.ids}};
- const move=d.querySelector('[data-cs-action="move"]');assert.ok(move);assert.equal(move.disabled,true);assert.equal(move.textContent,'Move to project');
+ const move=d.querySelector('[data-cs-action="move"]');assert.ok(move);assert.equal(move.disabled,true);assert.equal(move.title,'Move to project');
  d.querySelector('[data-cs-action="all"]').click();assert.equal(move.disabled,false);move.click();await wait(50);
  const dialog=d.querySelector('.cs-move');assert.ok(dialog);assert.match(dialog.textContent,/Research/);assert.equal(calls.length,0);
  const confirm=dialog.querySelector('[data-cs-move-confirm]');assert.equal(confirm.disabled,true);
@@ -357,7 +446,7 @@ test('Claude move uses group wording, targets the workspace and keeps moved chat
  const task='cse_01AAAAAAAAAAAAAAAAAAAAAA';
  const {dom,w,d}=await setup({url:'https://claude.ai/',markup:`<div data-testid="sidebar"><h2>Chats</h2><a href="/chat/${id('1')}">Chat</a><a href="/cowork/${task}">Task</a></div>`,beforeLoad:w=>{w.document.cookie=`lastActiveOrg=${id('9')};path=/`;w.AbortSignal=AbortSignal;w.fetch=async url=>{assert.equal(url,`/api/organizations/${id('9')}/projects`);return {ok:true,status:200,json:async()=>[{uuid:id('5'),name:'Group A'},{uuid:id('6'),name:'Old',archived_at:'2026-01-01'}]};};w.eval(fs.readFileSync('src/projects.js','utf8'));}});
  try{
- const move=d.querySelector('[data-cs-action="move"]');assert.equal(move.textContent,'Move to group');
+ const move=d.querySelector('[data-cs-action="move"]');assert.equal(move.title,'Move to group');
  const boxes=[...d.querySelectorAll('.cs-checkbox')];const taskBox=boxes.find(box=>box.dataset.csId===task),chatBox=boxes.find(box=>box.dataset.csId===id('1'));
  taskBox.click();assert.equal(move.hidden,true);taskBox.click();chatBox.click();assert.equal(move.hidden,false);
  const calls=[];w.ChatTidyBatch.run=async message=>{calls.push(message);return {completed:message.ids}};
@@ -395,5 +484,28 @@ test('system theme follows the rendered page instead of the OS and the always mo
  assert.equal(d.querySelector('.cs-toolbar').classList.contains('cs-always'),false);
  await change({checkboxMode:{newValue:'always'}});assert.equal(d.querySelector('.cs-toolbar').classList.contains('cs-always'),true);
  await change({checkboxMode:{newValue:'dynamic'}});assert.equal(d.querySelector('.cs-toolbar').classList.contains('cs-always'),false);
+ }finally{dom.window.close()}
+});
+test('hidden mode keeps the icon visible only while something is selected',async()=>{
+ const {dom,d}=await setup();try{
+ const bar=d.querySelector('.cs-toolbar');
+ assert.equal(bar.classList.contains('cs-always')||bar.classList.contains('cs-has-selection'),false);
+ d.querySelector('.cs-checkbox').click();assert.equal(bar.classList.contains('cs-has-selection'),true);
+ d.querySelector('.cs-checkbox').click();assert.equal(bar.classList.contains('cs-has-selection'),false);
+ }finally{dom.window.close()}
+});
+test('menu filter highlights matches, adds them to the selection and clears on close',async()=>{
+ const {dom,w,d}=await setup({markup:`<nav><h2>聊天</h2><div id="history">${row('1')}${row('2')}${row('4')}</div></nav>`});try{
+ d.querySelector('.cs-checkbox').click();
+ d.querySelector('.cs-toggle').click();const input=d.querySelector('.cs-filter-input');assert.equal(d.activeElement,input);
+ const pick=d.querySelector('[data-cs-action="matches"]');assert.equal(pick.hidden,true);
+ input.value='chat 2';input.dispatchEvent(new w.Event('input'));await wait(150);
+ assert.equal(d.querySelectorAll('.cs-match').length,1);assert.equal(pick.hidden,false);assert.equal(pick.disabled,false);assert.match(pick.textContent,/1/);
+ input.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
+ assert.equal(d.querySelectorAll('.cs-checkbox:checked').length,2);assert.equal(d.querySelector('.cs-actions').hidden,false);
+ input.value='nothing';input.dispatchEvent(new w.Event('input'));await wait(150);assert.equal(pick.disabled,true);
+ input.value='chat';input.dispatchEvent(new w.Event('input'));await wait(150);assert.equal(d.querySelectorAll('.cs-match').length,3);
+ d.body.click();assert.equal(d.querySelector('.cs-actions').hidden,true);assert.equal(input.value,'');assert.equal(d.querySelectorAll('.cs-match').length,0);
+ assert.equal(d.querySelectorAll('.cs-checkbox:checked').length,2);
  }finally{dom.window.close()}
 });

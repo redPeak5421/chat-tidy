@@ -423,5 +423,20 @@
         "example": "3"
       }
     }
+  },
+  "filterPlaceholder": {
+    "message": "按标题筛选…"
+  },
+  "selectMatches": {
+    "message": "选中 $N$",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveShort": {
+    "message": "移动"
   }
 }

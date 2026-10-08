@@ -34,5 +34,11 @@ globalThis.ChatTidyCore = (() => {
       else selected.set(id, title);
     }
   }
-  return {chatId, select, siteForUrl, isCoworkId};
+  // Case-insensitive substring match on titles; an empty query matches nothing.
+  function match(items, query) {
+    const needle = String(query || '').trim().toLocaleLowerCase();
+    if (!needle) return [];
+    return items.filter(item => String(item.title || '').toLocaleLowerCase().includes(needle));
+  }
+  return {chatId, select, match, siteForUrl, isCoworkId};
 })();

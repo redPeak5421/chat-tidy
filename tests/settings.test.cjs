@@ -2,7 +2,7 @@ const {test}=require('node:test');const assert=require('node:assert/strict');con
 async function popup(site='chatgpt',initial={}){
  const dom=new JSDOM(fs.readFileSync('popup.html','utf8'),{url:'https://extension.test',runScripts:'outside-only'}),w=dom.window;
  const saved={language:'en',...initial};w.matchMedia=()=>({matches:false,addEventListener(){}});
- w.chrome={storage:{local:{get:async defaults=>({...defaults,...saved}),set:async data=>Object.assign(saved,data)}},tabs:{query:async()=>[{id:1}],sendMessage:async()=>({site})}};
+ w.chrome={runtime:{getManifest:()=>JSON.parse(fs.readFileSync('manifest.json','utf8'))},storage:{local:{get:async defaults=>({...defaults,...saved}),set:async data=>Object.assign(saved,data)}},tabs:{query:async()=>[{id:1}],sendMessage:async()=>({site})}};
  for(const name of ['i18n','popup'])w.eval(fs.readFileSync('src/'+name+'.js','utf8'));await new Promise(r=>setTimeout(r,0));return {w,d:w.document,saved};
 }
 test('settings secondary page and local theme survive reopening',async()=>{
@@ -23,4 +23,8 @@ test('hide support removes the whole section including its collapsed heading',as
 test('support cards keep their two-column card layout styles',()=>{
  if(!fs.readFileSync('popup.html','utf8').includes('support-section'))return; // the Safari build ships no support cards
  const css=fs.readFileSync('src/popup.css','utf8');assert.match(css,/\.support-cards\{[^}]*display:grid;grid-template-columns:repeat\(2,/,'two-column grid');assert.match(css,/\.support-card\{[^}]*display:flex[^}]*text-decoration:none/,'card link styled as a card');assert.match(css,/\.support-arrow\{[^}]*margin-left:auto/,'arrow pushed right');
+});
+
+test('popup displays the installed manifest version across language changes',async()=>{
+ const {w,d}=await popup();try{const version=JSON.parse(fs.readFileSync('manifest.json','utf8')).version;assert.equal(d.querySelector('#extension-version').textContent,version);const language=d.querySelector('#language');language.value='zh-CN';language.dispatchEvent(new w.Event('change'));await new Promise(r=>setTimeout(r,0));assert.equal(d.querySelector('#extension-version').textContent,version);}finally{w.close();}
 });

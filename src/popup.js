@@ -1,4 +1,5 @@
 (async () => {
+  document.getElementById('extension-version').textContent=chrome.runtime?.getManifest?.().version || '';
   const api=ChatTidyI18n;
   const defaults={enabled:true,grokShowAll:false,grokHideBots:false,grokCollapseBots:false,theme:'system',hideSupport:false,concurrency:2,checkboxMode:'dynamic',language:api.browserLanguage()};
   const fields=['enabled','grokShowAll','language','checkboxMode','concurrency','theme','grokHideBots','grokCollapseBots',...(document.getElementById('hideSupport')?['hideSupport']:[])];
@@ -17,7 +18,21 @@
     document.getElementById('enabled').checked=settings.enabled;document.getElementById('grokShowAll').checked=settings.grokShowAll;
     document.getElementById('language').value=settings.language;
     for(const key of ['checkboxMode','concurrency'])document.querySelectorAll('input[name="'+key+'"]').forEach(input=>input.checked=input.value===String(settings[key]));
+    placeHelp();
   }
+  const help=document.getElementById('concurrency-help'),note=document.getElementById('concurrency-note');
+  function placeHelp(){
+    if(!help||!note)return;
+    help.setAttribute('aria-label',note.textContent);
+    let open=false;try{open=note.matches(':popover-open');}catch{open=false;}
+    help.setAttribute('aria-expanded',open?'true':'false');
+    if(!open)return;
+    const anchor=(help.closest('.setting-item')||help).getBoundingClientRect(),width=Math.min(300,document.documentElement.clientWidth-24);
+    note.style.width=width+'px';
+    note.style.left=Math.max(12,Math.min(anchor.left,document.documentElement.clientWidth-width-12))+'px';
+    note.style.top=(anchor.bottom+6)+'px';
+  }
+  note?.addEventListener('toggle',placeHelp);
   document.getElementById('open-settings').onclick=()=>{document.getElementById('main-page').hidden=true;document.getElementById('settings-page').hidden=false;document.getElementById('back-settings').focus();};
   document.getElementById('back-settings').onclick=()=>{document.getElementById('main-page').hidden=false;document.getElementById('settings-page').hidden=true;document.getElementById('open-settings').focus();};
   // Chrome caps the popup at 600px: bring the expanded guide into view instead of leaving it clipped below the fold.

@@ -25,6 +25,20 @@
   const t = (key,vars) => i18n.t(settings.language,key,vars);
   const own = node => node?.nodeType === 1 && (node.matches('[data-cs-owned]') || node.closest('[data-cs-owned]'));
   function el(tag,className,text) { const node=document.createElement(tag); if(className)node.className=className; if(text!==undefined)node.textContent=text; return node; }
+  const icons={
+    manage:'M5 4h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-9l-6 4V5a1 1 0 0 1 1-1Z M7 9l1.5 1.5L11 8 M13 9h4 M7 13h10',
+    search:'M11 4a7 7 0 1 1 0 14a7 7 0 1 1 0-14Z M16.5 16.5 20 20',
+    all:'M5 5h14v14H5Z M8.5 12l2.5 2.5 4.5-5',
+    invert:'M4 8h13 M14 5l3 3-3 3 M20 16H7 M10 13l-3 3 3 3',
+    clear:'M7 7l10 10 M17 7 7 17',
+    archive:'M4 5h16v4H4Z M5 9v10h14V9 M10 13h4',
+    move:'M3 6h6l2 2h10v11H3Z M10 13.5h7 M14 10.5l3 3-3 3',
+    delete:'M4 7h16 M9 7V4h6v3 M6 7l1 13h10l1-13 M10 11v6 M14 11v6'
+  };
+  function svgIcon(name){
+    const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('aria-hidden','true');
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('d',icons[name]);icon.append(path);return icon;
+  }
   function visible(node) { return node?.isConnected && !node.closest('[hidden],[aria-hidden="true"],.cs-deleted-row') && node.getClientRects().length > 0 && getComputedStyle(node).visibility !== 'hidden'; }
   const searchSelector='[role="dialog"] [cmdk-list]';
   // Sites whose sidebar sits inside <main> declare precise roots; the others exclude main content wholesale.
@@ -35,16 +49,31 @@
   function roots() { return [...document.querySelectorAll(rootSelector())].filter(node=>visible(node)&&(scopedRoots||!node.closest('main'))); }
   // Qwen rows carry no href: the site module maps them to IDs from the website's own list.
   const qwenRows=site.id==='qwen'&&globalThis.ChatTidyQwen?ChatTidyQwen.create({changed:()=>schedule()}):null;
-  function rowId(link){return qwenRows?qwenRows.idOf(link):core.chatId(link.getAttribute('href'),site.origin);}
+  const chatgptRow='[data-sidebar-chatgpt-conversation-key]';
+  function rowId(link){
+    const row=site.id==='chatgpt'&&link.closest(chatgptRow);
+    if(row){
+      const key=row.getAttribute('data-sidebar-chatgpt-conversation-key');
+      const id=key?.match(/^chatgpt:conversation:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i)?.[1];
+      return id?.toLowerCase()||null;
+    }
+    return qwenRows?qwenRows.idOf(link):core.chatId(link.getAttribute('href'),site.origin);
+  }
+  function rowNodes(root){
+    const links=[...root.querySelectorAll('a[href]')];
+    if(site.id!=='chatgpt')return links;
+    // New app-shell rows navigate through a role=button; only the surrounding conversation key is authoritative.
+    return [...links.filter(link=>!link.closest(chatgptRow)),...root.querySelectorAll(chatgptRow)].map(node=>node.matches(chatgptRow)?node.querySelector('[role="button"][aria-label],a[href]'):node).filter(Boolean);
+  }
   function items() {
     const result=[],seen=new Set();
     if(qwenRows){
       for(const row of qwenRows.scan()){if(!visible(row.link))continue;result.push({id:row.id,title:row.title,link:row.link,root:row.link.closest(site.roots)||document.body});}
       return result;
     }
-    for(const root of roots()) for(const link of root.querySelectorAll('a[href]')) {
+    for(const root of roots()) for(const link of rowNodes(root)) {
       if(seen.has(link)||!visible(link))continue;
-      seen.add(link);const id=core.chatId(link.getAttribute('href'),site.origin);if(!id)continue;
+      seen.add(link);const id=rowId(link);if(!id)continue;
       const clone=link.cloneNode(true);clone.querySelectorAll('[data-cs-owned],button').forEach(n=>n.remove());
       const title=(link.getAttribute('aria-label')||clone.textContent||link.getAttribute('title')||'').trim();
       if(title)result.push({id,title,link,root});
@@ -84,24 +113,52 @@
     if(document.documentElement.dataset.csTheme!==theme)document.documentElement.dataset.csTheme=theme;
   }
   function coworkState(){const ids=[...selected.keys()];return {coworkOnly:site.id==='claude'&&ids.length>0&&ids.every(id=>core.isCoworkId(id)),mixed:site.id==='claude'&&ids.some(id=>core.isCoworkId(id))};}
+  // Title filter state for the open menu; matches are recomputed on every scan while a query is active.
+  let filterQuery='',matches=[],filterTimer=0;
+  function applyFilter(query){
+    filterQuery=query;const found=filterQuery.trim()?items():[];matches=core.match(found,filterQuery);
+    const ids=new Set(matches.map(item=>item.id));
+    document.querySelectorAll('.cs-match').forEach(link=>{if(!ids.has(rowId(link)))link.classList.remove('cs-match');});
+    for(const item of matches)item.link.classList.add('cs-match');
+  }
+  function closeMenus(){
+    clearTimeout(filterTimer);
+    document.querySelectorAll('.cs-actions').forEach(n=>{if(n.hasAttribute('popover'))n.hidePopover?.();n.hidden=true;});
+    document.querySelectorAll('.cs-toggle').forEach(n=>n.setAttribute('aria-expanded','false'));
+    document.querySelectorAll('.cs-filter-input').forEach(input=>input.value='');
+    if(filterQuery)applyFilter('');
+    sync();
+  }
   function sync() {
     const count=t('selected',{n:selected.size});
-    document.querySelectorAll('.cs-toolbar').forEach(bar=>{bar.classList.toggle('cs-has-selection',selected.size>0);bar.classList.toggle('cs-always',settings.checkboxMode==='always');});
+    document.querySelectorAll('.cs-toolbar').forEach(bar=>{
+      bar.classList.toggle('cs-has-selection',selected.size>0);bar.classList.toggle('cs-always',settings.checkboxMode==='always');
+      const open=bar.querySelector('.cs-toggle')?.getAttribute('aria-expanded')==='true';
+      bar.hidden=bar.classList.contains('cs-chatgpt-rail-toolbar')&&settings.checkboxMode!=='always'&&!selected.size&&!open;
+      if(bar.hidden){const menu=bar.querySelector('.cs-actions');if(menu?.hasAttribute('popover'))menu.hidePopover?.();if(menu)menu.hidden=true;bar.querySelector('.cs-toggle')?.setAttribute('aria-expanded','false');}
+    });
     document.querySelectorAll('.cs-count').forEach(node=>{if(node.textContent!==count)node.textContent=count;});
-    document.querySelectorAll('.cs-checkbox').forEach(box=>{box.checked=selected.has(box.dataset.csId);box.disabled=busy;box.closest('a')?.classList.toggle('cs-selected',box.checked);});
+    document.querySelectorAll('.cs-checkbox').forEach(box=>{box.checked=selected.has(box.dataset.csId);box.disabled=busy;box.closest('.cs-chat-link')?.classList.toggle('cs-selected',box.checked);});
     const {coworkOnly,mixed}=coworkState();
     document.querySelectorAll('[data-cs-action]').forEach(button=>{const action=button.dataset.csAction;
-      button.disabled=busy || (action==='archive'&&site.id==='claude'&&!coworkOnly) || (action==='move'&&mixed) || (['clear','delete','archive','move'].includes(action)&&!selected.size);
+      button.disabled=busy || (action==='archive'&&site.id==='claude'&&!coworkOnly) || (action==='move'&&mixed) || (['clear','delete','archive','move'].includes(action)&&!selected.size) || (action==='matches'&&!matches.length);
+      if(action==='matches'){const text=t('selectMatches',{n:matches.length});if(button.textContent!==text)button.textContent=text;button.hidden=!filterQuery.trim();}
       // Ordinary Claude chats have no native archive, and Cowork tasks cannot be moved into a group.
       if(action==='archive'&&site.id==='claude')button.hidden=!coworkOnly;
       if(action==='move'&&site.id==='claude')button.hidden=mixed;});
   }
-  function button(key,action) { const b=el('button','cs-button',t(key));b.type='button';b.dataset.csAction=action;b.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();act(action);});return b; }
+  // With an icon, label=false renders an icon-only button whose name moves to the tooltip.
+  function button(key,action,icon,label) {
+    const b=el('button','cs-button');b.type='button';b.dataset.csAction=action;
+    if(!icon)b.textContent=t(key);
+    else{b.append(svgIcon(icon));b.title=t(key);if(label===false){b.classList.add('cs-icon-button');b.setAttribute('aria-label',t(key));}else b.append(el('span','',t(label||key)));}
+    b.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();act(action);});return b;
+  }
   function act(action) {
     if(!contextAlive()||busy)return;
     sameWorkspace();
-    document.querySelectorAll('.cs-actions').forEach(n=>n.hidden=true);
-    document.querySelectorAll('.cs-toggle').forEach(n=>n.setAttribute('aria-expanded','false'));
+    // Selecting matches keeps the panel open so the chosen action is one click away.
+    if(action==='matches'){for(const item of matches)selected.set(item.id,item.title);sync();return;}
     if(action==='archiveManager'){void archiveManager?.open();return;}
     const {coworkOnly,mixed}=coworkState();
     if(action==='move'){
@@ -113,7 +170,9 @@
     core.select(selected,items(),action);sync();
   }
   function toolbar(root) {
-    if(root.querySelector('.cs-toolbar')||root.previousElementSibling?.classList.contains('cs-search-toolbar'))return;
+    const existing=root.querySelector('.cs-toolbar')||(site.id==='chatgpt'?document.querySelector('.cs-chatgpt-rail-toolbar'):null);
+    if(existing){if(['chatgpt','claude'].includes(site.id))placeToolbar(root,existing);return;}
+    if(root.previousElementSibling?.classList.contains('cs-search-toolbar'))return;
     if(site.id==='grok'&&root.matches('[cmdk-list]')){
       const bar=el('div','cs-toolbar cs-search-toolbar');bar.dataset.csOwned='true';bar.setAttribute('role','group');bar.setAttribute('aria-label',t('manage'));
       bar.append(el('span','cs-count'));for(const key of ['clear','invert','all','delete'])bar.append(button(key,key));root.before(bar);return;
@@ -121,32 +180,74 @@
     const bar=el('div','cs-toolbar');bar.dataset.csOwned='true';
     bar.setAttribute('role','group');bar.setAttribute('aria-label',t('manage'));
     const count=el('span','cs-count');count.setAttribute('aria-live','polite');
-    const actions=el('div','cs-actions');actions.append(count);
-    for(const key of ['clear','invert','all',...(canArchive?['archive']:[]),...(mover?['move']:[]),'delete']){
-      const control=button(key==='move'?mover.label:key,key);
+    const actions=el('div','cs-actions');
+    // Native sidebar rows have isolated stacking contexts. Render the menu in the top layer above them.
+    if(typeof actions.showPopover==='function')actions.setAttribute('popover','manual');
+    // Compact panel: filter row, selection row, then action row; new features fill rows instead of lengthening a list.
+    const filterRow=el('div','cs-filter-row'),field=el('label','cs-filter'),input=el('input','cs-filter-input');
+    input.type='text';input.placeholder=t('filterPlaceholder');input.setAttribute('aria-label',t('filterPlaceholder'));input.autocomplete='off';input.spellcheck=false;
+    input.addEventListener('input',()=>{clearTimeout(filterTimer);filterTimer=setTimeout(()=>{applyFilter(input.value);sync();},120);});
+    // Keep typing away from site shortcuts such as ChatGPT's type-to-focus composer.
+    for(const type of ['keydown','keyup','keypress'])input.addEventListener(type,event=>{
+      event.stopPropagation();if(type!=='keydown')return;
+      if(event.key==='Enter'){event.preventDefault();clearTimeout(filterTimer);applyFilter(input.value);act('matches');}
+      if(event.key==='Escape'){event.preventDefault();closeMenus();bar.querySelector('.cs-toggle')?.focus();}
+    });
+    const pick=el('button','cs-button cs-pick');pick.type='button';pick.dataset.csAction='matches';pick.hidden=true;
+    pick.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();act('matches');});
+    field.append(svgIcon('search'),input);filterRow.append(field,pick);
+    const selectRow=el('div','cs-select-row');selectRow.append(count);
+    for(const key of ['all','invert','clear'])selectRow.append(button(key,key,key,false));
+    const runRow=el('div','cs-run-row');
+    for(const key of [...(canArchive?['archive']:[]),...(mover?['move']:[]),'delete']){
+      const control=button(key==='move'?mover.label:key,key,key,key==='move'?'moveShort':undefined);
       if(key==='archive'&&site.id==='claude'){control.title=t('coworkArchiveOnly');control.hidden=true;}
-      actions.append(control);
+      runRow.append(control);
     }
+    actions.append(filterRow,selectRow,runRow);
     if(hasManager){const section=el('div','cs-manager-section');section.append(button('archiveManager','archiveManager'));actions.append(section);}
     {
       actions.hidden=true;const toggle=el('button','cs-button cs-toggle');
-      const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');
-      icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('aria-hidden','true');
-      const path=document.createElementNS('http://www.w3.org/2000/svg','path');
-      path.setAttribute('d','M5 4h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-9l-6 4V5a1 1 0 0 1 1-1Z M7 9l1.5 1.5L11 8 M13 9h4 M7 13h10');
-      icon.append(path);toggle.append(icon);toggle.type='button';toggle.title=t('manage');toggle.setAttribute('aria-label',t('manage'));toggle.setAttribute('aria-expanded','false');
-      toggle.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();actions.hidden=!actions.hidden;toggle.setAttribute('aria-expanded',String(!actions.hidden));if(!actions.hidden){const rect=toggle.getBoundingClientRect();actions.style.top=Math.min(rect.bottom+6,window.innerHeight-220)+'px';actions.style.left=Math.max(8,Math.min(rect.right-220,window.innerWidth-240))+'px';actions.querySelector('button:not(:disabled)')?.focus();}});
+      toggle.append(svgIcon('manage'));toggle.type='button';toggle.title=t('manage');toggle.setAttribute('aria-label',t('manage'));toggle.setAttribute('aria-expanded','false');
+      toggle.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();
+        if(!actions.hidden){closeMenus();return;}
+        closeMenus();applyTheme();actions.hidden=false;toggle.setAttribute('aria-expanded','true');
+        const rail=bar.classList.contains('cs-chatgpt-rail-toolbar');if(actions.hasAttribute('popover'))actions.showPopover?.();
+        const rect=toggle.getBoundingClientRect(),panel=actions.getBoundingClientRect().width||300,left=rail?(getComputedStyle(toggle).direction==='rtl'?rect.left-panel-8:rect.right+8):rect.right-panel;
+        actions.style.top=Math.max(8,Math.min(rail?rect.top:rect.bottom+6,window.innerHeight-(actions.offsetHeight||160)-8))+'px';actions.style.left=Math.max(8,Math.min(left,window.innerWidth-panel-8))+'px';input.focus();});
       bar.append(toggle);
     }
     bar.append(actions);
+    placeToolbar(root,bar);
+  }
+  function placeToolbar(root,bar){
+    const rail=site.id==='chatgpt'?[...document.querySelectorAll('[data-app-navigation-rail]')].find(visible):null;
+    let host=rail?.querySelector('[data-sidebar-destination]')?.parentElement;
+    if(host){while(host.parentElement&&host.parentElement!==rail)host=host.parentElement;}
+    if(host&&host!==rail){
+      if(!bar.classList.contains('cs-chatgpt-rail-toolbar')){
+        bar.previousElementSibling?.classList.remove('cs-heading-hover');bar.parentElement?.classList.remove('cs-chatgpt-heading');
+        bar.classList.remove('cs-at-heading');bar.classList.add('cs-chatgpt-rail-toolbar');
+        // The native scroll group uses a fade mask; the top layer keeps the menu outside that clipping area.
+        bar.querySelector('.cs-actions').setAttribute('popover','manual');
+      }
+      if(bar.parentElement!==host)host.append(bar);
+      return;
+    }
+    if(bar.classList.contains('cs-chatgpt-rail-toolbar')){
+      closeMenus();bar.classList.remove('cs-chatgpt-rail-toolbar');bar.hidden=false;
+    }
     const headings=[...root.querySelectorAll('h2,h3,[role="heading"],button')].filter(node=> /^(聊天|聊天記錄|聊天记录|最近|最近使用|最近的聊天|Recent|Recent chats|Chats|Chats and tasks|Recents|Your chats|Discussions|Vos discussions|チャット|チャット履歴|Чаты|Ваши чаты|历史会话|歷史會話|Chat History|История чатов|Historique des discussions|对话|對話|Conversations|All chats|全部对话|全部聊天|所有对话|所有對話|Tous les chats|すべてのチャット|Все чаты)$/i.test((node.querySelector('[data-group-name]')?.textContent||node.textContent).trim()));
     // Kimi's section header keeps its title (a collapse button or a plain div) beside a "view all" action.
     // Qwen's "All chats" section header is div.list-folder > … > div.folder-button holding .folder-name and the chevron
     // (the React prop id="finsh" never reaches the DOM); the icon goes right after the name, on that row.
     const qwenHeader=site.id==='qwen'?root.querySelector('.list-folder .folder-button'):null;
-    const heading=site.id==='gemini'?root.querySelector('[aria-controls="sidenav-section-content-chats"]'):site.id==='kimi'?(root.querySelector('.next-sidebar-section:has(.next-sidebar-history-list) .next-sidebar-section__title')||headings.find(node=>!own(node))):site.id==='qwen'?(qwenHeader||headings.find(node=>!own(node))):headings.find(node=>!own(node));
+    const chatgptHeading=site.id==='chatgpt'?root.querySelector('[data-app-action-sidebar-section-heading="Recents"] [data-app-action-sidebar-section-toggle]'):null;
+    // Claude may group recents by date. Prefer its first recent label, leaving the pinned header alone.
+    const claudeHeading=site.id==='claude'?(headings.find(node=>!own(node))||root.querySelector('[data-row-key^="label:"] [data-group-toggle]')||root.querySelector('[data-group-toggle]')):null;
+    const heading=chatgptHeading||claudeHeading||(site.id==='gemini'?root.querySelector('[aria-controls="sidenav-section-content-chats"]'):site.id==='kimi'?(root.querySelector('.next-sidebar-section:has(.next-sidebar-history-list) .next-sidebar-section__title')||headings.find(node=>!own(node))):site.id==='qwen'?(qwenHeader||headings.find(node=>!own(node))):headings.find(node=>!own(node)));
     if(heading&&site.id==='qwen'&&heading===qwenHeader){heading.classList.add('cs-heading-hover','cs-heading-row');const name=heading.querySelector('.folder-name');if(name)name.insertAdjacentElement('afterend',bar);else heading.append(bar);bar.classList.add('cs-at-heading');}
-    else if(heading) { const host=heading.closest('button,a')||heading;host.classList.add('cs-heading-hover');if(site.id==='gemini')host.parentElement.classList.add('cs-gemini-heading');if(site.id==='kimi')host.parentElement.classList.add('cs-heading-row');host.insertAdjacentElement('afterend',bar);bar.classList.add('cs-at-heading'); }
+    else if(heading) { const host=heading.closest('button,a')||heading;host.classList.add('cs-heading-hover');if(site.id==='gemini')host.parentElement.classList.add('cs-gemini-heading');if(site.id==='kimi')host.parentElement.classList.add('cs-heading-row');if(chatgptHeading)host.parentElement.classList.add('cs-chatgpt-heading');if(site.id==='claude'&&host.matches('[data-group-toggle]'))host.parentElement.classList.add('cs-claude-heading');if(host.nextElementSibling!==bar)host.insertAdjacentElement('afterend',bar);bar.classList.add('cs-at-heading'); }
     else { const first=items().find(item=>root.contains(item.link));if(first){let container=first.link.closest('ol,ul');if(!container||!root.contains(container))container=first.link.parentElement;container.before(bar);}else root.prepend(bar); }
   }
   function scan() {
@@ -156,6 +257,13 @@
     grokHistory?.render();
     botsController?.update(settings);
     archiveManager?.scan();
+    if(site.id==='chatgpt'){
+      // Virtualized listitems can be reused for an unrelated conversation or work task.
+      document.querySelectorAll(chatgptRow+'.cs-deleted-row').forEach(row=>{if(!deleted.has(rowId(row)))row.classList.remove('cs-deleted-row');});
+      for(const box of document.querySelectorAll(chatgptRow+' .cs-checkbox'))if(rowId(box.parentElement)!==box.dataset.csId){
+        const row=box.parentElement;row.classList.remove('cs-chat-link','cs-chatgpt-row','cs-dynamic','cs-selected','cs-wave-active','cs-match');row.style.removeProperty('--cs-wave');box.remove();
+      }
+    }
     // Row identities are resolved by items(); hide afterwards so freshly rendered Qwen rows are recognized.
     const found=items();
     hideDeleted();
@@ -169,6 +277,7 @@
         item.link.prepend(box);
       }
       item.link.classList.add('cs-chat-link');
+      item.link.classList.toggle('cs-chatgpt-row',site.id==='chatgpt'&&!!item.link.closest(chatgptRow));
       const search=site.id==='grok'&&!!item.link.closest('[cmdk-list]');
       item.link.classList.toggle('cs-grok-search-link',search);
       if(search)item.link.closest('[cmdk-item]')?.classList.add('cs-grok-result');
@@ -179,11 +288,12 @@
     const parents=roots().filter(root=>found.some(item=>root.contains(item.link)));
     for(const root of parents.filter(root=>!parents.some(other=>other!==root&&other.contains(root))))toolbar(root);
     grokHistory?.render();
+    if(filterQuery.trim())applyFilter(filterQuery);
     sync();applyTheme();watch();queueWave();
   }
   function schedule(){if(expired||scheduled)return;scheduled=true;setTimeout(()=>{scheduled=false;scan();},80);}
-  function watch(){if(expired)return;observer?.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['href','hidden','aria-hidden','aria-expanded','class']});}
-  function cleanup(){document.querySelectorAll('.cs-gemini-heading,.cs-heading-row').forEach(n=>n.classList.remove('cs-gemini-heading','cs-heading-row'));document.querySelectorAll('.cs-grok-result').forEach(n=>n.classList.remove('cs-grok-result'));document.querySelectorAll('.cs-grok-search-link').forEach(n=>n.classList.remove('cs-grok-search-link'));document.querySelectorAll('.cs-heading-hover').forEach(node=>node.classList.remove('cs-heading-hover'));document.querySelectorAll('[data-cs-owned]').forEach(node=>node.remove());document.querySelectorAll('.cs-chat-link').forEach(node=>{node.classList.remove('cs-chat-link','cs-dynamic','cs-selected','cs-wave-active');node.style.removeProperty('--cs-wave');});}
+  function watch(){if(expired)return;observer?.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['href','hidden','aria-hidden','aria-expanded','class','data-sidebar-chatgpt-conversation-key','aria-label']});}
+  function cleanup(){clearTimeout(filterTimer);filterQuery='';matches=[];document.querySelectorAll('.cs-match').forEach(n=>n.classList.remove('cs-match'));document.querySelectorAll('.cs-gemini-heading,.cs-heading-row,.cs-chatgpt-heading,.cs-claude-heading').forEach(n=>n.classList.remove('cs-gemini-heading','cs-heading-row','cs-chatgpt-heading','cs-claude-heading'));document.querySelectorAll('.cs-grok-result').forEach(n=>n.classList.remove('cs-grok-result'));document.querySelectorAll('.cs-grok-search-link').forEach(n=>n.classList.remove('cs-grok-search-link'));document.querySelectorAll('.cs-heading-hover').forEach(node=>node.classList.remove('cs-heading-hover'));document.querySelectorAll('[data-cs-owned]').forEach(node=>node.remove());document.querySelectorAll('.cs-chat-link').forEach(node=>{node.classList.remove('cs-chat-link','cs-chatgpt-row','cs-dynamic','cs-selected','cs-wave-active');node.style.removeProperty('--cs-wave');});}
   function confirmDelete(action='delete'){
     if(!contextAlive())return;
     if(!selected.size||document.querySelector('.cs-confirm'))return;
@@ -203,10 +313,10 @@
   }
   const deleted = new Set();
   function hideDeleted() {
-    const links=qwenRows?[...document.querySelectorAll(site.roots+' a.chat-item-drag-link')]:[...document.querySelectorAll(rootSelector().split(',').map(root=>root+' a[href]').join(','))];
+    const links=qwenRows?[...document.querySelectorAll(site.roots+' a.chat-item-drag-link')]:[...new Set([...document.querySelectorAll(rootSelector())].flatMap(rowNodes))];
     for(const link of links) {
       if(!deleted.has(rowId(link)))continue;
-      let row=link.closest('.cs-grok-result')||(qwenRows?link.closest('.chat-item-drag'):null)||link;
+      let row=(site.id==='chatgpt'?link.closest(chatgptRow):null)||link.closest('.cs-grok-result')||(qwenRows?link.closest('.chat-item-drag'):null)||link;
       const parent=link.parentElement;
       if(row===link&&parent && !parent.matches('nav,aside,ul,ol,#history') && parent.querySelectorAll('a[href]').length===1 && !parent.querySelector('.cs-toolbar')) row=parent;
       row.classList.add('cs-deleted-row');
@@ -276,8 +386,8 @@
   document.addEventListener('pointerleave',()=>{pointer=null;queueWave();});
   window.addEventListener('blur',()=>{pointer=null;queueWave();});
   document.addEventListener('scroll',()=>{queueWave();},true);
-  document.addEventListener('click',event=>{if(event.target.closest?.('.cs-toolbar'))return;document.querySelectorAll('.cs-actions').forEach(n=>n.hidden=true);document.querySelectorAll('.cs-toggle').forEach(n=>n.setAttribute('aria-expanded','false'));});
-  document.addEventListener('keydown',event=>{if(event.key==='Escape'){document.querySelectorAll('.cs-actions').forEach(n=>n.hidden=true);document.querySelectorAll('.cs-toggle[aria-expanded="true"]').forEach(n=>{n.setAttribute('aria-expanded','false');n.focus();});} });
+  document.addEventListener('click',event=>{if(event.target.closest?.('.cs-toolbar,.cs-confirm,.cs-move,.cs-archive-manager'))return;closeMenus();});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'){const open=document.querySelector('.cs-toggle[aria-expanded="true"]');closeMenus();open?.focus();} });
   // Prevent parent React link handlers, while preserving the checkbox's native toggle.
   document.addEventListener('click',event=>{if(event.target.matches?.('.cs-checkbox')){event.stopPropagation();const box=event.target;if(!busy){box.checked?selected.set(box.dataset.csId,items().find(item=>item.id===box.dataset.csId)?.title||''):selected.delete(box.dataset.csId);sync();}}},true);
   const botsController=site.id==='grok'&&globalThis.ChatTidyBots?ChatTidyBots.create():null;
@@ -289,7 +399,7 @@
     if(busy){notice(t('apiError')+' (busy)');return;}
     if(!sameWorkspace()){sync();notice(t('apiError')+' (workspace-changed)');return;}
     void runBatch(snapshot,approved,'move',target);}}):null;
-  function restoreRows(ids){for(const id of ids)deleted.delete(id);qwenRows?.unforget(ids);document.querySelectorAll('.cs-deleted-row').forEach(row=>{const link=row.matches('a')?row:row.querySelector('a');const id=link&&rowId(link);if(id&&!deleted.has(id))row.classList.remove('cs-deleted-row');});schedule();}
+  function restoreRows(ids){for(const id of ids)deleted.delete(id);qwenRows?.unforget(ids);document.querySelectorAll('.cs-deleted-row').forEach(row=>{const link=row.matches('a,'+chatgptRow)?row:row.querySelector('a');const id=link&&rowId(link);if(id&&!deleted.has(id))row.classList.remove('cs-deleted-row');});schedule();}
   const managerOptions=()=>({t,site,canRun:()=>!expired&&settings.enabled,onCompleted:(ids,action)=>{if(action==='restore')restoreRows(ids);}});
   let archiveManager=hasManager&&globalThis.ChatTidyArchive?ChatTidyArchive.create(managerOptions()):null;
   chrome.runtime.onMessage.addListener((message,sender,reply)=>{if(message?.type==='cs-site'&&sender.id===chrome.runtime.id){reply({site:site.id});}if(message?.type==='cs-open-archive'&&sender.id===chrome.runtime.id&&archiveManager){void archiveManager.open();reply({ok:true});}return false;});
@@ -307,7 +417,7 @@
         if(record.type==='attributes'){
           if(record.attributeName!=='class')return true;
           // Ignore our wave/selection class updates; repair only missing row markers.
-          const link=record.target,box=link.matches?.('a')&&link.querySelector('.cs-checkbox');
+          const link=record.target,box=link.matches?.('a,[role="button"]')&&link.querySelector('.cs-checkbox');
           return box && (!link.classList.contains('cs-chat-link') ||
             link.classList.contains('cs-dynamic')!==(!link.classList.contains('cs-grok-search-link')&&settings.checkboxMode!=='always') ||
             link.classList.contains('cs-selected')!==selected.has(box.dataset.csId));

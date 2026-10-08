@@ -423,5 +423,20 @@
         "example": "3"
       }
     }
+  },
+  "filterPlaceholder": {
+    "message": "Filtrer par titre…"
+  },
+  "selectMatches": {
+    "message": "Sélectionner $N$",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveShort": {
+    "message": "Déplacer"
   }
 }

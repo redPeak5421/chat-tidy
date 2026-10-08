@@ -45,3 +45,8 @@ test('Claude Cowork IDs are case-sensitive and scoped to Cowork routes',()=>{
  assert.equal(api.chatId('/cowork/'+id,'https://grok.com'),null);
  assert.equal(api.chatId('/chat/'+id,'https://claude.ai'),null);
 });
+test('title match is trimmed, case-insensitive and empty for a blank query',()=>{
+ const items=[{id:'a',title:'Test plan'},{id:'b',title:'Recipe'},{id:'c',title:'unit TEST'}];
+ assert.deepEqual([...api.match(items,'  test ')].map(item=>item.id),['a','c']);
+ assert.equal(api.match(items,'   ').length,0);assert.equal(api.match(items,'zzz').length,0);
+});

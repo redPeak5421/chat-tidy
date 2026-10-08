@@ -4,15 +4,17 @@ English | [简体中文](README.zh-CN.md)
 
 A browser extension for selecting and bulk-managing ChatGPT, Claude, Grok, Gemini, Kimi and Qwen conversations from the sidebar.
 
+1.10.5 supports the redesigned ChatGPT, Claude and Grok sidebars, adds title filtering and keeps the management menu open after actions. The redesigned ChatGPT management entry appears in the application navigation rail below Explore. In hidden mode it appears while chats are selected or its menu is open; always-visible mode keeps it available. Conversation buttons, rerenders, recycled rows and legacy chat links remain supported.
+
 ## Install
 
 In Chrome or another Chromium browser, enable Developer mode on the extensions page and load this directory as an unpacked extension. Refresh the website after installing or updating.
 
 ## Usage
 
-Select chats and open the management menu beside the chat heading. Clear, invert or select all loaded chats, then review and confirm deletion once. Scroll the sidebar to load more chats. Chat Tidy uses each website’s native deletion behavior and cannot undo it. Grok uses its native soft-delete operation.
+Select chats and open the management menu in the application navigation rail on redesigned ChatGPT, beside the first recent-group collapse heading on Claude, or beside the chat heading on other layouts. Clear, invert or select all loaded chats; the menu stays open after actions so you can select all and then delete directly. Close it with the management icon, an outside click or Escape. Review and confirm deletion once. Type in the filter box at the top of the menu to highlight loaded chats whose titles match, then press Enter or “Select” to add them to the selection. Scroll the sidebar to load more chats. Chat Tidy uses each website’s native deletion behavior and cannot undo it. Grok uses its native soft-delete operation.
 
-The popup provides an enable switch, checkbox visibility, deletion concurrency and six languages: English, 简体中文, 繁體中文, Français, 日本語 and Русский. Hidden checkboxes appear when the pointer approaches the left edge. Selected and keyboard-focused rows remain visible.
+The popup provides an enable switch, checkbox visibility, deletion concurrency and six languages: English, 简体中文, 繁體中文, Français, 日本語 and Русский. Hidden checkboxes appear when the pointer approaches the left edge. Selected and keyboard-focused rows remain visible. The redesigned ChatGPT rail entry appears only in always-visible mode or while chats are selected. On other layouts, the management icon beside the heading follows the same setting: always shown when checkboxes are shown; otherwise it appears on hover and stays visible while any chat is selected.
 
 ChatGPT and Grok support 1–3 concurrent deletion requests. Claude sends same-origin requests from the initiating page to the website’s native bulk-delete endpoint, with up to 20 selected chats per request and a 500 ms interval between groups; the concurrency setting applies to ChatGPT and Grok. A 403 stops immediately without retries or alternate endpoints. Rate limits stop the batch, start a cooldown and reduce concurrency. Stop prevents pending requests; requests already sent cannot be recalled. Keep the initiating page open until processing ends.
 

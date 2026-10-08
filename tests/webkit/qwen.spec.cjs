@@ -36,7 +36,7 @@ test('Qwen rows are mapped from the site list and deletion targets only the chec
 test('Qwen move picker offers projects and adds the selection through the native batch endpoint',async({page,context})=>{
  const requests=[];await boot(page,context,{requests});
  await expect(page.locator('.cs-checkbox')).toHaveCount(2);
- await page.locator('.cs-toggle').click();await page.locator('[data-cs-action="all"]').click();await page.locator('.cs-toggle').click();await page.locator('[data-cs-action="move"]').click();
+ await page.locator('.cs-toggle').click();await page.locator('[data-cs-action="all"]').click();await expect(page.locator('.cs-actions')).toBeVisible();await page.locator('[data-cs-action="move"]').click();
  const dialog=page.locator('.cs-move');await expect(dialog).toBeVisible();await expect(dialog).toContainText('Research');
  await dialog.locator('input[value="proj-1"]').check();await dialog.locator('[data-cs-move-confirm]').click();
  await expect.poll(()=>requests.filter(r=>r.path==='/api/v2/projects/add_chat').length).toBe(1);

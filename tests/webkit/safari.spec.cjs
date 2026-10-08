@@ -20,7 +20,7 @@ test('selection, native modal, same-origin deletion and progress work without a 
  await expect(page.locator('.cs-checkbox')).toHaveCount(2);
  if(info.project.name==='desktop')await page.locator('nav h2').hover();
  await page.locator('.cs-toggle').click();await page.locator('[data-cs-action="all"]').click();
- await page.locator('.cs-toggle').click();await page.locator('[data-cs-action="delete"]').click();
+ await expect(page.locator('.cs-actions')).toBeVisible();await page.locator('[data-cs-action="delete"]').click();
  await expect(page.locator('dialog')).toBeVisible();expect(calls).toHaveLength(0);
  await page.locator('[data-cs-confirm]').click();await expect(page.locator('.cs-status')).toContainText('Removed 2');
  expect(calls.map(c=>c.path)).toEqual(['/api/auth/session',...ids.map(id=>'/backend-api/conversation/'+id)]);

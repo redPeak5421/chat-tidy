@@ -423,5 +423,20 @@
         "example": "3"
       }
     }
+  },
+  "filterPlaceholder": {
+    "message": "Фильтр по названию…"
+  },
+  "selectMatches": {
+    "message": "Выбрать $N$",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "moveShort": {
+    "message": "Переместить"
   }
 }
