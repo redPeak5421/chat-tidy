@@ -9,8 +9,17 @@ globalThis.ChatTidyCore = (() => {
     // Kimi renders history and pinned rows as RouterLink anchors inside the "next-sidebar" sections.
     'https://www.kimi.com': Object.freeze({id:'kimi',name:'Kimi',origin:'https://www.kimi.com',route:'/chat/',roots:'[class*="next-sidebar"]:has(.next-sidebar-history-list),.next-sidebar-history-list,.next-sidebar-pinned-list'}),
     // Qwen sidebar rows carry no href; src/qwen.js maps them to chat IDs before selection runs.
-    'https://chat.qwen.ai': Object.freeze({id:'qwen',name:'Qwen',origin:'https://chat.qwen.ai',route:'/c/',roots:'#sidebar .session-list'})
+    'https://chat.qwen.ai': Object.freeze({id:'qwen',name:'Qwen',origin:'https://chat.qwen.ai',route:'/c/',roots:'#sidebar .session-list'}),
+    // Z.ai rows are href-less buttons in .AgentChatList; src/zai.js maps them. The root is the "Recent" panel holding label and list.
+    'https://chat.z.ai': Object.freeze({id:'zai',name:'Z.ai',origin:'https://chat.z.ai',route:'/c/',roots:'#sidebar div:has(>div>.AgentChatList),#sidebar .AgentChatList'})
   });
+  // One schema for every stored preference. Language is absent: its default follows the browser through ChatTidyI18n.
+  const settings = Object.freeze({enabled:true,theme:'system',checkboxMode:'dynamic',concurrency:5,hideSupport:false,grokShowAll:false,grokHideBots:false,grokCollapseBots:false});
+  // The only accepted requests-in-flight values; anything else stored (such as the old default 2) means the default.
+  const concurrencyOptions = Object.freeze([1,3,5,10,15]);
+  // Native features per site. Claude archives only Cowork tasks; the archived-chats manager also restores. Kimi, Gemini, Grok and Z.ai only delete.
+  const features = Object.freeze({archive:['chatgpt','claude','qwen'],manager:['chatgpt','qwen'],move:['chatgpt','claude','qwen']});
+  function supports(site, feature) { return !!features[feature]?.includes(typeof site === 'string' ? site : site?.id); }
   function siteForUrl(value) {
     try { return sites[new URL(value).origin] || null; } catch { return null; }
   }
@@ -40,5 +49,25 @@ globalThis.ChatTidyCore = (() => {
     if (!needle) return [];
     return items.filter(item => String(item.title || '').toLocaleLowerCase().includes(needle));
   }
-  return {chatId, select, match, siteForUrl, isCoworkId};
+  // Retry-After as delay-seconds or an HTTP date, in milliseconds; undefined when absent or unreadable.
+  function retryAfterMs(value, now = Date.now()) {
+    const text = String(value ?? '').trim();
+    if (!text) return undefined;
+    if (/^\d+(\.\d+)?$/.test(text)) return Number(text) * 1000;
+    const date = /[a-z]/i.test(text) ? Date.parse(text) : NaN;
+    return Number.isFinite(date) ? Math.max(0, date - now) : undefined;
+  }
+  // The error batch requests and the Gemini, Kimi, Qwen and Z.ai clients throw for a non-2xx answer. A 429 carries the server's own window (retryAfter)
+  // and the cooldown written when a batch stops (retryAt, never under a minute).
+  function httpError(response) {
+    const status = response.status;
+    const error = Error(status === 401 ? 'login' : status === 403 ? 'forbidden' : status === 429 ? 'rate-limit' : 'http-' + status);
+    if (status === 429) {
+      const ms = retryAfterMs(response.headers?.get('Retry-After'));
+      if (ms !== undefined) error.retryAfter = ms;
+      error.retryAt = Date.now() + Math.max(60000, error.retryAfter || 0);
+    }
+    return error;
+  }
+  return {chatId, select, match, siteForUrl, isCoworkId, settings, concurrencyOptions, supports, retryAfterMs, httpError};
 })();

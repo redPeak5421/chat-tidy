@@ -33,3 +33,41 @@ test('Grok localized Bots in the new sidebar use the native collapse control and
  await page.evaluate(()=>change({grokHideBots:{newValue:true}},'local'));await expect(page.locator('#bots')).toBeHidden();await expect(page.locator('#chats')).toBeVisible();
  await page.evaluate(()=>change({enabled:{newValue:false}},'local'));await expect(page.locator('#bots')).toBeVisible();await expect(page.locator('#bots ul')).toBeVisible();
 });
+test('left-edge hover wave lights rows in a real layout and stays silent while the pointer is over the page',async({page,context})=>{
+ await context.route('https://claude.ai/**',route=>route.fulfill({contentType:'text/html',body:`<meta charset="utf-8"><style>body{margin:0;display:flex;font:14px system-ui}[data-testid=sidebar]{width:288px;padding:12px;box-sizing:border-box}[data-testid=sidebar] a{height:40px;display:flex;align-items:center}main{flex:1;height:600px}</style><div data-testid="sidebar"><h2>Recents</h2>${['1','2','3'].map(n=>`<div><a href="/chat/${id(n)}">Chat ${n}</a></div>`).join('')}</div><main>Page</main>`}));
+ await page.goto('https://claude.ai/');
+ await page.evaluate(()=>{globalThis.chrome={storage:{local:{get:async d=>({...d,language:'en',checkboxMode:'dynamic'})},onChanged:{addListener(){}}},runtime:{id:'test',onMessage:{addListener(){}}}};globalThis.ChatTidyBatch={cancel(){},run(){throw Error('no chat operations');}};});
+ for(const f of ['core','i18n','content'])await page.addScriptTag({path:`src/${f}.js`});
+ await page.addStyleTag({path:'src/content.css'});
+ await expect(page.locator('.cs-dynamic')).toHaveCount(3);
+ const box=await page.locator('.cs-chat-link').nth(1).boundingBox();
+ await page.mouse.move(box.x+10,box.y+box.height/2);
+ await expect(page.locator('.cs-chat-link').nth(1)).toHaveClass(/cs-wave-active/);
+ await page.mouse.move(700,300);
+ await expect(page.locator('.cs-wave-active')).toHaveCount(0);
+ await page.evaluate(()=>{globalThis.waveWrites=0;new MutationObserver(r=>{globalThis.waveWrites+=r.length;}).observe(document.querySelector('[data-testid=sidebar]'),{subtree:true,attributes:true});});
+ for(const x of [720,760,800])await page.mouse.move(x,320);
+ await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+ expect(await page.evaluate(()=>globalThis.waveWrites)).toBe(0);
+ await page.mouse.move(box.x+10,box.y+box.height/2);
+ await expect(page.locator('.cs-chat-link').nth(1)).toHaveClass(/cs-wave-active/);
+});
+for(const scheme of ['light','dark'])test(`Claude recents icon matches the native 24px filter button without growing the row (${scheme})`,async({page,context})=>{
+ await page.emulateMedia({colorScheme:scheme});
+ await context.route('https://claude.ai/**',route=>route.fulfill({contentType:'text/html',body:`<meta charset="utf-8"><style>:root{--cds-fill-ghost-hover:${scheme==='dark'?'#ffffff13':'#0000000d'}}body{margin:0;font:14px system-ui;background:${scheme==='dark'?'#1f1e1d':'#faf9f7'};color:${scheme==='dark'?'#eee':'#222'}}[data-testid=sidebar]{width:288px;padding:12px;box-sizing:border-box}[data-row-key]{--df-row-h:32px}.labelrow{display:flex;align-items:center;padding:0 4px 4px 10px;line-height:16px}.labelrow h3{display:flex;flex:1;min-width:0;margin:0;font:inherit}.labelrow [data-group-toggle]{display:flex;flex:1;margin:-4px 0 -4px -4px;padding:4px 0 4px 4px;height:28px;border:0;background:none;font:inherit;color:inherit}.filter{display:flex;align-items:center;justify-content:center;width:24px;height:24px;margin:-4px 0 -4px 4px;padding:0;border:0;border-radius:6px;background:none;color:inherit}.native-row a{height:32px;display:flex;align-items:center}</style><div data-testid="sidebar"><div data-row-key="label:recents"><div data-sidebar-group-label class="labelrow"><h3><button data-group-toggle><span data-group-name>Recents</span></button></h3><div><button class="filter" aria-label="Filter">≡</button></div></div></div><div class="native-row"><a href="/chat/${id('1')}">Example one</a></div></div>`}));
+ await page.goto('https://claude.ai/');
+ const before=(await page.locator('[data-row-key="label:recents"]').boundingBox()).height;
+ await page.evaluate(()=>{globalThis.chrome={storage:{local:{get:async d=>({...d,language:'en',checkboxMode:'always'})},onChanged:{addListener(){}}},runtime:{id:'test',onMessage:{addListener(){}}}};globalThis.ChatTidyBatch={cancel(){},run(){throw Error('no chat operations');}};});
+ for(const f of ['core','i18n','content'])await page.addScriptTag({path:`src/${f}.js`});
+ await page.addStyleTag({path:'src/content.css'});
+ const toggle=page.locator('.cs-toggle');await expect(toggle).toBeVisible();
+ const t=await toggle.boundingBox(),f=await page.locator('.filter').boundingBox(),svg=await toggle.locator('svg').boundingBox();
+ expect((await page.locator('[data-row-key="label:recents"]').boundingBox()).height).toBe(before);
+ expect([t.width,t.height]).toEqual([24,24]);expect([svg.width,svg.height]).toEqual([16,16]);
+ expect(Math.abs((t.y+t.height/2)-(f.y+f.height/2))).toBeLessThan(1);expect(Math.round(f.x-(t.x+t.width))).toBe(4);
+ expect(await toggle.evaluate(n=>getComputedStyle(n).borderRadius)).toBe('6px');
+ // The stylesheet lands after the script here, so let the background transition settle first.
+ await expect.poll(()=>toggle.evaluate(n=>getComputedStyle(n).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+ await toggle.hover();await expect.poll(()=>toggle.evaluate(n=>getComputedStyle(n).backgroundColor)).toBe(scheme==='dark'?'rgba(255, 255, 255, 0.075)':'rgba(0, 0, 0, 0.05)');
+ await page.mouse.move(600,500);await expect.poll(()=>toggle.evaluate(n=>getComputedStyle(n).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+});

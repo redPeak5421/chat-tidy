@@ -1,16 +1,16 @@
 # Chat Tidy Privacy Policy / 隐私政策
-Effective date: 2026-09-21
+Effective date: 2026-10-26
 
 Chat Tidy is an independent browser extension for organizing conversations on supported AI chat websites. It is not affiliated with the supported services.
 
 ## Data handled and purpose
-Chat Tidy temporarily reads conversation titles, identifiers, timestamps and workspace/task metadata to display selection controls, history and confirmation dialogs. It uses the user's existing authenticated session, including temporary authentication responses or tokens where required, to load history and perform user-requested deletion (after confirmation), native archiving, restoration, or project/group creation and moves where supported. It does not persist conversation contents or login credentials, nor build a browsing history or activity profile.
+Chat Tidy temporarily reads conversation titles, identifiers, timestamps and workspace/task metadata to display selection controls, history and confirmation dialogs. It uses the user's existing authenticated session, including temporary authentication responses or tokens where required, to load history and perform user-requested deletion (after confirmation), native archiving, restoration, or project/group creation and moves where supported. Several deletion requests may be sent at the same time (1, 3, 5, 10 or 15, chosen by the user); this changes only how fast requests are sent, not which data is handled. It does not persist conversation contents or login credentials, nor build a browsing history or activity profile.
 
 ## Storage and retention
 Preferences (language, enabled status, checkbox visibility, appearance, concurrency and optional sidebar settings) and rate-limit cooldown timestamps are stored locally through Chrome extension storage until changed or removed. Uninstalling removes this extension storage. Selections and loaded history metadata remain in temporary page/extension memory and are cleared when the relevant page or context closes or reloads. Already-sent requests cannot be recalled by stopping or uninstalling.
 
 ## Transmission
-Selected identifiers and necessary authentication are sent over HTTPS only to the corresponding service at chatgpt.com, claude.ai, grok.com, gemini.google.com, www.kimi.com or chat.qwen.ai for the requested operation. The extension has no developer-operated backend, analytics or advertising and does not send chat data to the developer. These services process requests under their own policies; deletion does not guarantee immediate erasure from all of their systems.
+Selected identifiers and necessary authentication are sent over HTTPS only to the corresponding service at chatgpt.com, claude.ai, grok.com, gemini.google.com, www.kimi.com, chat.qwen.ai or chat.z.ai for the requested operation. The extension has no developer-operated backend, analytics or advertising and does not send chat data to the developer. These services process requests under their own policies; deletion does not guarantee immediate erasure from all of their systems.
 
 ## Optional support pages
 Only after a user chooses a support link, the extension opens Afdian in a new tab or an extension support tab containing the official Ko-fi page in a cross-origin iframe. These websites and their payment providers may process network identifiers, cookies and information entered by the user under their own policies. Chat Tidy does not read payment fields, collect financial details, or pass chat data or chat-service credentials to these pages. Supporting the project is optional and does not unlock extension functionality.

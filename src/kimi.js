@@ -17,9 +17,7 @@ globalThis.ChatTidyKimi=(()=>{
  }
  async function checked(response){
   if(response.ok)return response;
-  const e=Error(response.status===429?'rate-limit':response.status===401?'login':response.status===403?'forbidden':'http-'+response.status);
-  if(response.status===429)e.retryAt=Date.now()+Math.max(60000,Number(response.headers?.get('Retry-After'))*1000||0);
-  throw e;
+  throw ChatTidyCore.httpError(response);
  }
  function acknowledge(body){
   // DeleteChatResponse is an empty message; Connect errors carry a code and never arrive with HTTP 200.
@@ -34,5 +32,5 @@ globalThis.ChatTidyKimi=(()=>{
   let body;try{body=await response.json();}catch{throw Error('unexpected-response');}
   acknowledge(body);
  }
- return {session,headers,remove,acknowledge};
+ return {session,remove,acknowledge};
 })();

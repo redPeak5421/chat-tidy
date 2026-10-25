@@ -50,3 +50,9 @@ test('title match is trimmed, case-insensitive and empty for a blank query',()=>
  assert.deepEqual([...api.match(items,'  test ')].map(item=>item.id),['a','c']);
  assert.equal(api.match(items,'   ').length,0);assert.equal(api.match(items,'zzz').length,0);
 });
+test('Retry-After parses delay seconds and HTTP dates into milliseconds',()=>{
+ const now=Date.parse('2026-10-25T00:00:00Z');
+ assert.equal(api.retryAfterMs('12',now),12000);assert.equal(api.retryAfterMs(' 0 ',now),0);assert.equal(api.retryAfterMs('1.5',now),1500);
+ assert.equal(api.retryAfterMs('Sun, 25 Oct 2026 00:01:30 GMT',now),90000);assert.equal(api.retryAfterMs('Sat, 24 Oct 2026 00:00:00 GMT',now),0);
+ for(const bad of [null,undefined,'','-5','soon','12s'])assert.equal(api.retryAfterMs(bad,now),undefined,String(bad));
+});

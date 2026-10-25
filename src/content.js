@@ -5,7 +5,7 @@
   const core = ChatTidyCore, i18n = ChatTidyI18n;
   const site=core.siteForUrl(location.href);
   if(!site)return;
-  let settings = {enabled:true,theme:'system',grokHideBots:false,grokCollapseBots:false,grokShowAll:false,checkboxMode:'dynamic',language:i18n.browserLanguage()};
+  let settings = {...core.settings,language:i18n.browserLanguage()};
   function organizationId(){
     if(site.id!=='claude')return null;
     const value=document.cookie.split(';').map(part=>part.trim()).find(part=>part.startsWith('lastActiveOrg='))?.slice(14);
@@ -13,6 +13,8 @@
   }
   let selectionOrganization=organizationId();
   const selected = new Map();
+  // The row element each chat was ticked on. Mapped sites (Qwen, Z.ai) only act when that very element still carries the ID.
+  const pickedRows = new Map();
   function sameWorkspace(){
     const current=organizationId();
     if(current===selectionOrganization)return true;
@@ -21,7 +23,7 @@
     return false;
   }
   let expired=false;
-  let busy = false, stopped = false, scheduled = false, observer;
+  let busy = false, scheduled = false, observer;
   const t = (key,vars) => i18n.t(settings.language,key,vars);
   const own = node => node?.nodeType === 1 && (node.matches('[data-cs-owned]') || node.closest('[data-cs-owned]'));
   function el(tag,className,text) { const node=document.createElement(tag); if(className)node.className=className; if(text!==undefined)node.textContent=text; return node; }
@@ -43,12 +45,14 @@
   const searchSelector='[role="dialog"] [cmdk-list]';
   // Sites whose sidebar sits inside <main> declare precise roots; the others exclude main content wholesale.
   const scopedRoots=['gemini','kimi','qwen'].includes(site.id);
-  const canArchive=['chatgpt','claude','qwen'].includes(site.id);
-  const hasManager=['chatgpt','qwen'].includes(site.id);
+  const canArchive=core.supports(site,'archive');
+  const hasManager=core.supports(site,'manager');
   function rootSelector(){return site.id==='grok'?site.roots+','+searchSelector:site.roots;}
   function roots() { return [...document.querySelectorAll(rootSelector())].filter(node=>visible(node)&&(scopedRoots||!node.closest('main'))); }
-  // Qwen rows carry no href: the site module maps them to IDs from the website's own list.
+  // Qwen and Z.ai rows carry no href: the site module maps them to IDs from the website's own list.
   const qwenRows=site.id==='qwen'&&globalThis.ChatTidyQwen?ChatTidyQwen.create({changed:()=>schedule()}):null;
+  const zaiRows=site.id==='zai'&&globalThis.ChatTidyZai?ChatTidyZai.create({changed:()=>schedule()}):null;
+  const siteRows=qwenRows||zaiRows,siteApi=qwenRows?ChatTidyQwen:zaiRows?ChatTidyZai:null;
   const chatgptRow='[data-sidebar-chatgpt-conversation-key]';
   function rowId(link){
     const row=site.id==='chatgpt'&&link.closest(chatgptRow);
@@ -57,7 +61,7 @@
       const id=key?.match(/^chatgpt:conversation:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i)?.[1];
       return id?.toLowerCase()||null;
     }
-    return qwenRows?qwenRows.idOf(link):core.chatId(link.getAttribute('href'),site.origin);
+    return siteRows?siteRows.idOf(link):core.chatId(link.getAttribute('href'),site.origin);
   }
   function rowNodes(root){
     const links=[...root.querySelectorAll('a[href]')];
@@ -65,17 +69,20 @@
     // New app-shell rows navigate through a role=button; only the surrounding conversation key is authoritative.
     return [...links.filter(link=>!link.closest(chatgptRow)),...root.querySelectorAll(chatgptRow)].map(node=>node.matches(chatgptRow)?node.querySelector('[role="button"][aria-label],a[href]'):node).filter(Boolean);
   }
-  function items() {
+  function items(rootList) {
     const result=[],seen=new Set();
-    if(qwenRows){
-      for(const row of qwenRows.scan()){if(!visible(row.link))continue;result.push({id:row.id,title:row.title,link:row.link,root:row.link.closest(site.roots)||document.body});}
+    if(siteRows){
+      for(const row of siteRows.scan()){if(!visible(row.link))continue;result.push({id:row.id,title:row.title,link:row.link,root:row.link.closest(site.roots)||document.body});}
       return result;
     }
-    for(const root of roots()) for(const link of rowNodes(root)) {
-      if(seen.has(link)||!visible(link))continue;
-      seen.add(link);const id=rowId(link);if(!id)continue;
-      const clone=link.cloneNode(true);clone.querySelectorAll('[data-cs-owned],button').forEach(n=>n.remove());
-      const title=(link.getAttribute('aria-label')||clone.textContent||link.getAttribute('title')||'').trim();
+    for(const root of rootList||roots()) for(const link of rowNodes(root)) {
+      // The ID is a cheap attribute read; style and layout checks only run for real chat rows.
+      if(seen.has(link))continue;const id=rowId(link);if(!id){seen.add(link);continue;}
+      if(!visible(link))continue;seen.add(link);
+      // Our checkbox has no text, so cloning is only needed when native buttons or other owned nodes sit inside the row.
+      let text=link.getAttribute('aria-label');
+      if(!text){if(link.querySelector('button,[data-cs-owned]:not(input)')){const clone=link.cloneNode(true);clone.querySelectorAll('[data-cs-owned],button').forEach(n=>n.remove());text=clone.textContent;}else text=link.textContent;}
+      const title=(text||link.getAttribute('title')||'').trim();
       if(title)result.push({id,title,link,root});
     }
     return result;
@@ -115,6 +122,8 @@
   function coworkState(){const ids=[...selected.keys()];return {coworkOnly:site.id==='claude'&&ids.length>0&&ids.every(id=>core.isCoworkId(id)),mixed:site.id==='claude'&&ids.some(id=>core.isCoworkId(id))};}
   // Title filter state for the open menu; matches are recomputed on every scan while a query is active.
   let filterQuery='',matches=[],filterTimer=0;
+  // Titles from the last scan, so a checkbox click never re-reads the whole sidebar.
+  let titles=new Map();
   function applyFilter(query){
     filterQuery=query;const found=filterQuery.trim()?items():[];matches=core.match(found,filterQuery);
     const ids=new Set(matches.map(item=>item.id));
@@ -133,9 +142,8 @@
     const count=t('selected',{n:selected.size});
     document.querySelectorAll('.cs-toolbar').forEach(bar=>{
       bar.classList.toggle('cs-has-selection',selected.size>0);bar.classList.toggle('cs-always',settings.checkboxMode==='always');
-      const open=bar.querySelector('.cs-toggle')?.getAttribute('aria-expanded')==='true';
-      bar.hidden=bar.classList.contains('cs-chatgpt-rail-toolbar')&&settings.checkboxMode!=='always'&&!selected.size&&!open;
-      if(bar.hidden){const menu=bar.querySelector('.cs-actions');if(menu?.hasAttribute('popover'))menu.hidePopover?.();if(menu)menu.hidden=true;bar.querySelector('.cs-toggle')?.setAttribute('aria-expanded','false');}
+      // The rail entry stays visible in every checkbox mode: hidden checkboxes must not hide the one-click select-all menu.
+      bar.hidden=false;
     });
     document.querySelectorAll('.cs-count').forEach(node=>{if(node.textContent!==count)node.textContent=count;});
     document.querySelectorAll('.cs-checkbox').forEach(box=>{box.checked=selected.has(box.dataset.csId);box.disabled=busy;box.closest('.cs-chat-link')?.classList.toggle('cs-selected',box.checked);});
@@ -147,18 +155,18 @@
       if(action==='archive'&&site.id==='claude')button.hidden=!coworkOnly;
       if(action==='move'&&site.id==='claude')button.hidden=mixed;});
   }
-  // With an icon, label=false renders an icon-only button whose name moves to the tooltip.
+  // An icon button shows a short label (label overrides the key's text) and keeps the full name as its tooltip.
   function button(key,action,icon,label) {
     const b=el('button','cs-button');b.type='button';b.dataset.csAction=action;
     if(!icon)b.textContent=t(key);
-    else{b.append(svgIcon(icon));b.title=t(key);if(label===false){b.classList.add('cs-icon-button');b.setAttribute('aria-label',t(key));}else b.append(el('span','',t(label||key)));}
+    else{b.append(svgIcon(icon));b.title=t(key);b.append(el('span','',t(label||key)));}
     b.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();act(action);});return b;
   }
   function act(action) {
     if(!contextAlive()||busy)return;
     sameWorkspace();
     // Selecting matches keeps the panel open so the chosen action is one click away.
-    if(action==='matches'){for(const item of matches)selected.set(item.id,item.title);sync();return;}
+    if(action==='matches'){for(const item of matches){selected.set(item.id,item.title);pickedRows.set(item.id,item.link);}sync();return;}
     if(action==='archiveManager'){void archiveManager?.open();return;}
     const {coworkOnly,mixed}=coworkState();
     if(action==='move'){
@@ -167,11 +175,12 @@
     }
     if(action==='archive'&&site.id==='claude'&&!coworkOnly)return;
     if(action==='delete'||(action==='archive'&&canArchive))return confirmDelete(action);
-    core.select(selected,items(),action);sync();
+    const found=items(),before=new Set(selected.keys());core.select(selected,found,action);
+    for(const item of found)if(selected.has(item.id)&&!before.has(item.id))pickedRows.set(item.id,item.link);sync();
   }
-  function toolbar(root) {
+  function toolbar(root,found) {
     const existing=root.querySelector('.cs-toolbar')||(site.id==='chatgpt'?document.querySelector('.cs-chatgpt-rail-toolbar'):null);
-    if(existing){if(['chatgpt','claude'].includes(site.id))placeToolbar(root,existing);return;}
+    if(existing){if(['chatgpt','claude'].includes(site.id))placeToolbar(root,existing,found);return;}
     if(root.previousElementSibling?.classList.contains('cs-search-toolbar'))return;
     if(site.id==='grok'&&root.matches('[cmdk-list]')){
       const bar=el('div','cs-toolbar cs-search-toolbar');bar.dataset.csOwned='true';bar.setAttribute('role','group');bar.setAttribute('aria-label',t('manage'));
@@ -196,8 +205,10 @@
     const pick=el('button','cs-button cs-pick');pick.type='button';pick.dataset.csAction='matches';pick.hidden=true;
     pick.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();act('matches');});
     field.append(svgIcon('search'),input);filterRow.append(field,pick);
-    const selectRow=el('div','cs-select-row');selectRow.append(count);
-    for(const key of ['all','invert','clear'])selectRow.append(button(key,key,key,false));
+    // Count on its own line, then three labelled, equal-width selection buttons.
+    const selectRow=el('div','cs-select-row'),choices=el('div','cs-select-buttons');
+    for(const key of ['all','invert','clear'])choices.append(button(key,key,key));
+    selectRow.append(count,choices);
     const runRow=el('div','cs-run-row');
     for(const key of [...(canArchive?['archive']:[]),...(mover?['move']:[]),'delete']){
       const control=button(key==='move'?mover.label:key,key,key,key==='move'?'moveShort':undefined);
@@ -206,21 +217,18 @@
     }
     actions.append(filterRow,selectRow,runRow);
     if(hasManager){const section=el('div','cs-manager-section');section.append(button('archiveManager','archiveManager'));actions.append(section);}
-    {
-      actions.hidden=true;const toggle=el('button','cs-button cs-toggle');
-      toggle.append(svgIcon('manage'));toggle.type='button';toggle.title=t('manage');toggle.setAttribute('aria-label',t('manage'));toggle.setAttribute('aria-expanded','false');
-      toggle.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();
-        if(!actions.hidden){closeMenus();return;}
-        closeMenus();applyTheme();actions.hidden=false;toggle.setAttribute('aria-expanded','true');
-        const rail=bar.classList.contains('cs-chatgpt-rail-toolbar');if(actions.hasAttribute('popover'))actions.showPopover?.();
-        const rect=toggle.getBoundingClientRect(),panel=actions.getBoundingClientRect().width||300,left=rail?(getComputedStyle(toggle).direction==='rtl'?rect.left-panel-8:rect.right+8):rect.right-panel;
-        actions.style.top=Math.max(8,Math.min(rail?rect.top:rect.bottom+6,window.innerHeight-(actions.offsetHeight||160)-8))+'px';actions.style.left=Math.max(8,Math.min(left,window.innerWidth-panel-8))+'px';input.focus();});
-      bar.append(toggle);
-    }
-    bar.append(actions);
-    placeToolbar(root,bar);
+    actions.hidden=true;const toggle=el('button','cs-button cs-toggle');
+    toggle.append(svgIcon('manage'));toggle.type='button';toggle.title=t('manage');toggle.setAttribute('aria-label',t('manage'));toggle.setAttribute('aria-expanded','false');
+    toggle.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();
+      if(!actions.hidden){closeMenus();return;}
+      closeMenus();applyTheme();actions.hidden=false;toggle.setAttribute('aria-expanded','true');
+      const rail=bar.classList.contains('cs-chatgpt-rail-toolbar');if(actions.hasAttribute('popover'))actions.showPopover?.();
+      const rect=toggle.getBoundingClientRect(),panel=actions.getBoundingClientRect().width||300,left=rail?(getComputedStyle(toggle).direction==='rtl'?rect.left-panel-8:rect.right+8):rect.right-panel;
+      actions.style.top=Math.max(8,Math.min(rail?rect.top:rect.bottom+6,window.innerHeight-(actions.offsetHeight||160)-8))+'px';actions.style.left=Math.max(8,Math.min(left,window.innerWidth-panel-8))+'px';input.focus();});
+    bar.append(toggle,actions);
+    placeToolbar(root,bar,found);
   }
-  function placeToolbar(root,bar){
+  function placeToolbar(root,bar,found){
     const rail=site.id==='chatgpt'?[...document.querySelectorAll('[data-app-navigation-rail]')].find(visible):null;
     let host=rail?.querySelector('[data-sidebar-destination]')?.parentElement;
     if(host){while(host.parentElement&&host.parentElement!==rail)host=host.parentElement;}
@@ -242,13 +250,17 @@
     // Qwen's "All chats" section header is div.list-folder > … > div.folder-button holding .folder-name and the chevron
     // (the React prop id="finsh" never reaches the DOM); the icon goes right after the name, on that row.
     const qwenHeader=site.id==='qwen'?root.querySelector('.list-folder .folder-button'):null;
+    // Z.ai's panel starts with a plain "Recent" label div followed by a (usually hidden) group tab button; the icon goes inside the label row.
+    const zaiLabel=site.id==='zai'?[...root.children].find(node=>node.id.startsWith('chat-group-tab-'))?.previousElementSibling:null;
+    const zaiHeader=zaiLabel?.tagName==='DIV'&&!zaiLabel.querySelector('.AgentChatList')&&visible(zaiLabel)?zaiLabel:null;
     const chatgptHeading=site.id==='chatgpt'?root.querySelector('[data-app-action-sidebar-section-heading="Recents"] [data-app-action-sidebar-section-toggle]'):null;
     // Claude may group recents by date. Prefer its first recent label, leaving the pinned header alone.
     const claudeHeading=site.id==='claude'?(headings.find(node=>!own(node))||root.querySelector('[data-row-key^="label:"] [data-group-toggle]')||root.querySelector('[data-group-toggle]')):null;
     const heading=chatgptHeading||claudeHeading||(site.id==='gemini'?root.querySelector('[aria-controls="sidenav-section-content-chats"]'):site.id==='kimi'?(root.querySelector('.next-sidebar-section:has(.next-sidebar-history-list) .next-sidebar-section__title')||headings.find(node=>!own(node))):site.id==='qwen'?(qwenHeader||headings.find(node=>!own(node))):headings.find(node=>!own(node)));
-    if(heading&&site.id==='qwen'&&heading===qwenHeader){heading.classList.add('cs-heading-hover','cs-heading-row');const name=heading.querySelector('.folder-name');if(name)name.insertAdjacentElement('afterend',bar);else heading.append(bar);bar.classList.add('cs-at-heading');}
-    else if(heading) { const host=heading.closest('button,a')||heading;host.classList.add('cs-heading-hover');if(site.id==='gemini')host.parentElement.classList.add('cs-gemini-heading');if(site.id==='kimi')host.parentElement.classList.add('cs-heading-row');if(chatgptHeading)host.parentElement.classList.add('cs-chatgpt-heading');if(site.id==='claude'&&host.matches('[data-group-toggle]'))host.parentElement.classList.add('cs-claude-heading');if(host.nextElementSibling!==bar)host.insertAdjacentElement('afterend',bar);bar.classList.add('cs-at-heading'); }
-    else { const first=items().find(item=>root.contains(item.link));if(first){let container=first.link.closest('ol,ul');if(!container||!root.contains(container))container=first.link.parentElement;container.before(bar);}else root.prepend(bar); }
+    if(zaiHeader){zaiHeader.classList.add('cs-heading-row','cs-zai-heading');if(bar.parentElement!==zaiHeader)zaiHeader.append(bar);bar.classList.add('cs-at-heading');}
+    else if(heading&&site.id==='qwen'&&heading===qwenHeader){heading.classList.add('cs-heading-hover','cs-heading-row');const name=heading.querySelector('.folder-name');if(name)name.insertAdjacentElement('afterend',bar);else heading.append(bar);bar.classList.add('cs-at-heading');}
+    else if(heading) { const host=heading.closest('button,a')||heading;host.classList.add('cs-heading-hover');if(site.id==='gemini')host.parentElement.classList.add('cs-gemini-heading');if(site.id==='kimi')host.parentElement.classList.add('cs-heading-row');if(chatgptHeading)host.parentElement.classList.add('cs-chatgpt-heading');if(site.id==='claude'&&(host.matches('[data-group-toggle]')||host.querySelector('[data-group-toggle]')))host.parentElement.classList.add('cs-claude-heading');if(host.nextElementSibling!==bar)host.insertAdjacentElement('afterend',bar);bar.classList.add('cs-at-heading'); }
+    else { const first=found.find(item=>root.contains(item.link)&&!item.link.closest('.cs-deleted-row'));if(first){let container=first.link.closest('ol,ul');if(!container||!root.contains(container))container=first.link.parentElement;container.before(bar);}else root.prepend(bar); }
   }
   function scan() {
     if(!contextAlive()||!settings.enabled||busy)return;
@@ -265,7 +277,13 @@
       }
     }
     // Row identities are resolved by items(); hide afterwards so freshly rendered Qwen rows are recognized.
-    const found=items();
+    const rootList=roots(),found=items(rootList);titles=new Map(found.map(item=>[item.id,item.title]));
+    // Mapped rows (Qwen, Z.ai) can be reused for another chat or lose their mapping: a checkbox never outlives the ID of its row.
+    if(siteRows){const live=new Set(found.map(item=>item.link));for(const box of document.querySelectorAll('.cs-checkbox[data-cs-id]')){const row=box.parentElement;if(live.has(row)&&siteRows.idOf(row)===box.dataset.csId)continue;row.classList.remove('cs-chat-link','cs-dynamic','cs-selected','cs-wave-active','cs-match');row.style.removeProperty('--cs-wave');box.remove();}
+      // A selection never follows its ID to another row element: the user ticked a row, not a position in the website's list.
+      for(const item of found){const row=pickedRows.get(item.id);if(selected.has(item.id)&&row&&row!==item.link){selected.delete(item.id);pickedRows.delete(item.id);}}
+      // Nor does it stay on a row that now carries another chat's ID.
+      for(const id of [...selected.keys()]){const other=pickedRows.get(id)&&siteRows.idOf(pickedRows.get(id));if(other&&other!==id){selected.delete(id);pickedRows.delete(id);}}}
     hideDeleted();
     for(const item of found) {
       // Put the checkbox inside the row link, using capture to prevent link navigation.
@@ -273,7 +291,7 @@
       if(box&&box.dataset.csId!==item.id){box.remove();box=null;}
       if(!box){box=el('input','cs-checkbox');box.type='checkbox';box.dataset.csOwned='true';box.dataset.csId=item.id;
         box.addEventListener('click',event=>{event.stopPropagation();});
-        box.addEventListener('change',()=>{if(busy)return;box.checked?selected.set(item.id,item.title):selected.delete(item.id);sync();});
+        box.addEventListener('change',()=>{if(busy)return;if(box.checked){selected.set(item.id,item.title);pickedRows.set(item.id,item.link);}else selected.delete(item.id);sync();});
         item.link.prepend(box);
       }
       item.link.classList.add('cs-chat-link');
@@ -285,15 +303,16 @@
       box.setAttribute('aria-label',t('selectChat',{title:item.title}));
     }
     // One toolbar for each top-level visible sidebar; nested history containers do not duplicate it.
-    const parents=roots().filter(root=>found.some(item=>root.contains(item.link)));
-    for(const root of parents.filter(root=>!parents.some(other=>other!==root&&other.contains(root))))toolbar(root);
+    // hideDeleted may have hidden a whole root; only then do the roots need another visibility pass.
+    const parents=(deleted.size?roots():rootList).filter(root=>found.some(item=>root.contains(item.link)));
+    for(const root of parents.filter(root=>!parents.some(other=>other!==root&&other.contains(root))))toolbar(root,found);
     grokHistory?.render();
     if(filterQuery.trim())applyFilter(filterQuery);
-    sync();applyTheme();watch();queueWave();
+    sync();applyTheme();watch();band=null;queueWave();
   }
   function schedule(){if(expired||scheduled)return;scheduled=true;setTimeout(()=>{scheduled=false;scan();},80);}
   function watch(){if(expired)return;observer?.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['href','hidden','aria-hidden','aria-expanded','class','data-sidebar-chatgpt-conversation-key','aria-label']});}
-  function cleanup(){clearTimeout(filterTimer);filterQuery='';matches=[];document.querySelectorAll('.cs-match').forEach(n=>n.classList.remove('cs-match'));document.querySelectorAll('.cs-gemini-heading,.cs-heading-row,.cs-chatgpt-heading,.cs-claude-heading').forEach(n=>n.classList.remove('cs-gemini-heading','cs-heading-row','cs-chatgpt-heading','cs-claude-heading'));document.querySelectorAll('.cs-grok-result').forEach(n=>n.classList.remove('cs-grok-result'));document.querySelectorAll('.cs-grok-search-link').forEach(n=>n.classList.remove('cs-grok-search-link'));document.querySelectorAll('.cs-heading-hover').forEach(node=>node.classList.remove('cs-heading-hover'));document.querySelectorAll('[data-cs-owned]').forEach(node=>node.remove());document.querySelectorAll('.cs-chat-link').forEach(node=>{node.classList.remove('cs-chat-link','cs-chatgpt-row','cs-dynamic','cs-selected','cs-wave-active');node.style.removeProperty('--cs-wave');});}
+  function cleanup(){clearTimeout(filterTimer);filterQuery='';matches=[];document.querySelectorAll('.cs-match').forEach(n=>n.classList.remove('cs-match'));document.querySelectorAll('.cs-gemini-heading,.cs-heading-row,.cs-chatgpt-heading,.cs-claude-heading,.cs-zai-heading').forEach(n=>n.classList.remove('cs-gemini-heading','cs-heading-row','cs-chatgpt-heading','cs-claude-heading','cs-zai-heading'));document.querySelectorAll('.cs-grok-result').forEach(n=>n.classList.remove('cs-grok-result'));document.querySelectorAll('.cs-grok-search-link').forEach(n=>n.classList.remove('cs-grok-search-link'));document.querySelectorAll('.cs-heading-hover').forEach(node=>node.classList.remove('cs-heading-hover'));document.querySelectorAll('[data-cs-owned]').forEach(node=>node.remove());document.querySelectorAll('.cs-chat-link').forEach(node=>{node.classList.remove('cs-chat-link','cs-chatgpt-row','cs-dynamic','cs-selected','cs-wave-active');node.style.removeProperty('--cs-wave');});}
   function confirmDelete(action='delete'){
     if(!contextAlive())return;
     if(!selected.size||document.querySelector('.cs-confirm'))return;
@@ -312,26 +331,31 @@
     confirm.onclick=()=>{close();if(!sameWorkspace()){sync();return;}void runBatch(snapshot,approvedOrganization,action);};footer.append(cancel,confirm);dialog.append(footer);(site.id==='grok'?document.querySelector('[role="dialog"]:has([cmdk-list])')||document.body:document.body).append(dialog);dialog.showModal();cancel.focus();
   }
   const deleted = new Set();
+  // A Z.ai row wrapper is hidden only when it holds this one row; otherwise only the row button is.
+  function zaiWrapper(link){const wrap=link.closest('.AgentChatList>div');return wrap&&wrap.querySelectorAll('button[data-selected]').length===1?wrap:null;}
   function hideDeleted() {
-    const links=qwenRows?[...document.querySelectorAll(site.roots+' a.chat-item-drag-link')]:[...new Set([...document.querySelectorAll(rootSelector())].flatMap(rowNodes))];
+    if(!deleted.size)return;
+    const links=qwenRows?[...document.querySelectorAll(site.roots+' a.chat-item-drag-link')]:zaiRows?[...document.querySelectorAll('#sidebar .AgentChatList button[data-selected]')]:[...new Set([...document.querySelectorAll(rootSelector())].flatMap(rowNodes))];
     for(const link of links) {
       if(!deleted.has(rowId(link)))continue;
-      let row=(site.id==='chatgpt'?link.closest(chatgptRow):null)||link.closest('.cs-grok-result')||(qwenRows?link.closest('.chat-item-drag'):null)||link;
+      let row=(site.id==='chatgpt'?link.closest(chatgptRow):null)||link.closest('.cs-grok-result')||(qwenRows?link.closest('.chat-item-drag'):null)||(zaiRows?zaiWrapper(link):null)||link;
       const parent=link.parentElement;
       if(row===link&&parent && !parent.matches('nav,aside,ul,ol,#history') && parent.querySelectorAll('a[href]').length===1 && !parent.querySelector('.cs-toolbar')) row=parent;
       row.classList.add('cs-deleted-row');
     }
   }
-  let qwenUser=null;
-  function refreshQwenUser(){if(site.id!=='qwen'||!globalThis.ChatTidyQwen)return;ChatTidyQwen.session().then(id=>{qwenUser=id;}).catch(()=>{qwenUser=null;});}
+  // The account that was signed in when the rows were selected; a run under another account stops.
+  let siteUser=null;
+  function refreshSiteUser(){if(!siteApi)return;siteApi.session().then(id=>{siteUser=id;}).catch(()=>{siteUser=null;});}
   function notice(text){const box=el('section','cs-status',text);box.dataset.csOwned='true';const close=el('button','cs-button',t('close'));close.onclick=()=>box.remove();box.append(close);document.body.append(box);}
   async function runBatch(snapshot,approvedOrganization,action='delete',target){
-    if(!contextAlive()||busy)return;busy=true;stopped=false;sync();
-    if(qwenRows){
-      // Rows are mapped by structure, so confirm each approved ID still sits on a row with the reviewed title.
-      const current=new Map(qwenRows.scan().map(row=>[row.id,row.title]));
-      snapshot=snapshot.filter(item=>current.get(item.id)===item.title);
-      if(!qwenUser){try{qwenUser=await ChatTidyQwen.session();}catch(error){qwenUser=null;busy=false;sync();notice(t('apiError')+' ('+error.message+')');return;}}
+    if(!contextAlive()||busy)return;busy=true;sync();
+    if(siteRows){
+      // Rows are mapped by structure. The website's list is read again first; then every approved ID must still be mapped
+      // to the very row element the user ticked, with the reviewed title, or nothing runs.
+      const current=new Map((await siteRows.reload()).filter(row=>row.link.isConnected).map(row=>[row.id,row]));
+      if(snapshot.some(item=>{const row=current.get(item.id);return !row||row.title!==item.title||row.link!==pickedRows.get(item.id);})){busy=false;sync();notice(t('apiError')+' (rows-changed)');schedule();return;}
+      try{const user=await siteApi.session();if(siteUser&&user!==siteUser)throw Error('account-changed');siteUser=user;}catch(error){if(error.message!=='account-changed')siteUser=null;busy=false;sync();notice(t('apiError')+' ('+error.message+')');return;}
       if(!snapshot.length){busy=false;sync();notice(t('apiError')+' (rows-changed)');return;}
     }
     const allowed=new Set(snapshot.map(item=>item.id)), completed=new Set();
@@ -340,22 +364,25 @@
     const status=el('section','cs-status');status.dataset.csOwned='true';status.setAttribute('aria-label',t('manage'));
     const message=el('p','',t('progress',{done:0,total:snapshot.length}));message.setAttribute('role','status');
     const hint=el('p','cs-hint',t(action==='archive'?'archiveWorking':action==='move'?'moveWorking':'working')),stop=el('button','cs-button',t('stop'));stop.type='button';
-    stop.onclick=()=>{stopped=true;stop.disabled=true;ChatTidyBatch.cancel();};
+    stop.onclick=()=>{stop.disabled=true;ChatTidyBatch.cancel();};
     status.append(message,hint,stop);(site.id==='grok'?document.querySelector('[role="dialog"]:has([cmdk-list])')||document.body:document.body).append(status);
-    const update=ids=>{
+    // Acknowledgements are recorded at once; the sidebar pass (hide rows, checkboxes, count) runs at most once per frame.
+    let frame=0;
+    const paint=()=>{frame=0;hideDeleted();message.textContent=t('progress',{done:completed.size,total:snapshot.length});sync();};
+    const update=(ids,final)=>{
       if(!status.isConnected)document.body.append(status);
       const done=[];
-      for(const id of ids||[])if(allowed.has(id)){completed.add(id);selected.delete(id);if(hide)deleted.add(id);done.push(id);}
-      qwenRows?.forget(done);
-      hideDeleted();message.textContent=t('progress',{done:completed.size,total:snapshot.length});sync();
+      for(const id of ids||[])if(allowed.has(id)&&!completed.has(id)){completed.add(id);selected.delete(id);if(hide)deleted.add(id);done.push(id);}
+      siteRows?.forget(done);
+      if(final){cancelAnimationFrame(frame);paint();}else if(!frame)frame=requestAnimationFrame(paint);
     };
     let result;
     try {
-      result=await ChatTidyBatch.run({action,target,ids:[...allowed],organizationId:approvedOrganization,expectedUserId:qwenRows?qwenUser:undefined,onProgress:update,
+      result=await ChatTidyBatch.run({action,target,ids:[...allowed],organizationId:approvedOrganization,expectedUserId:siteRows?siteUser:undefined,onProgress:ids=>update(ids),
         canRun:()=>!expired&&contextAlive()&&organizationId()===approvedOrganization});
-      update(result.completed);
+      update(result.completed,true);
     } catch { result={error:'connection-lost'}; }
-    finally { busy=false; }
+    finally { busy=false;if(frame){cancelAnimationFrame(frame);frame=0;} }
     if(!contextAlive())return;
     const finished=result.cancelled?(action==='archive'?'archiveStopped':action==='move'?'moveStopped':'stopped'):result.error?'failed':action==='move'?'moveDone':'done';
     message.textContent=t(finished,{n:completed.size});
@@ -366,17 +393,20 @@
   }
   window.addEventListener('pagehide',()=>{ChatTidyBatch.cancel();});
   // Measure unshifted row bounds so moving titles never move the trigger zone.
-  let pointer=null,waveFrame=0;
+  // band is the x-range where an anchor can exist; while the pointer stays outside it and no row is lit, frames read no layout at all.
+  let pointer=null,waveFrame=0,band=null,waving=false;
   function paintWave(){
     waveFrame=0;
+    if(!waving&&(!pointer||band&&(pointer.x<band[0]||pointer.x>band[1])))return;
     const links=[...document.querySelectorAll('.cs-chat-link.cs-dynamic')];
     const rects=links.map(link=>link.getBoundingClientRect());
-    const anchor=pointer && rects.find((r,i)=>visible(links[i]) && pointer.x>=r.left-8 && pointer.x<=r.left+56 && pointer.y>=r.top && pointer.y<=r.bottom);
+    band=[Infinity,-Infinity];for(const r of rects){if(r.left<band[0])band[0]=r.left;if(r.left>band[1])band[1]=r.left;}band[0]-=8;band[1]+=56;waving=false;
+    const anchor=pointer && rects.find((r,i)=>pointer.x>=r.left-8 && pointer.x<=r.left+56 && pointer.y>=r.top && pointer.y<=r.bottom && visible(links[i]));
     links.forEach((link,i)=>{
       const r=rects[i],distance=pointer?Math.abs(pointer.y-(r.top+r.height/2)):Infinity;
       const radius=Math.max(1,r.height)*3.2;
       const strength=anchor && Math.abs(r.left-anchor.left)<24 && distance<radius ? Math.pow(Math.cos(distance/radius*Math.PI/2),2) : 0;
-      const next=strength.toFixed(3);
+      const next=strength.toFixed(3);if(strength>0)waving=true;
       if(link.style.getPropertyValue('--cs-wave')!==next)link.style.setProperty('--cs-wave',next);
       if(link.classList.contains('cs-wave-active')!==(strength>.08))link.classList.toggle('cs-wave-active',strength>.08);
     });
@@ -386,12 +416,15 @@
   document.addEventListener('pointerleave',()=>{pointer=null;queueWave();});
   window.addEventListener('blur',()=>{pointer=null;queueWave();});
   document.addEventListener('scroll',()=>{queueWave();},true);
+  // Rows can shift sideways without a scan (sidebar resize or slide-in); entering a row or resizing re-measures the band.
+  document.addEventListener('pointerover',event=>{if(event.target.closest?.('.cs-chat-link'))band=null;},{passive:true,capture:true});
+  window.addEventListener('resize',()=>{band=null;});
   document.addEventListener('click',event=>{if(event.target.closest?.('.cs-toolbar,.cs-confirm,.cs-move,.cs-archive-manager'))return;closeMenus();});
   document.addEventListener('keydown',event=>{if(event.key==='Escape'){const open=document.querySelector('.cs-toggle[aria-expanded="true"]');closeMenus();open?.focus();} });
   // Prevent parent React link handlers, while preserving the checkbox's native toggle.
-  document.addEventListener('click',event=>{if(event.target.matches?.('.cs-checkbox')){event.stopPropagation();const box=event.target;if(!busy){box.checked?selected.set(box.dataset.csId,items().find(item=>item.id===box.dataset.csId)?.title||''):selected.delete(box.dataset.csId);sync();}}},true);
+  document.addEventListener('click',event=>{if(event.target.matches?.('.cs-checkbox')){event.stopPropagation();const box=event.target;if(!busy){if(box.checked){selected.set(box.dataset.csId,titles.get(box.dataset.csId)||'');pickedRows.set(box.dataset.csId,box.parentElement);}else selected.delete(box.dataset.csId);sync();}}},true);
   const botsController=site.id==='grok'&&globalThis.ChatTidyBots?ChatTidyBots.create():null;
-  const grokHistory=site.id==='grok'&&globalThis.ChatTidyGrok?ChatTidyGrok.create({t,changed:schedule,error:code=>{const notice=el('section','cs-status',t('grokLoadError')+' ('+code+')');notice.dataset.csOwned='true';const close=el('button','cs-button',t('close'));close.onclick=()=>notice.remove();notice.append(close);document.body.append(notice);}}):null;
+  const grokHistory=site.id==='grok'&&globalThis.ChatTidyGrok?ChatTidyGrok.create({t,changed:schedule,error:code=>notice(t('grokLoadError')+' ('+code+')')}):null;
   const mover=globalThis.ChatTidyProjects?ChatTidyProjects.create({t,site,organizationId:()=>selectionOrganization,onRun:(snapshot,target)=>{
     if(!contextAlive())return;
     const approved=selectionOrganization;
@@ -399,7 +432,7 @@
     if(busy){notice(t('apiError')+' (busy)');return;}
     if(!sameWorkspace()){sync();notice(t('apiError')+' (workspace-changed)');return;}
     void runBatch(snapshot,approved,'move',target);}}):null;
-  function restoreRows(ids){for(const id of ids)deleted.delete(id);qwenRows?.unforget(ids);document.querySelectorAll('.cs-deleted-row').forEach(row=>{const link=row.matches('a,'+chatgptRow)?row:row.querySelector('a');const id=link&&rowId(link);if(id&&!deleted.has(id))row.classList.remove('cs-deleted-row');});schedule();}
+  function restoreRows(ids){for(const id of ids)deleted.delete(id);siteRows?.unforget(ids);document.querySelectorAll('.cs-deleted-row').forEach(row=>{const link=row.matches('a,'+chatgptRow)?row:row.querySelector('a');const id=link&&rowId(link);if(id&&!deleted.has(id))row.classList.remove('cs-deleted-row');});schedule();}
   const managerOptions=()=>({t,site,canRun:()=>!expired&&settings.enabled,onCompleted:(ids,action)=>{if(action==='restore')restoreRows(ids);}});
   let archiveManager=hasManager&&globalThis.ChatTidyArchive?ChatTidyArchive.create(managerOptions()):null;
   chrome.runtime.onMessage.addListener((message,sender,reply)=>{if(message?.type==='cs-site'&&sender.id===chrome.runtime.id){reply({site:site.id});}if(message?.type==='cs-open-archive'&&sender.id===chrome.runtime.id&&archiveManager){void archiveManager.open();reply({ok:true});}return false;});
@@ -407,33 +440,38 @@
   document.addEventListener('keydown',event=>{if(event.target.matches?.('.cs-checkbox'))event.stopPropagation();},true);
   chrome.storage.local.get(settings).then(saved=>{
     settings={...settings,...saved};applyTheme();
-    // Sites switch themes by toggling attributes on <html>/<body> or following the OS.
-    new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:['class','style','data-theme','data-mode','data-color-mode','theme']});
-    if(document.body)new MutationObserver(applyTheme).observe(document.body,{attributes:true,attributeFilter:['class','style','data-theme','data-mode','data-color-mode','theme']});
+    // Sites switch themes by toggling attributes on <html>/<body> or following the OS. pageTheme() walks computed
+    // styles, so bursts of attribute writes collapse into one check per frame.
+    let themeFrame=0;const queueTheme=()=>{if(!themeFrame)themeFrame=requestAnimationFrame(()=>{themeFrame=0;applyTheme();});};
+    const themeWatch=new MutationObserver(queueTheme),themeAttributes={attributes:true,attributeFilter:['class','style','data-theme','data-mode','data-color-mode','theme']};
+    themeWatch.observe(document.documentElement,themeAttributes);if(document.body)themeWatch.observe(document.body,themeAttributes);
     globalThis.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change',()=>setTimeout(applyTheme,50));
     observer=new MutationObserver(records=>{
       if(records.some(record=>{
-        if(own(record.target) || (record.target.closest?.('main')&&!record.target.closest?.('[data-testid="modal-archived-conversations"]')&&!(scopedRoots&&record.target.closest?.(site.roots))))return false;
-        if(record.type==='attributes'){
-          if(record.attributeName!=='class')return true;
-          // Ignore our wave/selection class updates; repair only missing row markers.
-          const link=record.target,box=link.matches?.('a,[role="button"]')&&link.querySelector('.cs-checkbox');
-          return box && (!link.classList.contains('cs-chat-link') ||
-            link.classList.contains('cs-dynamic')!==(!link.classList.contains('cs-grok-search-link')&&settings.checkboxMode!=='always') ||
-            link.classList.contains('cs-selected')!==selected.has(box.dataset.csId));
+        const node=record.target;
+        if(record.type==='attributes'&&record.attributeName==='class'){
+          // Our wave/selection class writes arrive here on every hover frame: decide on the row itself before any
+          // ancestor walk, and repair only missing row markers.
+          const box=node.matches?.('a,[role="button"]')&&node.querySelector('.cs-checkbox');
+          if(!box || node.classList.contains('cs-chat-link') &&
+            node.classList.contains('cs-dynamic')===(!node.classList.contains('cs-grok-search-link')&&settings.checkboxMode!=='always') &&
+            node.classList.contains('cs-selected')===selected.has(box.dataset.csId))return false;
         }
+        if(own(node) || (node.closest?.('main')&&!node.closest?.('[data-testid="modal-archived-conversations"]')&&!(scopedRoots&&node.closest?.(site.roots))))return false;
+        if(record.type==='attributes')return true;
         return [...record.addedNodes,...record.removedNodes].some(node=>!own(node));
       }))schedule();
-    });if(settings.enabled)refreshQwenUser();scan();watch();void grokHistory?.setEnabled(settings.enabled&&settings.grokShowAll);
+    });if(settings.enabled)refreshSiteUser();scan();watch();void grokHistory?.setEnabled(settings.enabled&&settings.grokShowAll);
   }).catch(()=>{ /* Invalidated extension: refreshing the page re-injects it. */ });
   chrome.storage.onChanged.addListener((changes,area)=>{
-    if(area!=='local'||!['enabled','language','checkboxMode','grokShowAll','theme','grokHideBots','grokCollapseBots'].some(key=>changes[key]))return;
-    for(const key of ['enabled','language','checkboxMode','grokShowAll','theme','grokHideBots','grokCollapseBots'])if(changes[key])settings[key]=changes[key].newValue;
+    const keys=Object.keys(settings).filter(key=>changes[key]&&!['concurrency','hideSupport'].includes(key));
+    if(area!=='local'||!keys.length)return;
+    for(const key of keys)settings[key]=changes[key].newValue;
     applyTheme();botsController?.update(settings);
     if(!['enabled','language','checkboxMode','grokShowAll'].some(key=>changes[key]))return;
     if(busy)return;
     archiveManager?.destroy();archiveManager=hasManager&&settings.enabled&&globalThis.ChatTidyArchive?ChatTidyArchive.create(managerOptions()):null;
     mover?.close();
-    cleanup();void grokHistory?.setEnabled(settings.enabled&&settings.grokShowAll);if(!settings.enabled)selected.clear();else{refreshQwenUser();scan();}
+    cleanup();void grokHistory?.setEnabled(settings.enabled&&settings.grokShowAll);if(!settings.enabled)selected.clear();else{refreshSiteUser();scan();}
   });
 })();

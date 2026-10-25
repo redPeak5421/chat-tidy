@@ -3,7 +3,7 @@ async function popup(site='chatgpt',initial={}){
  const dom=new JSDOM(fs.readFileSync('popup.html','utf8'),{url:'https://extension.test',runScripts:'outside-only'}),w=dom.window;
  const saved={language:'en',...initial};w.matchMedia=()=>({matches:false,addEventListener(){}});
  w.chrome={runtime:{getManifest:()=>JSON.parse(fs.readFileSync('manifest.json','utf8'))},storage:{local:{get:async defaults=>({...defaults,...saved}),set:async data=>Object.assign(saved,data)}},tabs:{query:async()=>[{id:1}],sendMessage:async()=>({site})}};
- for(const name of ['i18n','popup'])w.eval(fs.readFileSync('src/'+name+'.js','utf8'));await new Promise(r=>setTimeout(r,0));return {w,d:w.document,saved};
+ for(const name of ['core','i18n','popup'])w.eval(fs.readFileSync('src/'+name+'.js','utf8'));await new Promise(r=>setTimeout(r,0));return {w,d:w.document,saved};
 }
 test('settings secondary page and local theme survive reopening',async()=>{
  const {w,d,saved}=await popup();try{assert.ok(d.querySelector('#open-settings'),'settings entry');d.querySelector('#open-settings').click();assert.equal(d.querySelector('#settings-page').hidden,false);assert.equal(d.querySelector('#main-page').hidden,true);const theme=d.querySelector('#theme');assert.equal(theme.value,'system');theme.value='dark';theme.dispatchEvent(new w.Event('change'));await new Promise(r=>setTimeout(r,0));assert.equal(saved.theme,'dark');assert.equal(d.documentElement.dataset.theme,'dark');const again=await popup('chatgpt',saved);assert.equal(again.d.querySelector('#theme').value,'dark');again.w.close();d.querySelector('#back-settings').click();assert.equal(d.querySelector('#main-page').hidden,false);}finally{w.close();}
@@ -12,7 +12,7 @@ test('Bots settings are Grok-only with false defaults and local persistence',asy
  for(const site of ['chatgpt','claude','grok']){const {w,d,saved}=await popup(site);try{const block=d.querySelector('#grok-bots-options');assert.ok(block,'Bots options');assert.equal(block.hidden,site!=='grok');for(const key of ['grokHideBots','grokCollapseBots']){const input=d.getElementById(key);assert.equal(input.checked,false);if(site==='grok'){input.checked=true;input.dispatchEvent(new w.Event('change'));await new Promise(r=>setTimeout(r,0));assert.equal(saved[key],true);}}}finally{w.close();}}
 });
 test('settings page describes per-site capabilities as a translated list',async()=>{
- const {w,d}=await popup('chatgpt',{language:'zh-CN'});try{const about=d.querySelector('#settings-page .about');assert.ok(about,'about section');assert.equal(about.tagName,'DETAILS');assert.equal(about.open,false,'collapsed by default');assert.equal(about.querySelector('summary'),about.querySelector('.about-title'));const items=[...about.querySelectorAll('ul li')].map(li=>li.textContent);assert.equal(items.length,6);for(const name of ['ChatGPT','Claude','Grok','Gemini','Kimi','Qwen'])assert.ok(items.some(text=>text.startsWith(name)),name);assert.match(about.querySelector('.about-title').textContent,/ChatGPT.*Claude.*Grok.*Gemini.*Kimi.*Qwen/);assert.match(items.find(text=>text.startsWith('Kimi')),/批量删除/);}finally{w.close();}
+ const {w,d}=await popup('chatgpt',{language:'zh-CN'});try{const about=d.querySelector('#settings-page .about');assert.ok(about,'about section');assert.equal(about.tagName,'DETAILS');assert.equal(about.open,false,'collapsed by default');assert.equal(about.querySelector('summary'),about.querySelector('.about-title'));const items=[...about.querySelectorAll('ul li')].map(li=>li.textContent);assert.equal(items.length,7);for(const name of ['ChatGPT','Claude','Grok','Gemini','Kimi','Qwen','Z.ai'])assert.ok(items.some(text=>text.startsWith(name)),name);assert.match(about.querySelector('.about-title').textContent,/ChatGPT.*Claude.*Grok.*Gemini.*Kimi.*Qwen.*Z\.ai/);assert.match(items.find(text=>text.startsWith('Kimi')),/批量删除/);}finally{w.close();}
 });
 test('archive button only appears on ChatGPT and Qwen',async()=>{
  for(const site of ['chatgpt','claude','grok','gemini','kimi','qwen']){const {w,d}=await popup(site);try{assert.equal(d.querySelector('#open-archive').hidden,!['chatgpt','qwen'].includes(site));}finally{w.close();}}
@@ -27,4 +27,18 @@ test('support cards keep their two-column card layout styles',()=>{
 
 test('popup displays the installed manifest version across language changes',async()=>{
  const {w,d}=await popup();try{const version=JSON.parse(fs.readFileSync('manifest.json','utf8')).version;assert.equal(d.querySelector('#extension-version').textContent,version);const language=d.querySelector('#language');language.value='zh-CN';language.dispatchEvent(new w.Event('change'));await new Promise(r=>setTimeout(r,0));assert.equal(d.querySelector('#extension-version').textContent,version);}finally{w.close();}
+});
+test('concurrency offers exactly 1, 3, 5, 10 and 15, defaults to 5 and stores numbers',async()=>{
+ const {w,d,saved}=await popup();try{
+  const inputs=[...d.querySelectorAll('input[name="concurrency"]')];
+  assert.deepEqual(inputs.map(input=>Number(input.value)),Array.from(w.ChatTidyCore.concurrencyOptions));assert.deepEqual(inputs.map(input=>input.value),['1','3','5','10','15']);
+  assert.equal(d.querySelector('input[name="concurrency"]:checked').value,'5');
+  const fifteen=inputs.at(-1);fifteen.checked=true;fifteen.dispatchEvent(new w.Event('change',{bubbles:true}));await new Promise(r=>setTimeout(r,0));
+  assert.equal(saved.concurrency,15);assert.equal(d.querySelector('input[name="concurrency"]:checked').value,'15');
+  assert.match(d.getElementById('concurrency-note').textContent,/Default 5/);
+ }finally{w.close();}
+ // Values no longer offered (the old default 2) show the default the deletion falls back to; 1 and 3 stay selected.
+ for(const [stored,shown] of [[2,'5'],[0,'5'],[20,'5'],['5','5'],[null,'5'],[1,'1'],[3,'3'],[10,'10']]){
+  const {w,d}=await popup('chatgpt',{concurrency:stored});try{assert.equal(d.querySelector('input[name="concurrency"]:checked')?.value,shown,'stored '+JSON.stringify(stored));}finally{w.close();}
+ }
 });

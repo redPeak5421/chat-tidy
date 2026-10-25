@@ -72,17 +72,17 @@ test('ChatGPT app-shell archived rows can be restored through the archive manage
  assert.equal(d.querySelectorAll('.cs-checkbox:checked').length,0);
  }finally{dom.window.close()}
 });
-test('ChatGPT rail menu follows selection-only visibility and survives rail replacement',async()=>{
+test('ChatGPT rail menu stays visible in every checkbox mode and survives rail replacement',async()=>{
  const {dom,d,change}=await setup({markup:modernRail()+modernSidebar()});try{
  let bar=d.querySelector('.cs-toolbar');
  assert.equal(bar.parentElement,d.querySelector('.rail-items'));
  assert.equal(bar.previousElementSibling.textContent,'Explore');
- assert.equal(bar.hidden,true);
+ assert.equal(bar.hidden,false);
  assert.equal(d.querySelector('#app-shell-sidebar .cs-toolbar'),null);
  d.querySelector('.cs-checkbox').click();assert.equal(bar.hidden,false);
- d.querySelector('[data-cs-action="clear"]').click();assert.equal(bar.hidden,true);
+ d.querySelector('[data-cs-action="clear"]').click();assert.equal(bar.hidden,false);
  await change({checkboxMode:{newValue:'always'}});bar=d.querySelector('.cs-toolbar');assert.equal(bar.hidden,false);
- await change({checkboxMode:{newValue:'dynamic'}});bar=d.querySelector('.cs-toolbar');assert.equal(bar.hidden,true);
+ await change({checkboxMode:{newValue:'dynamic'}});bar=d.querySelector('.cs-toolbar');assert.equal(bar.hidden,false);
  d.querySelector('.cs-checkbox').click();
  d.querySelector('[data-app-navigation-rail]').outerHTML=modernRail();await wait(150);
  bar=d.querySelector('.cs-toolbar');assert.equal(d.querySelectorAll('.cs-toolbar').length,1);assert.equal(bar.parentElement,d.querySelector('.rail-items'));assert.equal(bar.hidden,false);
@@ -92,7 +92,7 @@ test('ChatGPT rail menu follows selection-only visibility and survives rail repl
 test('ChatGPT moves the existing header menu when the navigation rail loads late',async()=>{
  const {dom,d}=await setup({markup:modernSidebar()});try{
  const bar=d.querySelector('.cs-toolbar');d.body.insertAdjacentHTML('afterbegin',modernRail());await wait(150);
- assert.equal(d.querySelectorAll('.cs-toolbar').length,1);assert.equal(bar.parentElement,d.querySelector('.rail-items'));assert.equal(bar.hidden,true);
+ assert.equal(d.querySelectorAll('.cs-toolbar').length,1);assert.equal(bar.parentElement,d.querySelector('.rail-items'));assert.equal(bar.hidden,false);
  }finally{dom.window.close()}
 });
 test('all, invert, clear and cancellation never invoke native delete',async()=>{
@@ -136,7 +136,7 @@ test('checkbox does not navigate using a parent click handler',async()=>{
 test('popup persists language and renders translated help',async()=>{
  const dom=new JSDOM(fs.readFileSync('popup.html','utf8'),{url:'https://extension.test/',runScripts:'outside-only'});const w=dom.window,d=w.document,saved={};
  try{w.chrome={storage:{local:{get:async()=>({enabled:true,language:'en'}),set:async data=>Object.assign(saved,data)}}};
- for(const f of ['i18n','popup'])w.eval(fs.readFileSync(`src/${f}.js`,'utf8'));await wait(0);
+ for(const f of ['core','i18n','popup'])w.eval(fs.readFileSync(`src/${f}.js`,'utf8'));await wait(0);
  const lang=d.getElementById('language');lang.value='ja';lang.dispatchEvent(new w.Event('change'));await wait(0);assert.equal(saved.language,'ja');assert.equal(d.querySelector('summary').textContent,'使い方');
  assert.equal(d.getElementById('layout'),null);assert.ok(d.querySelector('.logo svg'));
  }finally{w.close()}
@@ -191,6 +191,36 @@ test('initialization paints an already observed pointer without another movement
  }finally{dom.window.close()}
 });
 
+
+test('pointer far from the rows reads no layout and writes nothing; our wave classes never trigger a rescan',async()=>{
+ const {dom,w,d}=await setup();try{
+ const links=[...d.querySelectorAll('.cs-chat-link')];let reads=0;
+ links.forEach((link,i)=>link.getBoundingClientRect=()=>{reads++;return {left:20,right:300,top:100+i*40,bottom:140+i*40,height:40,width:280};});
+ const roots=d.querySelectorAll.bind(d);let scans=0;d.querySelectorAll=selector=>{if(selector==='nav,aside,[data-testid="history"],#history,[data-testid="sidebar"]')scans++;return roots(selector);};
+ d.dispatchEvent(new w.MouseEvent('pointermove',{clientX:35,clientY:120}));await wait(40);
+ assert.ok(links[0].classList.contains('cs-wave-active'));await wait(150);assert.equal(scans,0,'wave class writes are not sidebar changes');
+ d.dispatchEvent(new w.MouseEvent('pointermove',{clientX:600,clientY:120}));await wait(40);
+ assert.ok(links.every(link=>link.style.getPropertyValue('--cs-wave')==='0.000'&&!link.classList.contains('cs-wave-active')));
+ reads=0;const writes=[];new w.MutationObserver(records=>writes.push(...records)).observe(d.body,{subtree:true,attributes:true});
+ for(const x of [620,700,900])d.dispatchEvent(new w.MouseEvent('pointermove',{clientX:x,clientY:150}));await wait(40);
+ d.querySelector('#history').dispatchEvent(new w.Event('scroll'));await wait(40);
+ assert.equal(reads,0,'no rect reads outside the row band');assert.equal(writes.length,0,'no style or class writes');
+ // Entering a row re-measures, so a sidebar that moved sideways without a scan still lights up.
+ links.forEach((link,i)=>link.getBoundingClientRect=()=>({left:640,right:900,top:100+i*40,bottom:140+i*40,height:40,width:260}));
+ links[0].dispatchEvent(new w.MouseEvent('pointerover',{bubbles:true}));d.dispatchEvent(new w.MouseEvent('pointermove',{clientX:650,clientY:120}));await wait(40);
+ assert.equal(links[0].style.getPropertyValue('--cs-wave'),'1.000');
+ }finally{dom.window.close()}
+});
+test('a scan queries the sidebar roots once when nothing is deleted, and checkbox clicks read no styles',async()=>{
+ const {dom,w,d}=await setup();try{
+ const query=d.querySelectorAll.bind(d);let calls=0;d.querySelectorAll=selector=>{if(selector==='nav,aside,[data-testid="history"],#history,[data-testid="sidebar"]')calls++;return query(selector);};
+ d.querySelector('#history').insertAdjacentHTML('beforeend',row('4'));await wait(150);
+ assert.equal(d.querySelectorAll('.cs-checkbox').length,3);assert.equal(calls,1);
+ const style=w.getComputedStyle;let styles=0;w.getComputedStyle=(...args)=>{styles++;return style(...args);};
+ d.querySelector('.cs-checkbox').click();w.getComputedStyle=style;assert.equal(styles,0);
+ d.querySelector('[data-cs-action="delete"]').click();assert.deepEqual([...d.querySelectorAll('.cs-review li')].map(n=>n.textContent),['Chat 1']);
+ }finally{dom.window.close()}
+});
 
 test('selected checkbox does not prevent another row hover after a scroll event',async()=>{
  const {dom,w,d}=await setup();try{
@@ -339,7 +369,7 @@ test('Grok search dialog recognizes empty overlay links, adds top delete and kee
 for(const site of ['grok','claude'])test(`popup show-all switch visibility follows active ${site} page`,async()=>{
  const dom=new JSDOM(fs.readFileSync('popup.html','utf8'),{url:'https://extension.test/',runScripts:'outside-only'});const w=dom.window,d=w.document,saved={};
  try{w.chrome={tabs:{query:async()=>[{id:1}],sendMessage:async()=>({site})},storage:{local:{get:async()=>({enabled:true,language:'en',grokShowAll:false}),set:async data=>Object.assign(saved,data)}}};
- for(const name of ['i18n','popup'])w.eval(fs.readFileSync(`src/${name}.js`,'utf8'));await wait(10);
+ for(const name of ['core','i18n','popup'])w.eval(fs.readFileSync(`src/${name}.js`,'utf8'));await wait(10);
  assert.equal(d.querySelector('#grok-options').hidden,site!=='grok');
  if(site==='grok'){const input=d.querySelector('#grokShowAll');input.checked=true;input.dispatchEvent(new w.Event('change'));await wait(10);assert.equal(saved.grokShowAll,true);}
  }finally{w.close()}
@@ -479,7 +509,7 @@ test('ChatGPT project creation sends the private sharing shape and falls back to
 test('system theme follows the rendered page instead of the OS and the always mode keeps the icon visible',async()=>{
  const {dom,d,change}=await setup({markup:`<nav style="background-color: rgb(30, 31, 32)"><h2>聊天</h2><div id="history">${row('1')}${row('2')}</div></nav>`});try{
  assert.equal(d.documentElement.dataset.csTheme,'dark');
- d.querySelector('nav').style.backgroundColor='rgb(250, 250, 250)';d.body.className='light-theme';await wait(20);assert.equal(d.documentElement.dataset.csTheme,'light');
+ d.querySelector('nav').style.backgroundColor='rgb(250, 250, 250)';d.body.className='light-theme';await wait(40);assert.equal(d.documentElement.dataset.csTheme,'light');
  await change({theme:{newValue:'dark'}});assert.equal(d.documentElement.dataset.csTheme,'dark');
  assert.equal(d.querySelector('.cs-toolbar').classList.contains('cs-always'),false);
  await change({checkboxMode:{newValue:'always'}});assert.equal(d.querySelector('.cs-toolbar').classList.contains('cs-always'),true);
@@ -507,5 +537,129 @@ test('menu filter highlights matches, adds them to the selection and clears on c
  input.value='chat';input.dispatchEvent(new w.Event('input'));await wait(150);assert.equal(d.querySelectorAll('.cs-match').length,3);
  d.body.click();assert.equal(d.querySelector('.cs-actions').hidden,true);assert.equal(input.value,'');assert.equal(d.querySelectorAll('.cs-match').length,0);
  assert.equal(d.querySelectorAll('.cs-checkbox:checked').length,2);
+ }finally{dom.window.close()}
+});
+// Z.ai rows are href-less buttons inside .AgentChatList; src/zai.js maps them from the website's own list.
+const zaiRow=title=>`<div class="w-full relative group"><button data-selected="false"><div class="flex"><div class="truncate">${title}</div></div><span class="contents"></span></button></div>`;
+async function zaiSetup({session='user-a',titles=['Alpha','Beta'],list}={}){
+ const markup=`<div id="sidebar"><div class="panel"><div class="label">最近</div><button id="chat-group-tab-zai-web" hidden><span>最近</span></button><div class="wrap"><div class="AgentChatList">${titles.map(zaiRow).join('')}</div></div></div></div><main><div class="truncate">Main</div></main>`;
+ const state={session,list:list||[{id:qwenId('1'),title:'Alpha'},{id:qwenId('2'),title:'Beta'}]};
+ const ctx=await setup({url:'https://chat.z.ai/',markup,beforeLoad:w=>{
+  w.AbortSignal=AbortSignal;w.localStorage.setItem('token','t');
+  // The parser cannot nest buttons; add the native row menu like the Svelte app does.
+  w.document.querySelectorAll('button[data-selected]>span.contents').forEach(span=>{const menu=w.document.createElement('button');menu.className='chatItemMenu';span.append(menu);});
+  w.fetch=async url=>{const path=url.split('?')[0];const body=path==='/api/v1/chats/'?(url.includes('page=1')?state.list:[]):path==='/api/v1/auths/'?{id:state.session}:{detail:'missing'};return {ok:true,status:200,headers:{get:()=>null},json:async()=>body};};
+  w.eval(fs.readFileSync('src/zai.js','utf8'));
+ }});
+ await wait(150);return {...ctx,state};
+}
+test('Z.ai rows receive IDs from the site list, the icon sits in the Recent label row and only delete is offered',async()=>{
+ const {dom,d}=await zaiSetup();try{
+ const boxes=[...d.querySelectorAll('.cs-checkbox')];assert.deepEqual(boxes.map(box=>box.dataset.csId),[qwenId('1'),qwenId('2')]);
+ assert.ok(boxes.every(box=>box.parentElement.matches('button[data-selected]')));assert.equal(d.querySelector('main .cs-checkbox'),null);
+ const label=d.querySelector('.label');assert.equal(d.querySelectorAll('.cs-toolbar').length,1);assert.equal(d.querySelector('.cs-toolbar').parentElement,label);
+ assert.ok(label.classList.contains('cs-zai-heading'));assert.ok(label.classList.contains('cs-heading-row'));assert.equal(label.firstChild.textContent,'最近');
+ assert.equal(d.querySelector('[data-cs-action="archive"]'),null);assert.equal(d.querySelector('[data-cs-action="move"]'),null);assert.equal(d.querySelector('[data-cs-action="archiveManager"]'),null);assert.ok(d.querySelector('[data-cs-action="delete"]'));
+ }finally{dom.window.close()}
+});
+test('Z.ai deletion re-reads the list, checks the account and hides only the confirmed row wrapper',async()=>{
+ const {dom,w,d,state}=await zaiSetup();try{
+ const calls=[];w.ChatTidyBatch.run=async message=>{calls.push(message);return {completed:message.ids}};
+ d.querySelector(`.cs-checkbox[data-cs-id="${qwenId('2')}"]`).click();d.querySelector('[data-cs-action="delete"]').click();assert.match(d.querySelector('.cs-confirm').textContent,/Z\.ai/);
+ d.querySelector('[data-cs-confirm]').click();await wait(150);
+ assert.equal(calls.length,1);assert.equal(calls[0].action,'delete');assert.deepEqual(Array.from(calls[0].ids),[qwenId('2')]);assert.equal(calls[0].expectedUserId,'user-a');
+ const wrappers=d.querySelectorAll('.AgentChatList>div');assert.ok(wrappers[1].classList.contains('cs-deleted-row'));assert.equal(wrappers[0].classList.contains('cs-deleted-row'),false);
+ await wait(150);
+ state.session='user-b';d.querySelector(`.cs-checkbox[data-cs-id="${qwenId('1')}"]`).click();d.querySelector('[data-cs-action="delete"]').click();d.querySelector('[data-cs-confirm]').click();await wait(150);
+ assert.equal(calls.length,1,'another signed-in account stops before the executor');assert.match(d.querySelector('.cs-status:last-of-type').textContent,/account-changed/);
+ }finally{dom.window.close()}
+});
+test('Claude recents label wrapped in h3 gets the compact heading class and keeps the native filter after the icon',async()=>{
+ const {dom,d}=await setup({url:'https://claude.ai/new',markup:`<div data-testid="sidebar"><div data-row-key="label:recents"><div data-sidebar-group-label class="labelrow"><h3><button data-group-toggle><span data-group-name>最近</span></button></h3><div><button aria-label="筛选和分组最近对话">F</button></div></div></div><div><a href="/chat/${id('1')}">Example</a></div></div>`});
+ try{const bar=d.querySelector('.cs-toolbar');assert.ok(bar.parentElement.classList.contains('cs-claude-heading'));assert.equal(bar.nextElementSibling,d.querySelector('[aria-label="筛选和分组最近对话"]').parentElement);
+ const css=fs.readFileSync('src/content.css','utf8');assert.match(css,/\.cs-claude-heading>\.cs-toolbar>\.cs-toggle[^{]*\{[^}]*width:24px;height:24px;padding:0[^}]*border-radius:6px/);assert.match(css,/\.cs-claude-heading>\.cs-toolbar,[^{]*\{[^}]*margin-block:-4px/);
+ }finally{dom.window.close()}
+});
+test('progress from a fast batch repaints the sidebar at most once per frame and completes synchronously',async()=>{
+ const rows=Array.from({length:6},(_,i)=>row(String(i+1))).join('');
+ const {dom,w,d}=await setup({markup:`<nav><h2>聊天</h2><div id="history">${rows}</div></nav>`});try{
+ let syncs=0;const original=w.document.querySelectorAll.bind(w.document);w.document.querySelectorAll=selector=>{if(selector==='.cs-count')syncs++;return original(selector);};
+ w.ChatTidyBatch.run=async job=>{const done=[];for(const value of job.ids){done.push(value);job.onProgress([...done]);}return {completed:job.ids};};
+ d.querySelector('[data-cs-action="all"]').click();syncs=0;d.querySelector('[data-cs-action="delete"]').click();d.querySelector('[data-cs-confirm]').click();
+ await wait(0);
+ assert.equal(d.querySelectorAll('.cs-deleted-row').length,6,'the final update hides every acknowledged row');
+ assert.ok(syncs<=4,'six acknowledgements must not cause six sidebar passes ('+syncs+')');
+ assert.match(d.querySelector('.cs-status').textContent,/6/);
+ }finally{dom.window.close()}
+});
+test('Z.ai reused row nodes never keep another chat\'s checkbox ID and duplicate titles get none',async()=>{
+ const dup=await zaiSetup({titles:['Beta','Beta','Gamma'],list:[{id:qwenId('1'),title:'Beta'},{id:qwenId('2'),title:'Beta'},{id:qwenId('3'),title:'Gamma'}]});
+ try{assert.deepEqual([...dup.d.querySelectorAll('.cs-checkbox')].map(box=>box.dataset.csId),[qwenId('3')],'same-title rows are never mapped');}finally{dup.dom.window.close()}
+ const {dom,d,state}=await zaiSetup();try{
+ assert.deepEqual([...d.querySelectorAll('.cs-checkbox')].map(box=>box.dataset.csId),[qwenId('1'),qwenId('2')]);
+ // Alpha is deleted natively; the unkeyed list reuses the first node for Beta and drops the last node.
+ state.list=[{id:qwenId('2'),title:'Beta'}];const node=d.querySelector('button[data-selected]');node.querySelector('.truncate').textContent='Beta';d.querySelectorAll('.AgentChatList>div')[1].remove();await wait(150);
+ assert.equal(d.querySelector(`.cs-checkbox[data-cs-id="${qwenId('1')}"]`),null,'the stale ID is gone');
+ await wait(150);assert.deepEqual([...d.querySelectorAll('.cs-checkbox')].map(box=>box.dataset.csId),[qwenId('2')]);assert.equal(node.querySelector('.cs-checkbox').dataset.csId,qwenId('2'));
+ // A reused node now showing a different chat drops its checkbox until the list confirms the new ID.
+ node.querySelector('.truncate').textContent='Gamma';await wait(150);
+ assert.equal(node.querySelector('.cs-checkbox'),null);assert.equal(node.classList.contains('cs-chat-link'),false);
+ }finally{dom.window.close()}
+});
+test('Z.ai runs only on the row element that was ticked; a re-rendered row drops the selection',async()=>{
+ const {dom,w,d}=await zaiSetup();try{
+ const calls=[];w.ChatTidyBatch.run=async message=>{calls.push(message);return {completed:message.ids}};
+ const swap=()=>{const old=d.querySelectorAll('.AgentChatList>div')[0];old.replaceWith(dom.window.document.createRange().createContextualFragment(zaiRow('Alpha')));};
+ d.querySelector(`.cs-checkbox[data-cs-id="${qwenId('1')}"]`).click();d.querySelector('[data-cs-action="delete"]').click();
+ swap();d.querySelector('[data-cs-confirm]').click();await wait(150);
+ assert.equal(calls.length,0,'the ticked element is gone, so nothing runs');assert.match(d.querySelector('.cs-status').textContent,/rows-changed/);
+ await wait(150);assert.equal(d.querySelectorAll('.cs-checkbox:checked').length,0,'the new element is not silently selected');
+ assert.equal(d.querySelector('.AgentChatList button[data-selected] .cs-checkbox').dataset.csId,qwenId('1'));
+ }finally{dom.window.close()}
+});
+test('Qwen same-title rows get no checkbox and a run re-reads the list before acting',async()=>{
+ const markup=`<div id="sidebar"><div class="session-list">${qwenSection(`<div class="list-folder-pt"><div class="list-folder-chats">Today</div>${qwenRow('T')}${qwenRow('T')}${qwenRow('X')}</div>`)}</div></div>`;
+ const state={list:[{id:qwenId('1'),title:'T'},{id:qwenId('2'),title:'T'},{id:qwenId('3'),title:'X'}]};
+ const {dom,w,d}=await setup({url:'https://chat.qwen.ai/',markup,beforeLoad:w=>{
+  w.AbortSignal=AbortSignal;
+  w.fetch=async url=>{const path=url.split('?')[0];const body=path==='/api/v2/chats/pinned'?{success:true,data:[]}:path==='/api/v2/chats/'?{success:true,data:state.list.slice()}:path==='/api/v1/auths/'?{id:'user-a'}:{success:false,data:{code:'missing'}};return {ok:true,status:200,headers:{get:()=>null},json:async()=>body};};
+  w.eval(fs.readFileSync('src/qwen.js','utf8'));
+ }});
+ try{
+ await wait(200);assert.deepEqual([...d.querySelectorAll('.cs-checkbox')].map(box=>box.dataset.csId),[qwenId('3')],'same-title rows are never mapped');
+ const calls=[];w.ChatTidyBatch.run=async message=>{calls.push(message);return {completed:message.ids}};
+ d.querySelector('.cs-checkbox').click();d.querySelector('[data-cs-action="delete"]').click();
+ // Before confirming, the website's list changes: the row titled X is now another chat.
+ state.list=[{id:qwenId('2'),title:'T'},{id:qwenId('1'),title:'T'},{id:qwenId('9'),title:'X'}];
+ d.querySelector('[data-cs-confirm]').click();await wait(150);
+ assert.equal(calls.length,0);assert.match(d.querySelector('.cs-status').textContent,/rows-changed/);
+ await wait(150);assert.equal(d.querySelectorAll('.cs-checkbox:checked').length,0);assert.match(d.querySelector('.cs-count').textContent,/0/,'the row now holding another chat is no longer selected');
+ }finally{dom.window.close()}
+});
+test('Z.ai deletion fails closed when a reviewed chat no longer maps to its row',async()=>{
+ const {dom,w,d,state}=await zaiSetup();try{
+ const calls=[];w.ChatTidyBatch.run=async message=>{calls.push(message);return {completed:message.ids}};
+ d.querySelector(`.cs-checkbox[data-cs-id="${qwenId('2')}"]`).click();d.querySelector('[data-cs-action="delete"]').click();
+ state.list=[{id:qwenId('1'),title:'Alpha'},{id:qwenId('3'),title:'Beta'}];
+ d.querySelector('[data-cs-confirm]').click();await wait(150);
+ assert.equal(calls.length,0);assert.match(d.querySelector('.cs-status').textContent,/rows-changed/);assert.equal(d.querySelectorAll('.cs-deleted-row').length,0);
+ }finally{dom.window.close()}
+});
+test('Z.ai hides the row wrapper only when it holds that single row',async()=>{
+ const {dom,w,d}=await zaiSetup();try{
+ const list=d.querySelector('.AgentChatList'),wrap=d.createElement('div');list.prepend(wrap);wrap.append(...[...list.querySelectorAll('button[data-selected]')]);[...list.children].slice(1).forEach(n=>n.remove());await wait(200);
+ w.ChatTidyBatch.run=async message=>({completed:message.ids});
+ d.querySelector(`.cs-checkbox[data-cs-id="${qwenId('2')}"]`).click();d.querySelector('[data-cs-action="delete"]').click();d.querySelector('[data-cs-confirm]').click();await wait(150);
+ assert.equal(wrap.classList.contains('cs-deleted-row'),false);const buttons=wrap.querySelectorAll('button[data-selected]');assert.ok(buttons[1].classList.contains('cs-deleted-row'));assert.equal(buttons[0].classList.contains('cs-deleted-row'),false);
+ }finally{dom.window.close()}
+});
+test('Z.ai keeps the toolbar and checkboxes when one row is a placeholder the list does not confirm, and reveals the icon over the whole Recent panel',async()=>{
+ const {dom,d}=await zaiSetup({titles:['New chat','Alpha','Beta'],list:[{id:qwenId('3'),title:''},{id:qwenId('1'),title:'Alpha'},{id:qwenId('2'),title:'Beta'}]});try{
+ await wait(150);
+ const buttons=[...d.querySelectorAll('button[data-selected]')];
+ assert.equal(buttons[0].querySelector('.cs-checkbox'),null,'the unconfirmed row gets no checkbox');
+ assert.deepEqual(buttons.slice(1).map(b=>b.querySelector('.cs-checkbox')?.dataset.csId),[qwenId('1'),qwenId('2')]);
+ assert.equal(d.querySelector('.cs-toolbar').parentElement,d.querySelector('.label'));
+ assert.match(fs.readFileSync('src/content.css','utf8'),/\.cs-zai-heading>\.cs-toolbar\{opacity:1\}/);
  }finally{dom.window.close()}
 });

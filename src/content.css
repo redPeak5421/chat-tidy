@@ -86,14 +86,23 @@
 /* ChatGPT app-shell: align the menu with the section toggle and let the native title shrink beside the checkbox. */
 .cs-chatgpt-heading{align-items:center!important}.cs-chatgpt-heading>.cs-toolbar{flex-shrink:0}
 .cs-chatgpt-row>div:last-child{min-width:0;flex:1}
-/* App navigation rail: no hover reveal in dynamic mode; sync() hides the entry until a chat is selected. */
+/* App navigation rail: the entry is always shown, with no hover reveal, in every checkbox mode. */
 .cs-toolbar.cs-chatgpt-rail-toolbar{width:36px;min-width:36px;height:36px;flex:0 0 36px;align-self:center;margin:0;opacity:1}
-.cs-chatgpt-rail-toolbar[hidden]{display:none!important}
 .cs-chatgpt-rail-toolbar>.cs-toggle{width:36px;height:36px;padding:8px;border-radius:12px;color:var(--cs-color-1)}
 .cs-actions[popover]{margin:0;right:auto;bottom:auto}
 .cs-claude-heading{display:flex!important;align-items:center!important;flex-wrap:nowrap!important}
 .cs-claude-heading>[data-group-toggle]{flex:1;min-width:0}
 .cs-claude-heading>.cs-toolbar{flex-shrink:0}
+/* Claude and Z.ai label rows: match the native 24px header buttons (6px radius, 16px glyph, ghost hover) so the row never grows. */
+@media(hover:hover){
+ .cs-claude-heading>.cs-toolbar,.cs-zai-heading>.cs-toolbar{flex:0 0 24px;width:24px;min-width:24px;height:24px;margin-block:-4px;margin-inline:4px 0}
+ .cs-claude-heading>.cs-toolbar>.cs-toggle,.cs-zai-heading>.cs-toolbar>.cs-toggle{width:24px;height:24px;padding:0;border:0;border-radius:6px;background:transparent;transition:background-color .1s ease-out}
+ .cs-claude-heading>.cs-toolbar>.cs-toggle svg,.cs-zai-heading>.cs-toolbar>.cs-toggle svg{width:16px;height:16px}
+ .cs-claude-heading>.cs-toolbar>.cs-toggle:hover,.cs-claude-heading>.cs-toolbar>.cs-toggle[aria-expanded="true"]{background:var(--cds-fill-ghost-hover,var(--cs-color-2))}
+ .cs-zai-heading>.cs-toolbar>.cs-toggle:hover,.cs-zai-heading>.cs-toolbar>.cs-toggle[aria-expanded="true"]{background:var(--color-bg-hover,var(--cs-color-2))}
+}
+/* Z.ai's "Recent" caption is static text nobody hovers, so the icon is always visible there, whatever the checkbox mode. */
+.cs-zai-heading>.cs-toolbar{opacity:1}
 /* Compact management panel: filter, selection and action rows keep a fixed footprint. */
 .cs-actions{width:300px;padding:8px;gap:4px;border-radius:16px}
 .cs-actions [hidden]{display:none!important}
@@ -104,12 +113,15 @@
 .cs-filter-input{flex:1;min-width:0;width:100%;height:100%;margin:0;padding:0;border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;color:inherit;font:inherit;font-size:13px}
 .cs-filter-input::placeholder{color:var(--cs-color-1);opacity:1}
 .cs-actions .cs-pick{flex:none;padding:4px 9px;font-size:12px;background:var(--cs-color-2);white-space:nowrap}
-.cs-select-row{display:flex;align-items:center;gap:2px;min-height:34px;padding:0 0 0 10px}
-.cs-actions .cs-select-row .cs-count{flex:1;min-width:0;padding:0;margin:0;border:0;font-size:13px;overflow:hidden;text-overflow:ellipsis}
-.cs-actions .cs-icon-button{display:inline-flex;align-items:center;justify-content:center;flex:none;width:34px!important;height:34px!important;min-height:0!important;padding:0!important;border-radius:9px;box-sizing:border-box}
-.cs-actions .cs-button svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.cs-select-row{display:flex;flex-direction:column;gap:4px;padding:2px 0 6px}
+.cs-actions .cs-select-row .cs-count{display:block;min-width:0;padding:2px 10px;margin:0;border:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cs-select-buttons{display:flex;gap:4px}
+.cs-select-buttons>.cs-button{flex:1 1 0;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:4px;box-sizing:border-box;height:34px!important;min-height:0!important;max-height:34px!important;padding:0 4px!important;font-size:12px;line-height:1!important;white-space:nowrap;border-radius:10px}
+.cs-select-buttons>.cs-button>span,.cs-run-row>.cs-button>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cs-actions .cs-button svg{display:block;width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .cs-run-row{display:flex;flex-wrap:wrap;gap:6px;padding-top:6px;border-top:1px solid var(--cs-color-7)}
 .cs-run-row>.cs-button{flex:1 1 0;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:5px;box-sizing:border-box;height:34px!important;min-height:0!important;max-height:34px!important;padding:0 10px!important;font-size:13px;line-height:1!important;white-space:nowrap;border-radius:10px}
 .cs-actions .cs-manager-section{margin-top:0}
 .cs-chat-link.cs-match{background-color:color-mix(in srgb,#6366f1 16%,transparent)!important;border-radius:8px}
-@media(hover:none){.cs-actions .cs-icon-button{width:44px!important;height:44px!important}.cs-filter{height:44px!important;max-height:44px!important}.cs-run-row>.cs-button{height:44px!important;max-height:44px!important}.cs-select-row{min-height:44px}}
+.cs-actions,.cs-actions .cs-button{color:var(--cs-color-0)}.cs-actions .cs-button[data-cs-action="delete"]{color:var(--cs-color-5)}
+@media(hover:none){.cs-select-buttons>.cs-button{height:44px!important;max-height:44px!important}.cs-filter{height:44px!important;max-height:44px!important}.cs-run-row>.cs-button{height:44px!important;max-height:44px!important}.cs-select-row{min-height:44px}}

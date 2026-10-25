@@ -24,7 +24,7 @@
     "message": "全选和反选仅处理侧栏当前已加载的聊天。向下滚动可加载更多；页面刷新后选择会清空。"
   },
   "privacy": {
-    "message": "在 ChatGPT、Claude、Grok、Gemini、Kimi 和 Qwen 页面运行。只保存设置，不保存聊天或登录凭据，不向第三方发送数据。"
+    "message": "在 ChatGPT、Claude、Grok、Gemini、Kimi、Qwen 和 Z.ai 页面运行。只保存设置，不保存聊天或登录凭据，不向第三方发送数据。"
   },
   "clear": {
     "message": "取消选择"
@@ -158,7 +158,7 @@
     "message": "并发删除"
   },
   "concurrencyHelp": {
-    "message": "ChatGPT / Grok / Gemini / Kimi / Qwen 默认并发 2，非官方限额；Claude 原生批量每组 20 条。遇限流停止。"
+    "message": "所有网站同时发出的请求数（Claude 每个请求最多 20 条；Cowork 任务逐个处理）。默认 5。数值越高越快，但越容易触发网站限流：短暂限流会自动暂停后继续，较长限流则停止并冷却。"
   },
   "cooldown": {
     "message": "限流冷却中，可在 $TIME$ 后重试。",
@@ -326,7 +326,7 @@
     "message": "隐藏支持菜单"
   },
   "aboutTitle": {
-    "message": "支持 ChatGPT、Claude、Grok、Gemini、Kimi、Qwen 的浏览器页面增强："
+    "message": "支持 ChatGPT、Claude、Grok、Gemini、Kimi、Qwen、Z.ai 的浏览器页面增强："
   },
   "aboutChatgpt": {
     "message": "ChatGPT：批量删除、批量归档、归档管理（恢复 / 删除）、批量移动至项目或新项目。"
@@ -345,6 +345,9 @@
   },
   "aboutQwen": {
     "message": "Qwen：批量删除、批量归档、归档管理（恢复 / 删除）、批量移动至项目或新项目。"
+  },
+  "aboutZai": {
+    "message": "Z.ai：批量删除。"
   },
   "moveProject": {
     "message": "移动至项目"

@@ -8,16 +8,12 @@ globalThis.ChatTidyQwen=(()=>{
   const id=globalThis.crypto?.randomUUID?.()||String(Date.now());
   return {Accept:'application/json','Content-Type':'application/json',source:'web','X-Request-Id':id,Timezone:timezone,'Accept-Language':globalThis.navigator?.language||'en-US'};
  }
- async function request(path,{method='GET',body,base='/api/v2',raw=false}={}){
+ async function request(path,{method='GET',body,base='/api/v2',raw=false,timeout=20000}={}){
   if(location.origin!==ORIGIN)throw Error('invalid-request');
   let response;
-  try{response=await fetch(base+path,{method,credentials:'same-origin',mode:'same-origin',redirect:'error',headers:headers(),body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(20000)});}
+  try{response=await fetch(base+path,{method,credentials:'same-origin',mode:'same-origin',redirect:'error',headers:headers(),body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(timeout)});}
   catch{throw Error('network');}
-  if(!response.ok){
-   const e=Error(response.status===429?'rate-limit':response.status===401?'login':response.status===403?'forbidden':'http-'+response.status);
-   if(response.status===429)e.retryAt=Date.now()+Math.max(60000,Number(response.headers?.get('Retry-After'))*1000||0);
-   throw e;
-  }
+  if(!response.ok)throw ChatTidyCore.httpError(response);
   let json;try{json=await response.json();}catch{throw Error('unexpected-response');}
   if(!json||typeof json!=='object')throw Error('unexpected-response');
   // /api/v2 answers with a {success, data} envelope; /api/v1 returns the record itself (the site wraps it client-side).
@@ -27,7 +23,7 @@ globalThis.ChatTidyQwen=(()=>{
  }
  function chat(value){return value&&typeof value==='object'&&typeof value.id==='string'&&UUID.test(value.id)?{id:value.id.toLowerCase(),title:typeof value.title==='string'?value.title:'',project:value.project_id||null,pinned:!!value.pinned,range:typeof value.time_range==='string'?value.time_range:'',created:value.created_at}:null;}
  function list(values){return Array.isArray(values)?values.map(chat).filter(Boolean):[];}
- // Identity check before destructive waves: the site's own session endpoint.
+ // Identity check before a destructive run: the site's own session endpoint.
  async function session(){const user=await request('/auths/',{base:'/api/v1',raw:true});if(typeof user?.id!=='string'||!user.id)throw Error('login');return user.id;}
  const api={
   chats:async page=>list(await request('/chats/?page='+encodeURIComponent(page)+'&exclude_project=true')),
@@ -38,10 +34,13 @@ globalThis.ChatTidyQwen=(()=>{
   toggleArchive:async id=>{await request('/chats/'+id+'/archive',{method:'POST'});},
   projects:async()=>{const data=await request('/projects/');return Array.isArray(data)?data.filter(item=>typeof item?.id==='string'&&typeof item?.name==='string').map(item=>({id:item.id,name:item.name})):[];},
   createProject:async name=>{const data=await request('/projects/',{method:'POST',body:{name,description:'',memory_span:'default',icon:'icon=icon-line-folder-01&style=text-primary',files:[]}});if(typeof data?.id!=='string')throw Error('unexpected-response');return {id:data.id,name:typeof data.name==='string'?data.name:name};},
-  addToProject:async(projectId,ids)=>{await request('/projects/add_chat',{method:'POST',body:{chat_ids:ids,project_id:projectId}});}
+  // A group of up to 20 chats per request gets a longer window than single-chat calls.
+  addToProject:async(projectId,ids)=>{await request('/projects/add_chat',{method:'POST',body:{chat_ids:ids,project_id:projectId},timeout:60000});}
  };
  // Sidebar rows have no href. The site renders pinned rows first, then the paged list split by date
  // labels; rows are mapped only when a whole section matches the website's own list in size and titles.
+ // The (truncated) title is the only link between a row and a chat, so a title shared by two rows of a section or by two
+ // chats in the list never maps: when such chats swap places, position alone would hand one row the other's ID.
  function truncate(title){return title.length>100?title.slice(0,97)+'...':title;}
  function create({changed=()=>{}}={}){
   const mapped=new WeakMap();
@@ -75,7 +74,13 @@ globalThis.ChatTidyQwen=(()=>{
    }
    return {pinned,groups};
   }
-  function assign(rows,items){for(let i=0;i<rows.length;i++){const item=items[i];if(item&&truncate(item.title)===titleOf(rows[i]))mapped.set(rows[i],{id:item.id,title:item.title||titleOf(rows[i])});}}
+  function assign(rows,items){
+   const count=(map,title)=>map.set(title,(map.get(title)||0)+1),inRows=new Map(),inList=new Map(),listed=new Set(pageItems.map(item=>item.id));
+   for(const row of rows)count(inRows,titleOf(row));
+   // A pinned chat may also appear in the paged list; it is counted once.
+   for(const item of [...pageItems,...pinnedItems.filter(item=>!listed.has(item.id))])if(!removed.has(item.id))count(inList,truncate(item.title));
+   for(let i=0;i<rows.length;i++){const item=items[i],title=titleOf(rows[i]);if(item&&title&&truncate(item.title)===title&&inRows.get(title)===1&&inList.get(title)===1)mapped.set(rows[i],{id:item.id,title:item.title||title});}
+  }
   // Aligns sections without assigning: pinned rows against pinned chats, then each dated section in order.
   // 'partial' means more pages could complete the last section; otherwise a size mismatch stops alignment there.
   function attempt(dom,pinnedInMain){
@@ -104,7 +109,8 @@ globalThis.ChatTidyQwen=(()=>{
    })();
    await loading;
   }
-  function refresh(){if(Date.now()-refreshedAt<30000)return;refreshedAt=Date.now();epoch++;pinnedItems=[];pageItems=[];complete=false;page=0;loading=null;failedAt=0;void load();}
+  function reset(){epoch++;pinnedItems=[];pageItems=[];complete=false;page=0;loading=null;failedAt=0;}
+  function refresh(){if(Date.now()-refreshedAt<30000)return;refreshedAt=Date.now();reset();void load();}
   function scan(){
    const dom=domSections();if(!dom)return [];
    const rows=[...dom.pinned,...dom.groups.flat()];
@@ -120,9 +126,19 @@ globalThis.ChatTidyQwen=(()=>{
    else if(best?.status==='mismatch'||(best&&!best.pinnedOk))refresh();
    return rows.map(row=>{const entry=mapped.get(row);return entry?{id:entry.id,title:entry.title,link:row}:null;}).filter(Boolean);
   }
+  // Before a destructive run: fetch the list again so the mapping reflects the server right now.
+  async function reload(){
+   reset();refreshedAt=Date.now();
+   for(let guard=0;guard<50;guard++){
+    await load();
+    const dom=domSections(),rows=dom?dom.pinned.length+dom.groups.flat().length:0;
+    if(complete||failedAt||pinnedItems.length+pageItems.length>=rows)break;
+   }
+   return scan();
+  }
   function forget(ids){for(const id of ids)removed.add(id);}
   function unforget(ids){for(const id of ids)removed.delete(id);refreshedAt=0;refresh();}
-  return {scan,forget,unforget,refresh,idOf:link=>mapped.get(link)?.id||null};
+  return {scan,reload,forget,unforget,refresh,idOf:link=>mapped.get(link)?.id||null};
  }
- return {request,session,api,create,truncate,chat};
+ return {session,api,create};
 })();

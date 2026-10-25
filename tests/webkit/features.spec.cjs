@@ -54,3 +54,22 @@ test('ChatGPT move picker lists projects from the sidebar endpoint and patches g
  await expect.poll(()=>patches.length).toBe(1);expect(patches[0]).toEqual({path:'/backend-api/conversation/'+ids[0],body:{gizmo_id:'g-p-fixture'}});
  await expect(page.locator('.cs-status')).toContainText('Moved 1');await expect(page.locator(`a[href="/c/${ids[0]}"]`)).toBeHidden();
 });
+test('the five concurrency choices fit the 440px popup in every language',async({page,context},testInfo)=>{
+ await context.route('https://fixture.test/**',route=>{const p=new URL(route.request().url()).pathname.slice(1)||'popup.html';if(!/^(popup\.html|src\/[\w.-]+|icons\/[\w.-]+)$/.test(p))return route.abort();return route.fulfill({path:p,contentType:p.endsWith('.js')?'text/javascript':p.endsWith('.css')?'text/css':p.endsWith('.html')?'text/html':undefined});});
+ await page.addInitScript(()=>{globalThis.saved={};globalThis.chrome={storage:{local:{get:async d=>({...d,language:'en'}),set:async d=>Object.assign(saved,d)}},tabs:{query:async()=>[]}};});
+ await page.setViewportSize({width:440,height:600});await page.goto('https://fixture.test/popup.html');
+ for(const language of ['en','zh-CN','zh-TW','fr','ja','ru']){
+  await page.locator('#language').selectOption(language);
+  const layout=await page.evaluate(()=>{
+   const group=document.getElementById('concurrency'),field=group.closest('.field'),labels=[...group.querySelectorAll('label')],title=document.getElementById('concurrency-label');
+   const box=group.getBoundingClientRect(),area=field.getBoundingClientRect();
+   return {page:document.documentElement.scrollWidth<=innerWidth,values:labels.map(l=>l.querySelector('input').value),inside:box.left>=area.left-0.5&&box.right<=area.right+0.5,
+    oneRow:new Set(labels.map(l=>Math.round(l.getBoundingClientRect().top))).size===1,clipped:labels.some(l=>{const s=l.querySelector('span');return s.scrollWidth>s.clientWidth+0.5;}),
+    titleClipped:title.scrollWidth>title.clientWidth+0.5,width:Math.round(box.width),titleTop:Math.round(title.getBoundingClientRect().top)};
+  });
+  expect(layout.page,language).toBe(true);expect(layout.values).toEqual(['1','3','5','10','15']);
+  expect(layout.inside,language).toBe(true);expect(layout.oneRow,language).toBe(true);expect(layout.clipped,language).toBe(false);expect(layout.titleClipped,language).toBe(false);
+  await page.locator('#concurrency').screenshot({path:testInfo.outputPath('concurrency-'+language+'.png')});
+ }
+ await page.locator('input[name="concurrency"][value="15"]').check({force:true});await expect.poll(()=>page.evaluate(()=>saved.concurrency)).toBe(15);
+});

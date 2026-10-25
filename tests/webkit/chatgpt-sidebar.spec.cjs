@@ -41,15 +41,15 @@ test('ChatGPT app-shell: visible controls, keyboard selection, rerender and conf
  await expect(page.locator('.cs-checkbox,.cs-toolbar,.cs-chatgpt-heading,.cs-chatgpt-row')).toHaveCount(0);
 });
 
-test('ChatGPT rail entry stays hidden until selection and its menu escapes the native fade mask',async({page,context},testInfo)=>{
+test('ChatGPT rail entry stays visible in hidden-checkbox mode and its menu escapes the native fade mask',async({page,context},testInfo)=>{
  await context.route('https://chatgpt.com/**',route=>route.fulfill({contentType:'text/html',body:`<meta charset="utf-8"><style>body{margin:0;font:14px system-ui}nav[data-app-navigation-rail]{position:fixed;inset:0 auto 0 0;width:52px;background:#f7f7f7;display:flex;flex-direction:column;align-items:center}.rail-items{display:flex;flex:1;flex-direction:column;align-items:center;gap:16px;width:100%;overflow-y:auto;mask-image:linear-gradient(#000 95%,transparent)}.rail-items>button,.rail-items>div>button{width:36px;height:36px;font-size:9px;padding:0}aside{margin-left:64px;width:300px}.header,.header>div{display:flex}[role=listitem]>div>[role=button]{height:36px;position:relative}.contents{display:contents}.contents>button{position:absolute;right:0;opacity:0;pointer-events:none}.title{display:flex;align-items:center;width:100%;height:100%}main{margin-left:400px}</style>${modernRail()+modernSidebar()}`}));
  await page.goto('https://chatgpt.com/');
  await page.evaluate(()=>{globalThis.chrome={storage:{local:{get:async d=>({...d,language:'en',checkboxMode:'dynamic'})},onChanged:{addListener(fn){globalThis.change=fn}}},runtime:{id:'fixture',onMessage:{addListener(){}}}};globalThis.ChatTidyBatch={cancel(){},run(){throw Error('No batch should run')}};});
  for(const f of ['core','i18n','projects','content'])await page.addScriptTag({path:`src/${f}.js`});
  await page.addStyleTag({path:'src/content.css'});
  const bar=page.locator('.cs-chatgpt-rail-toolbar'),toggle=bar.locator('.cs-toggle');
- await expect(bar).toHaveCount(1);await expect(toggle).toBeHidden();await expect(page.locator('#app-shell-sidebar .cs-toolbar')).toHaveCount(0);
- await page.locator('[data-app-navigation-rail]').hover();await expect(toggle).toBeHidden();
+ await expect(bar).toHaveCount(1);await expect(toggle).toBeVisible();await expect(page.locator('#app-shell-sidebar .cs-toolbar')).toHaveCount(0);
+ await page.locator('[data-app-navigation-rail]').hover();await expect(toggle).toBeVisible();
  const first=page.locator('.cs-checkbox').first();await first.focus();await first.press('Space');await expect(toggle).toBeVisible();
  await toggle.click();const menu=page.locator('.cs-actions');await expect(menu).toBeVisible();
  expect(await menu.evaluate(e=>e.matches(':popover-open'))).toBe(true);
@@ -58,10 +58,10 @@ test('ChatGPT rail entry stays hidden until selection and its menu escapes the n
  await menu.locator('.cs-filter-input').fill('Chat 2');await menu.locator('.cs-filter-input').press('Enter');await expect(page.locator('.cs-checkbox:checked')).toHaveCount(2);
  await page.screenshot({path:testInfo.outputPath('rail-menu.png')});
  await menu.locator('[data-cs-action="clear"]').click();await expect(toggle).toBeVisible();await expect(menu).toBeVisible();
- await page.keyboard.press('Escape');await expect(toggle).toBeHidden();await expect(menu).toBeHidden();
+ await page.keyboard.press('Escape');await expect(toggle).toBeVisible();await expect(menu).toBeHidden();
  await page.evaluate(()=>change({checkboxMode:{newValue:'always'}},'local'));await expect(page.locator('.cs-chatgpt-rail-toolbar .cs-toggle')).toBeVisible();
  await page.locator('.cs-chatgpt-rail-toolbar .cs-toggle').click();await expect(page.locator('.cs-actions')).toBeVisible();
  await page.keyboard.press('Escape');await expect(page.locator('.cs-actions')).toBeHidden();
- await page.evaluate(()=>change({checkboxMode:{newValue:'dynamic'}},'local'));await expect(page.locator('.cs-chatgpt-rail-toolbar .cs-toggle')).toBeHidden();
+ await page.evaluate(()=>change({checkboxMode:{newValue:'dynamic'}},'local'));await expect(page.locator('.cs-chatgpt-rail-toolbar .cs-toggle')).toBeVisible();
  await page.evaluate(()=>change({enabled:{newValue:false}},'local'));await expect(page.locator('.cs-toolbar,.cs-actions')).toHaveCount(0);
 });

@@ -1,9 +1,12 @@
 (async () => {
   document.getElementById('extension-version').textContent=chrome.runtime?.getManifest?.().version || '';
-  const api=ChatTidyI18n;
-  const defaults={enabled:true,grokShowAll:false,grokHideBots:false,grokCollapseBots:false,theme:'system',hideSupport:false,concurrency:2,checkboxMode:'dynamic',language:api.browserLanguage()};
-  const fields=['enabled','grokShowAll','language','checkboxMode','concurrency','theme','grokHideBots','grokCollapseBots',...(document.getElementById('hideSupport')?['hideSupport']:[])];
+  const api=ChatTidyI18n,core=ChatTidyCore;
+  const defaults={...core.settings,language:api.browserLanguage()};
+  // Every preference with a control on this page; the Safari build ships without the support toggle.
+  const fields=Object.keys(defaults).filter(key=>document.getElementById(key));
   let settings={...defaults,...await chrome.storage.local.get(defaults)};
+  // A stored value that is no longer offered (such as the old default 2) shows the default the deletion will use.
+  if(!core.concurrencyOptions.includes(settings.concurrency))settings.concurrency=defaults.concurrency;
   function render(){
     document.documentElement.lang=settings.language;
     document.documentElement.dataset.theme=['light','dark'].includes(settings.theme)?settings.theme:'system';
@@ -51,9 +54,9 @@
       document.getElementById('saved').textContent=api.t(settings.language,'supportOpenError');
     }finally{delete link.dataset.opening;}
   }));
-  if(chrome.tabs){try{const [tab]=await chrome.tabs.query({active:true,currentWindow:true});if(tab?.id){const result=await chrome.tabs.sendMessage(tab.id,{type:'cs-site'});document.getElementById('open-archive').hidden=!['chatgpt','qwen'].includes(result?.site);document.getElementById('grok-options').hidden=result?.site!=='grok';document.getElementById('grok-bots-options').hidden=result?.site!=='grok';}}catch{}}
+  if(chrome.tabs){try{const [tab]=await chrome.tabs.query({active:true,currentWindow:true});if(tab?.id){const result=await chrome.tabs.sendMessage(tab.id,{type:'cs-site'});document.getElementById('open-archive').hidden=!core.supports(result?.site,'manager');document.getElementById('grok-options').hidden=result?.site!=='grok';document.getElementById('grok-bots-options').hidden=result?.site!=='grok';}}catch{}}
   for(const key of fields)document.getElementById(key).addEventListener('change',async event=>{
-    const value=['enabled','grokShowAll','grokHideBots','grokCollapseBots','hideSupport'].includes(key)?event.target.checked:key==='concurrency'?Number(event.target.value):event.target.value;
+    const value=typeof defaults[key]==='boolean'?event.target.checked:typeof defaults[key]==='number'?Number(event.target.value):event.target.value;
     settings[key]=value;render();
     await chrome.storage.local.set({[key]:value});
     document.getElementById('saved').textContent=api.t(settings.language,'saved');

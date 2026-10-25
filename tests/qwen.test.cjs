@@ -52,12 +52,14 @@ test('Qwen sidebar rows map to IDs by section and title order across pinned and 
  let changes=0;const rows=w.ChatTidyQwen.create({changed:()=>changes++});
  assert.equal(rows.scan().length,0);await new Promise(r=>setTimeout(r,20));
  assert.ok(changes>=1);
+ // Two chats are titled Beta: neither row gets an ID, because only the title links a row to a chat.
  const mapped=rows.scan();
- assert.deepEqual(Array.from(mapped.map(item=>item.id)),[uuid('a'),uuid('1'),uuid('2'),uuid('3'),uuid('4')]);
- assert.equal(mapped.find(item=>item.id===uuid('3')).link.textContent.trim(),'Beta');
+ assert.deepEqual(Array.from(mapped.map(item=>item.id)),[uuid('a'),uuid('1'),uuid('4')]);
  assert.equal(mapped.find(item=>item.id===uuid('4')).title,long);
+ // Once one Beta is deleted and hidden, the remaining one is unambiguous.
  rows.forget([uuid('2')]);w.document.querySelectorAll('.chat-item-drag')[2].classList.add('cs-deleted-row');
- assert.deepEqual(Array.from(rows.scan().map(item=>item.id)),[uuid('a'),uuid('1'),uuid('3'),uuid('4')]);
+ const after=rows.scan();assert.deepEqual(Array.from(after.map(item=>item.id)),[uuid('a'),uuid('1'),uuid('3'),uuid('4')]);
+ assert.equal(after.find(item=>item.id===uuid('3')).link.textContent.trim(),'Beta');
  assert.equal(calls.filter(c=>c.url.startsWith('/api/v2/chats/?')).length,1,'a complete page is not refetched');
  // A row the website list does not know (a chat created after the fetch) disables its whole section and refreshes the list.
  w.document.querySelector('.list-folder-pt').insertAdjacentHTML('afterbegin',row('Mystery'));
@@ -80,30 +82,63 @@ test('Qwen mapping loads further pages only while rows outnumber known chats',as
  assert.deepEqual(calls.filter(c=>c.url.startsWith('/api/v2/chats/?')).map(c=>new URL(c.url,'https://chat.qwen.ai').searchParams.get('page')),['1','2']);
  }finally{w.close();}
 });
-test('Qwen mapping skips rows hidden after deletion so a same-titled neighbour keeps its own ID',async()=>{
+test('Qwen same-titled rows stay unmapped until one is deleted; the neighbour then keeps its own ID',async()=>{
  const markup=`<div id="sidebar"><div class="session-list">${section(`<div class="list-folder-pt">${row('Beta')}${row('Beta')}</div>`)}</div></div>`;
  const {w,routes}=setup(markup);try{
  routes['GET /api/v2/chats/pinned']={success:true,data:[]};
  routes['GET /api/v2/chats/']={success:true,data:[{id:uuid('1'),title:'Beta'},{id:uuid('2'),title:'Beta'}]};
  const rows=w.ChatTidyQwen.create({changed:()=>{}});rows.scan();await new Promise(r=>setTimeout(r,20));
- assert.deepEqual(Array.from(rows.scan().map(item=>item.id)),[uuid('1'),uuid('2')]);
+ assert.equal(rows.scan().length,0,'two rows titled Beta are ambiguous');
  rows.forget([uuid('1')]);w.document.querySelectorAll('.chat-item-drag')[0].classList.add('cs-deleted-row');
  const mapped=rows.scan();assert.equal(mapped.length,1);assert.equal(mapped[0].id,uuid('2'));assert.equal(mapped[0].link,w.document.querySelectorAll('a.chat-item-drag-link')[1]);
  }finally{w.close();}
 });
 test('Qwen mapping retries a failed page instead of skipping it',async()=>{
  const titles=Array.from({length:60},(_,i)=>'Chat '+i);
- const markup=`<div id="sidebar"><div class="session-list">${section(`<div class="list-folder-pt">${titles.map(row).join('')}${row('Chat 7')}</div>`)}</div></div>`;
+ const markup=`<div id="sidebar"><div class="session-list">${section(`<div class="list-folder-pt">${titles.map(row).join('')}${row('Chat 60')}</div>`)}</div></div>`;
  const {w,routes,calls}=setup(markup);try{
  let fail=true;routes['GET /api/v2/chats/pinned']={success:true,data:[]};
- routes['GET /api/v2/chats/']=url=>{if(url.includes('page=1')){if(fail){fail=false;throw Error('boom');}return {success:true,data:titles.map((title,i)=>({id:uuid(String(i%10)).replace(/^./,'f'),title}))};}return {success:true,data:[{id:uuid('e'),title:'Chat 7'}]};};
+ routes['GET /api/v2/chats/']=url=>{if(url.includes('page=1')){if(fail){fail=false;throw Error('boom');}return {success:true,data:titles.map((title,i)=>({id:uuid(String(i%10)).replace(/^./,'f'),title}))};}return {success:true,data:[{id:uuid('e'),title:'Chat 60'}]};};
  const rows=w.ChatTidyQwen.create({changed:()=>{}});
  rows.scan();await new Promise(r=>setTimeout(r,20));
  assert.equal(rows.scan().length,0,'nothing is mapped while page 1 is unknown');
  // The failure backs off for 15 seconds; simulate the clock moving on by re-creating after the backoff would elapse.
  const later=w.ChatTidyQwen.create({changed:()=>{}});later.scan();await new Promise(r=>setTimeout(r,20));later.scan();await new Promise(r=>setTimeout(r,20));
  const mapped=later.scan();assert.equal(mapped.length,61);
- assert.equal(mapped[7].id,'f'+uuid('7').slice(1));assert.equal(mapped[60].id,uuid('e'),'the duplicate title at the end keeps its own ID');
+ assert.equal(mapped[7].id,'f'+uuid('7').slice(1));assert.equal(mapped[60].id,uuid('e'),'the row on the second page keeps its own ID');
  assert.deepEqual(calls.filter(c=>c.url.startsWith('/api/v2/chats/?')).map(c=>new URL(c.url,'https://chat.qwen.ai').searchParams.get('page')),['1','1','2']);
+ }finally{w.close();}
+});
+test('Qwen move groups get a 60 s window while single-chat calls keep 20 s',async()=>{
+ const {w,routes}=setup();try{
+  const seen=[];w.AbortSignal={timeout:ms=>{seen.push(ms);return AbortSignal.timeout(ms);}};
+  routes['POST /api/v2/projects/add_chat']={success:true,data:true};routes['DELETE /api/v2/chats/'+uuid('1')]={success:true,data:true};
+  await w.ChatTidyQwen.api.addToProject('proj-3',[uuid('1'),uuid('2')]);await w.ChatTidyQwen.api.remove(uuid('1'));
+  assert.deepEqual(seen,[60000,20000]);
+ }finally{w.close();}
+});
+test('Qwen same-title chats that swap places and long titles that truncate alike never map',async()=>{
+ const long=n=>'L'.repeat(98)+n+'-tail';
+ const markup=`<div id="sidebar"><div class="session-list">${section(`<div class="list-folder-pt"><div class="list-folder-chats">Today</div><span data-k="A">${row('T')}</span><span data-k="B">${row('T')}</span>${row('X')}${row(long('1').slice(0,97)+'...')}${row(long('2').slice(0,97)+'...')}</div>`)}</div></div>`;
+ const {w,routes}=setup(markup);try{
+ let list=[{id:uuid('1'),title:'T'},{id:uuid('2'),title:'T'},{id:uuid('3'),title:'X'},{id:uuid('4'),title:long('1')},{id:uuid('5'),title:long('2')}];
+ routes['GET /api/v2/chats/pinned']={success:true,data:[]};routes['GET /api/v2/chats/']=()=>({success:true,data:list.slice()});
+ const rows=w.ChatTidyQwen.create();rows.scan();await new Promise(r=>setTimeout(r,20));
+ const d=w.document,by=k=>d.querySelector(`[data-k="${k}"] a`);
+ assert.deepEqual(Array.from(rows.scan().map(item=>item.id)),[uuid('3')],'only the unique title X maps; long titles collide once truncated');
+ // Chat B is continued: the website moves it to the top, in the sidebar and in its list.
+ d.querySelector('.list-folder-chats').after(d.querySelector('[data-k="B"]'));list=[list[1],list[0],...list.slice(2)];
+ rows.scan();assert.equal(rows.idOf(by('B')),null);assert.equal(rows.idOf(by('A')),null);
+ const fresh=await rows.reload();assert.deepEqual(Array.from(fresh.map(item=>item.id)),[uuid('3')]);
+ }finally{w.close();}
+});
+test('Qwen reload refetches the list before a run so approved IDs reflect the server now',async()=>{
+ const markup=`<div id="sidebar"><div class="session-list">${section(`<div class="list-folder-pt">${row('Alpha')}${row('Beta')}</div>`)}</div></div>`;
+ const {w,routes,calls}=setup(markup);try{
+ let list=[{id:uuid('1'),title:'Alpha'},{id:uuid('2'),title:'Beta'}];routes['GET /api/v2/chats/pinned']={success:true,data:[]};routes['GET /api/v2/chats/']=()=>({success:true,data:list.slice()});
+ const rows=w.ChatTidyQwen.create();rows.scan();await new Promise(r=>setTimeout(r,20));assert.equal(rows.scan().length,2);
+ list=[{id:uuid('1'),title:'Alpha'},{id:uuid('9'),title:'Beta'}];
+ const before=calls.length;const fresh=await rows.reload();assert.ok(calls.length>before);
+ assert.deepEqual(Array.from(fresh.map(item=>item.id)),[uuid('1'),uuid('9')]);
  }finally{w.close();}
 });
