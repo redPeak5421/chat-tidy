@@ -24,7 +24,7 @@
     "message": "全選択・反転の対象は読み込み済みのチャットのみです。スクロールで追加読み込みできます。再読み込みで選択は解除されます。"
   },
   "privacy": {
-    "message": "ChatGPT、Claude、Grok、Gemini、Kimi、Qwen、Z.ai のページで動作します。保存するのは設定のみで、チャットや認証情報は保存せず、第三者にも送信しません。"
+    "message": "ChatGPT、Claude、Grok、Gemini、Kimi、Qwen、Z.ai のページで動作します。設定とブックマーク（タイトル、短い抜粋、タグ、メモ）はこのブラウザ内だけに保存されます。認証情報は保存せず、開発者や第三者にも送信しません。"
   },
   "clear": {
     "message": "選択解除"
@@ -176,7 +176,7 @@
     "message": "Chat Tidy"
   },
   "extensionDescription": {
-    "message": "AI チャットサイトのサイドバーでチャットを選び、一括で削除・アーカイブ・移動できます。6 言語対応。"
+    "message": "AI チャットの会話をサイドバーで一括削除・アーカイブ・移動。目次、会話内検索、ブックマーク、コードツールも。"
   },
   "actionTitle": {
     "message": "Chat Tidy"
@@ -673,5 +673,8 @@
   },
   "libraryTagFilter": {
     "message": "タグで絞り込む"
+  },
+  "step4": {
+    "message": "会話を開くと右側の目次・検索・コードツールが使えます。「チャット拡張」でオン・オフできます。"
   }
 }

@@ -24,7 +24,7 @@
     "message": "全選與反向選擇只處理側欄已載入的聊天。向下捲動可載入更多；重新整理會清空選擇。"
   },
   "privacy": {
-    "message": "在 ChatGPT、Claude、Grok、Gemini、Kimi、Qwen 和 Z.ai 頁面執行。只儲存設定，不儲存聊天或登入憑證，不向第三方傳送資料。"
+    "message": "在 ChatGPT、Claude、Grok、Gemini、Kimi、Qwen 和 Z.ai 頁面執行。設定和你的收藏（標題、簡短摘錄、標籤、備註）只儲存在本瀏覽器；不儲存登入憑證，不向開發者或第三方傳送資料。"
   },
   "clear": {
     "message": "取消選擇"
@@ -176,7 +176,7 @@
     "message": "Chat Tidy"
   },
   "extensionDescription": {
-    "message": "在 AI 聊天網站的側邊欄勾選聊天，批次刪除、封存或移動，支援六種語言。"
+    "message": "在 AI 聊天網站側邊欄批次刪除、封存或移動對話，並提供對話目錄、對話內搜尋、收藏標籤和程式碼區塊增強。"
   },
   "actionTitle": {
     "message": "Chat Tidy"
@@ -673,5 +673,8 @@
   },
   "libraryTagFilter": {
     "message": "依標籤篩選"
+  },
+  "step4": {
+    "message": "打開任意對話即可使用右側目錄、搜尋和程式碼工具；可在「對話增強」中開關。"
   }
 }

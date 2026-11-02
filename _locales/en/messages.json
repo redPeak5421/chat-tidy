@@ -24,7 +24,7 @@
     "message": "Select all and invert affect only chats currently loaded in the sidebar. Scroll to load more. Refreshing clears your selection."
   },
   "privacy": {
-    "message": "Runs on ChatGPT, Claude, Grok, Gemini, Kimi, Qwen and Z.ai. Only settings are stored; no chats or credentials are saved or sent to third parties."
+    "message": "Runs on ChatGPT, Claude, Grok, Gemini, Kimi, Qwen and Z.ai. Settings and your bookmarks (titles, short excerpts, tags, notes) stay in this browser; no credentials are saved and nothing is sent to the developer or third parties."
   },
   "clear": {
     "message": "Clear selection"
@@ -176,7 +176,7 @@
     "message": "Chat Tidy"
   },
   "extensionDescription": {
-    "message": "Tick chats in the sidebar of AI chat websites and delete, archive or move them in bulk. Six languages."
+    "message": "Bulk-delete, archive or move AI chats, plus a chat outline, in-chat search, bookmarks and code tools."
   },
   "actionTitle": {
     "message": "Chat Tidy"
@@ -673,5 +673,8 @@
   },
   "libraryTagFilter": {
     "message": "Filter by tag"
+  },
+  "step4": {
+    "message": "Open any chat for the outline, search and code tools; turn them on or off under Chat enhancements."
   }
 }

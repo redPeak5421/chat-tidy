@@ -24,7 +24,7 @@
     "message": "Tout sélectionner et inverser concernent uniquement les discussions déjà chargées. Faites défiler pour en charger davantage. Actualiser efface la sélection."
   },
   "privacy": {
-    "message": "Fonctionne sur ChatGPT, Claude, Grok, Gemini, Kimi, Qwen et Z.ai. Seuls les réglages sont enregistrés ; aucune conversation ni identifiant n’est conservé ou transmis à des tiers."
+    "message": "Fonctionne sur ChatGPT, Claude, Grok, Gemini, Kimi, Qwen et Z.ai. Les réglages et vos favoris (titres, courts extraits, étiquettes, notes) restent dans ce navigateur ; aucun identifiant n’est conservé et rien n’est envoyé au développeur ni à des tiers."
   },
   "clear": {
     "message": "Désélectionner"
@@ -176,7 +176,7 @@
     "message": "Chat Tidy"
   },
   "extensionDescription": {
-    "message": "Cochez vos chats d’IA dans la barre latérale pour les supprimer, archiver ou déplacer en lot. Six langues."
+    "message": "Supprimez, archivez ou déplacez vos chats d’IA en lot, avec sommaire, recherche, favoris et outils de code."
   },
   "actionTitle": {
     "message": "Chat Tidy"
@@ -673,5 +673,8 @@
   },
   "libraryTagFilter": {
     "message": "Filtrer par étiquette"
+  },
+  "step4": {
+    "message": "Ouvrez une discussion pour utiliser le sommaire, la recherche et les outils de code ; activez-les dans Améliorations du chat."
   }
 }

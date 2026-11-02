@@ -91,3 +91,11 @@ for(const scheme of ['light','dark'])test(`Claude recents icon matches the nativ
  await toggle.hover();await expect.poll(()=>toggle.evaluate(n=>getComputedStyle(n).backgroundColor)).toBe(scheme==='dark'?'rgba(255, 255, 255, 0.075)':'rgba(0, 0, 0, 0.05)');
  await page.mouse.move(600,500);await expect.poll(()=>toggle.evaluate(n=>getComputedStyle(n).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
 });
+for(const language of ['en','fr','ru','ja'])test(`filter panel labels are never cut off (${language})`,async({page,context})=>{
+ await load(page,context,'claude.ai',`<div data-testid="sidebar"><div class="native-label"><div class="labelrow"><button data-group-toggle><span data-group-name>Chats and tasks</span></button></div></div><div class="native-row"><a href="/chat/${id('1')}">Example one</a></div></div><main>Outside</main>`);
+ await page.evaluate(language=>change({language:{newValue:language}},'local'),language);await page.waitForTimeout(300);
+ await page.locator('.cs-toggle').click();const menu=page.locator('.cs-actions');await expect(menu).toBeVisible();
+ const clipped=await menu.evaluate(m=>[...m.querySelectorAll('.cs-select-buttons>.cs-button>span,.cs-run-row>.cs-button>span')].filter(s=>s.offsetParent&&s.scrollWidth>s.clientWidth+1).map(s=>s.textContent));
+ expect(clipped).toEqual([]);
+ const box=await menu.boundingBox();expect(box.width).toBeLessThanOrEqual(310);
+});

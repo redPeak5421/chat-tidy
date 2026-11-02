@@ -115,12 +115,13 @@
 .cs-actions .cs-pick{flex:none;padding:4px 9px;font-size:12px;background:var(--cs-color-2);white-space:nowrap}
 .cs-select-row{display:flex;flex-direction:column;gap:4px;padding:2px 0 6px}
 .cs-actions .cs-select-row .cs-count{display:block;min-width:0;padding:2px 10px;margin:0;border:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cs-select-buttons{display:flex;gap:4px}
-.cs-select-buttons>.cs-button{flex:1 1 0;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:4px;box-sizing:border-box;height:34px!important;min-height:0!important;max-height:34px!important;padding:0 4px!important;font-size:12px;line-height:1!important;white-space:nowrap;border-radius:10px}
+/* Buttons are at least as wide as their label and wrap onto another row instead of truncating (French, Russian, Japanese). */
+.cs-select-buttons{display:flex;flex-wrap:wrap;gap:4px}
+.cs-select-buttons>.cs-button{flex:1 1 0;min-width:max-content;display:inline-flex;align-items:center;justify-content:center;gap:4px;box-sizing:border-box;height:34px!important;min-height:0!important;max-height:34px!important;padding:0 4px!important;font-size:12px;line-height:1!important;white-space:nowrap;border-radius:10px}
 .cs-select-buttons>.cs-button>span,.cs-run-row>.cs-button>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cs-actions .cs-button svg{display:block;width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .cs-run-row{display:flex;flex-wrap:wrap;gap:6px;padding-top:6px;border-top:1px solid var(--cs-color-7)}
-.cs-run-row>.cs-button{flex:1 1 0;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:5px;box-sizing:border-box;height:34px!important;min-height:0!important;max-height:34px!important;padding:0 10px!important;font-size:13px;line-height:1!important;white-space:nowrap;border-radius:10px}
+.cs-run-row>.cs-button{flex:1 1 0;min-width:max-content;display:inline-flex;align-items:center;justify-content:center;gap:5px;box-sizing:border-box;height:34px!important;min-height:0!important;max-height:34px!important;padding:0 10px!important;font-size:13px;line-height:1!important;white-space:nowrap;border-radius:10px}
 .cs-actions .cs-manager-section{margin-top:0}
 .cs-actions{max-height:calc(100vh - 16px);overflow-y:auto}
 .cs-results{list-style:none;margin:0;padding:2px 0 6px;max-height:min(240px,32vh);overflow-y:auto;border-bottom:1px solid var(--cs-color-7)}
