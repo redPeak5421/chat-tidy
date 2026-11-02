@@ -14,11 +14,19 @@ globalThis.ChatTidyCore = (() => {
     'https://chat.z.ai': Object.freeze({id:'zai',name:'Z.ai',origin:'https://chat.z.ai',route:'/c/',roots:'#sidebar div:has(>div>.AgentChatList),#sidebar .AgentChatList'})
   });
   // One schema for every stored preference. Language is absent: its default follows the browser through ChatTidyI18n.
-  const settings = Object.freeze({enabled:true,theme:'system',checkboxMode:'dynamic',concurrency:5,hideSupport:false,grokShowAll:false,grokHideBots:false,grokCollapseBots:false});
+  // Reading tools: the outline (with search and answer bookmarks) and code tools are on by default; layout changes are opt-in.
+  const settings = Object.freeze({enabled:true,theme:'system',checkboxMode:'dynamic',concurrency:5,hideSupport:false,grokShowAll:false,grokHideBots:false,grokCollapseBots:false,
+    outline:true,codeTools:true,codeLineNumbers:true,codeFold:true,codeDanger:true,chatWidth:'default',compactSidebar:false,hideClutter:false,focusMode:false});
+  const chatWidths = Object.freeze(['default','wide','full']);
   // The only accepted requests-in-flight values; anything else stored (such as the old default 2) means the default.
   const concurrencyOptions = Object.freeze([1,3,5,10,15]);
   // Native features per site. Claude archives only Cowork tasks; the archived-chats manager also restores. Kimi, Gemini, Grok and Z.ai only delete.
-  const features = Object.freeze({archive:['chatgpt','claude','qwen'],manager:['chatgpt','qwen'],move:['chatgpt','claude','qwen']});
+  // Reading tools live in the chat area and depend on src/reader-sites.js knowing each site's message and layout structure.
+  const readers = ['chatgpt','claude','grok','gemini','kimi','qwen','zai'];
+  const features = Object.freeze({archive:['chatgpt','claude','qwen'],manager:['chatgpt','qwen'],move:['chatgpt','claude','qwen'],
+    // Layout options exist only where the site's structure was verified (see the layout CSS in src/reader-sites.js).
+    outline:readers,codeTools:readers,library:readers,chatWidth:['chatgpt','claude','grok','gemini','kimi','qwen','zai'],compactSidebar:['claude','grok','gemini','kimi','qwen','zai'],
+    hideClutter:['chatgpt','claude','gemini','kimi','qwen'],focusMode:readers});
   function supports(site, feature) { return !!features[feature]?.includes(typeof site === 'string' ? site : site?.id); }
   function siteForUrl(value) {
     try { return sites[new URL(value).origin] || null; } catch { return null; }
@@ -69,5 +77,5 @@ globalThis.ChatTidyCore = (() => {
     }
     return error;
   }
-  return {chatId, select, match, siteForUrl, isCoworkId, settings, concurrencyOptions, supports, retryAfterMs, httpError};
+  return {chatId, select, match, siteForUrl, isCoworkId, settings, concurrencyOptions, chatWidths, supports, retryAfterMs, httpError};
 })();

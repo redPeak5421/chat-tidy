@@ -1,0 +1,71 @@
+/* Code block tools (src/code.js). --cs-bg/--cs-fg/--cs-mono are measured from each block and set inline, so the chrome
+   matches light code in dark pages and the reverse; the theme tokens below only apply when a block's color can't be read. */
+.cs-code-ui{--cs-bg:#fff;--cs-fg:#202321;--cs-warn:#b45309;--cs-accent:#6366f1}
+@media(prefers-color-scheme:dark){.cs-code-ui{--cs-bg:#141414;--cs-fg:#f2f2f2;--cs-warn:#f5b83d}}
+:root[data-cs-theme="light"] .cs-code-ui{--cs-bg:#fff;--cs-fg:#202321;--cs-warn:#b45309}
+:root[data-cs-theme="dark"] .cs-code-ui{--cs-bg:#141414;--cs-fg:#f2f2f2;--cs-warn:#f5b83d}
+:root .cs-code-ui[data-cs-code-tone="light"]{--cs-warn:#b45309}
+:root .cs-code-ui[data-cs-code-tone="dark"]{--cs-warn:#f5b83d}
+
+/* Site nodes: only attribute selectors and custom properties, never their classes or inline styles. */
+[data-cs-code-pad~="l"]:not(.cm-editor){padding-left:var(--cs-pad-l)!important}
+[data-cs-code-pad~="b"]:not(.cm-editor){padding-bottom:var(--cs-pad-b)!important}
+/* Read-only CodeMirror editors: the attribute sits on .cm-editor and only CSS reaches .cm-content, which CodeMirror owns. */
+.cm-editor[data-cs-code-pad~="l"] .cm-content{padding-left:var(--cs-pad-l)!important}
+.cm-editor[data-cs-code-pad~="b"] .cm-content{padding-bottom:var(--cs-pad-b)!important}
+[data-cs-code-fold="folded"]{max-height:var(--cs-fold-h)!important;overflow-y:hidden!important}
+::highlight(cs-danger){background-color:rgb(245 158 11/.2)}
+@media(prefers-color-scheme:dark){::highlight(cs-danger){background-color:rgb(245 158 11/.24)}}
+:root[data-cs-theme="light"] ::highlight(cs-danger){background-color:rgb(245 158 11/.2)}
+:root[data-cs-theme="dark"] ::highlight(cs-danger){background-color:rgb(245 158 11/.24)}
+
+/* Site rules like ".viewer > div" must not move the anchor: it stays out of flow at its static position. */
+.cs-code-anchor{position:absolute!important;inset:auto!important;display:block!important;width:0!important;height:0!important;margin:0!important;padding:0!important;border:0!important;transform:none!important;overflow:visible!important;pointer-events:none}
+.cs-code-ui{position:absolute;box-sizing:border-box;margin:0;padding:0;border:0;overflow:hidden;pointer-events:none;color:var(--cs-fg);font:400 12px/1.4 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;white-space:normal;text-align:left;direction:ltr;letter-spacing:normal;text-transform:none;tab-size:4}
+.cs-code-ui *{box-sizing:border-box}
+.cs-code-ui [hidden]{display:none!important}
+.cs-code-ui .cs-code-gutter{position:absolute;top:0;bottom:0;left:0;width:var(--cs-gw,0px);background:var(--cs-bg);user-select:none;-webkit-user-select:none;font:400 var(--cs-gfs,12px)/1 var(--cs-mono,ui-monospace,SFMono-Regular,Menlo,monospace);font-variant-numeric:tabular-nums;color:color-mix(in srgb,var(--cs-fg) 38%,transparent)}
+.cs-code-ui .cs-code-gutter[data-cs-code-bare]{background:none}
+.cs-code-ui .cs-code-probe{position:absolute;top:0;left:0;visibility:hidden;white-space:pre}
+.cs-code-ui .cs-code-probe::before{content:"0000000000"}
+.cs-code-ui [data-cs-code-label]::after{content:attr(data-cs-code-label)}
+.cs-code-ui .cs-code-layer{position:absolute;inset:0}
+.cs-code-ui .cs-code-num{position:absolute;left:var(--cs-lead);width:var(--cs-col);text-align:right;white-space:nowrap}
+.cs-code-ui .cs-code-num::before{content:attr(data-cs-code-n)}
+.cs-code-ui .cs-code-num[data-cs-code-danger]{color:var(--cs-warn)}
+.cs-code-ui .cs-code-mark{position:absolute;left:max(2px,calc(var(--cs-lead) / 2 - 1.5px));width:3px;border-radius:3px;background:var(--cs-warn)}
+
+.cs-code-ui .cs-code-copy{pointer-events:auto;appearance:none;position:absolute;left:calc(var(--cs-lead) + var(--cs-col) - 20px);display:grid;place-items:center;width:20px;height:20px;margin:0;padding:0;border:0;border-radius:6px;background:var(--cs-bg);color:color-mix(in srgb,var(--cs-fg) 62%,var(--cs-bg));cursor:pointer;opacity:0;transition:opacity .12s,background-color .12s,color .12s}
+.cs-code-ui .cs-code-copy:hover,.cs-code-ui .cs-code-copy[data-cs-code-hover],.cs-code-ui .cs-code-copy:focus-visible,.cs-code-ui .cs-code-copy[data-cs-code-copied]{opacity:1}
+.cs-code-ui .cs-code-copy:hover{background:color-mix(in srgb,var(--cs-fg) 9%,var(--cs-bg));color:var(--cs-fg)}
+.cs-code-ui .cs-code-copy[data-cs-code-copied]{color:var(--cs-accent)}
+/* Monaco keeps its own margin: the button fits the 16px of site padding beside the editor. */
+.cs-code-ui[data-cs-code-monaco] .cs-code-copy{width:16px;border-radius:5px}
+.cs-code-ui[data-cs-code-monaco] .cs-code-copy svg{width:13px;height:13px}
+.cs-code-ui .cs-code-copy svg,.cs-code-ui .cs-code-pill svg{width:14px;height:14px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.cs-code-ui .cs-code-copy[data-cs-code-copied]::after{content:attr(data-cs-code-tip);position:absolute;left:calc(100% + 6px);top:50%;transform:translateY(-50%);padding:3px 8px;border-radius:7px;background:var(--cs-fg);color:var(--cs-bg);font:500 11.5px/1.35 ui-sans-serif,system-ui,-apple-system,sans-serif;white-space:nowrap;pointer-events:none}
+
+.cs-code-ui .cs-code-fade{position:absolute;left:0;right:0;bottom:0;height:76px;background:linear-gradient(to bottom,transparent,var(--cs-bg) 72%);pointer-events:none}
+.cs-code-ui .cs-code-foot{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:6px 10px 8px;pointer-events:none}
+.cs-code-ui .cs-code-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;min-height:26px}
+.cs-code-ui .cs-code-pill{pointer-events:auto;appearance:none;display:inline-flex;align-items:center;gap:5px;height:26px;margin:0;padding:0 11px 0 8px;border:1px solid color-mix(in srgb,var(--cs-fg) 14%,transparent);border-radius:999px;background:var(--cs-bg);color:color-mix(in srgb,var(--cs-fg) 80%,var(--cs-bg));font:500 12px/1 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;white-space:nowrap;cursor:pointer;box-shadow:0 1px 2px #0000000f;transition:background-color .12s,color .12s,opacity .12s}
+.cs-code-ui .cs-code-pill:hover{background:color-mix(in srgb,var(--cs-fg) 7%,var(--cs-bg));color:var(--cs-fg)}
+.cs-code-ui .cs-code-fold{grid-column:2}
+.cs-code-ui .cs-code-fold[data-cs-code-quiet]{opacity:0}
+.cs-code-ui[data-cs-code-hover] .cs-code-fold[data-cs-code-quiet],.cs-code-ui:focus-within .cs-code-fold[data-cs-code-quiet]{opacity:1}
+@media(hover:none){.cs-code-ui .cs-code-fold[data-cs-code-quiet]{opacity:1}}
+.cs-code-ui .cs-code-chip{grid-column:3;justify-self:end;color:var(--cs-warn);background:color-mix(in srgb,var(--cs-warn) 9%,var(--cs-bg));border-color:color-mix(in srgb,var(--cs-warn) 30%,transparent)}
+.cs-code-ui .cs-code-chip:hover{color:var(--cs-warn);background:color-mix(in srgb,var(--cs-warn) 15%,var(--cs-bg))}
+.cs-code-ui .cs-code-pill:focus-visible,.cs-code-ui .cs-code-copy:focus-visible{outline:2px solid var(--cs-accent);outline-offset:2px}
+.cs-code-ui .cs-code-list{pointer-events:auto;align-self:flex-end;max-width:min(100%,440px);max-height:160px;overflow:auto;padding:4px;border:1px solid color-mix(in srgb,var(--cs-warn) 26%,transparent);border-radius:12px;background:var(--cs-bg)}
+.cs-code-ui .cs-code-risk{display:flex;align-items:baseline;gap:10px;padding:4px 8px;color:color-mix(in srgb,var(--cs-fg) 86%,var(--cs-bg));font-size:12.5px;line-height:1.4}
+.cs-code-ui .cs-code-risk-line{min-width:3ch;text-align:right;font:500 12px/1.4 var(--cs-mono,ui-monospace,monospace);font-variant-numeric:tabular-nums;color:var(--cs-warn)}
+
+@media(forced-colors:active){
+ .cs-code-ui .cs-code-gutter{background:Canvas;color:GrayText}
+ .cs-code-ui .cs-code-num[data-cs-code-danger],.cs-code-ui .cs-code-risk-line{color:CanvasText}
+ .cs-code-ui .cs-code-mark{background:Highlight}
+ .cs-code-ui .cs-code-fade{display:none}
+ .cs-code-ui .cs-code-pill,.cs-code-ui .cs-code-copy,.cs-code-ui .cs-code-list{border:1px solid ButtonText;background:ButtonFace;color:ButtonText;box-shadow:none}
+ ::highlight(cs-danger){background-color:Mark;color:MarkText}
+}

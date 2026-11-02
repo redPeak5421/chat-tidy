@@ -441,5 +441,237 @@
   },
   "moveShort": {
     "message": "Déplacer"
+  },
+  "noMatches": {
+    "message": "Aucune discussion chargée ne correspond"
+  },
+  "outline": {
+    "message": "Sommaire et recherche"
+  },
+  "enhance": {
+    "message": "Améliorations du chat"
+  },
+  "enhanceHint": {
+    "message": "Sommaire, recherche, favoris, blocs de code et mise en page"
+  },
+  "enhanceIntro": {
+    "message": "Tout ceci apparaît sur la page de conversation elle-même, dès qu’une conversation est ouverte."
+  },
+  "outlineHint": {
+    "message": "Ouvrez une conversation : une colonne de fins repères apparaît à sa droite, un par question posée. Survolez un repère pour lire la question, cliquez pour y aller ; l’icône du haut ouvre la liste complète, pour chercher dans la conversation et mettre des réponses en favori."
+  },
+  "codeTools": {
+    "message": "Outils pour le code"
+  },
+  "codeToolsHint": {
+    "message": "Dans les blocs de code des réponses : numéros de ligne à gauche, repli au-delà de 24 lignes, copie d’une seule ligne de commande au survol, et les commandes risquées comme rm -rf / surlignées en ambre."
+  },
+  "library": {
+    "message": "Mes favoris"
+  },
+  "libraryHint": {
+    "message": "Les conversations et réponses mises en favori depuis le sommaire. Retrouvez-les par étiquette ou note, et ouvrez-en une pour y revenir directement."
+  },
+  "codeLineNumbers": {
+    "message": "Afficher les numéros de ligne"
+  },
+  "codeFold": {
+    "message": "Replier les longs blocs"
+  },
+  "codeDanger": {
+    "message": "Signaler les commandes risquées"
+  },
+  "layoutGroup": {
+    "message": "Mise en page"
+  },
+  "layoutGroupHint": {
+    "message": "Modifie l’apparence de la page de conversation elle-même. Désactivez une option pour retrouver la mise en page du site."
+  },
+  "chatWidth": {
+    "message": "Largeur de la discussion"
+  },
+  "chatWidthHint": {
+    "message": "Élargit la conversation : le code long et les tableaux se replient moins."
+  },
+  "chatWidthDefault": {
+    "message": "Par défaut"
+  },
+  "chatWidthWide": {
+    "message": "Large"
+  },
+  "chatWidthFull": {
+    "message": "Pleine largeur"
+  },
+  "compactSidebar": {
+    "message": "Barre latérale compacte"
+  },
+  "compactSidebarHint": {
+    "message": "Lignes plus serrées dans la liste de gauche, pour voir plus de conversations."
+  },
+  "hideClutter": {
+    "message": "Masquer avertissements et offres payantes"
+  },
+  "hideClutterHint": {
+    "message": "Masque l’avertissement sous la zone de saisie et les bannières d’abonnement."
+  },
+  "focusMode": {
+    "message": "Mode concentration"
+  },
+  "focusModeHint": {
+    "message": "Masque la barre latérale et la barre du haut pour ne garder que la conversation ; un bouton en haut à droite le désactive."
+  },
+  "siteUnsupported": {
+    "message": "Pas encore disponible sur ce site"
+  },
+  "librarySearch": {
+    "message": "Chercher dans titres, étiquettes et notes"
+  },
+  "libraryAll": {
+    "message": "Tout"
+  },
+  "libraryChats": {
+    "message": "Discussions"
+  },
+  "libraryAnswers": {
+    "message": "Réponses"
+  },
+  "libraryEmpty": {
+    "message": "Rien d'enregistré pour l'instant. Ouvrez une discussion, puis gardez-la ou l'une de ses réponses depuis le sommaire à droite."
+  },
+  "libraryNoMatch": {
+    "message": "Aucun favori ne correspond"
+  },
+  "libraryRemove": {
+    "message": "Retirer des favoris"
+  },
+  "outlineTitle": {
+    "message": "Sommaire"
+  },
+  "outlineShow": {
+    "message": "Afficher le sommaire"
+  },
+  "outlineHide": {
+    "message": "Masquer le sommaire"
+  },
+  "outlineEmpty": {
+    "message": "Vos questions de cette discussion s'afficheront ici."
+  },
+  "searchChat": {
+    "message": "Chercher dans la discussion"
+  },
+  "searchCount": {
+    "message": "$CURRENT$ sur $TOTAL$",
+    "placeholders": {
+      "current": {
+        "content": "$1",
+        "example": "3"
+      },
+      "total": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
+  },
+  "searchNone": {
+    "message": "Aucun résultat dans les messages chargés"
+  },
+  "searchLoadedOnly": {
+    "message": "Cherche dans les messages chargés sur la page"
+  },
+  "searchPrev": {
+    "message": "Résultat précédent"
+  },
+  "searchNext": {
+    "message": "Résultat suivant"
+  },
+  "bookmarkAnswer": {
+    "message": "Garder cette réponse"
+  },
+  "removeAnswerBookmark": {
+    "message": "Retirer la réponse des favoris"
+  },
+  "starChat": {
+    "message": "Ajouter la discussion aux favoris"
+  },
+  "unstarChat": {
+    "message": "Retirer la discussion des favoris"
+  },
+  "tagsNote": {
+    "message": "Étiquettes et note"
+  },
+  "addTag": {
+    "message": "Ajoutez une étiquette puis Entrée"
+  },
+  "removeTag": {
+    "message": "Retirer l'étiquette $TAG$",
+    "placeholders": {
+      "tag": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "notePlaceholder": {
+    "message": "Ajouter une note"
+  },
+  "focusExit": {
+    "message": "Quitter le mode concentration"
+  },
+  "copyLine": {
+    "message": "Copier la ligne"
+  },
+  "copied": {
+    "message": "Copié"
+  },
+  "expandCode": {
+    "message": "Afficher les $N$ lignes",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "collapseCode": {
+    "message": "Replier"
+  },
+  "dangerCount": {
+    "message": "Commandes risquées : $N$",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "dangerDelete": {
+    "message": "Supprime des fichiers récursivement"
+  },
+  "dangerDisk": {
+    "message": "Écrase ou formate un disque"
+  },
+  "dangerRemoteScript": {
+    "message": "Exécute directement un script téléchargé"
+  },
+  "dangerPermissions": {
+    "message": "Ouvre les droits à tout le monde"
+  },
+  "dangerGit": {
+    "message": "Efface l'historique Git ou les modifications locales"
+  },
+  "dangerDatabase": {
+    "message": "Supprime des données de la base"
+  },
+  "dangerForkBomb": {
+    "message": "Fork bomb qui peut bloquer le système"
+  },
+  "dangerSystem": {
+    "message": "Éteint ou tue des processus système"
+  },
+  "clearSearch": {
+    "message": "Effacer la recherche"
+  },
+  "libraryTagFilter": {
+    "message": "Filtrer par étiquette"
   }
 }

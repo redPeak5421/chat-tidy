@@ -441,5 +441,237 @@
   },
   "moveShort": {
     "message": "移动"
+  },
+  "noMatches": {
+    "message": "已加载的对话中没有匹配项"
+  },
+  "outline": {
+    "message": "对话目录与搜索"
+  },
+  "enhance": {
+    "message": "对话增强"
+  },
+  "enhanceHint": {
+    "message": "目录、搜索、收藏、代码块和页面布局"
+  },
+  "enhanceIntro": {
+    "message": "以下功能都在打开某个对话后，出现在聊天页面里。"
+  },
+  "outlineHint": {
+    "message": "打开任意对话后，聊天区右侧出现一列细刻度（每个刻度是你的一个提问）。悬停看问题、点击跳转；点顶部图标展开列表，可搜索本对话、收藏回答。"
+  },
+  "codeTools": {
+    "message": "代码块增强"
+  },
+  "codeToolsHint": {
+    "message": "回答里的代码块：左侧显示行号，超过 24 行自动折叠，鼠标移到命令行可单独复制一行，rm -rf / 这类危险命令会标黄提醒。"
+  },
+  "library": {
+    "message": "我的收藏"
+  },
+  "libraryHint": {
+    "message": "在目录里收藏的对话和回答都在这里，可按标签、备注查找，点开直接跳回原处。"
+  },
+  "codeLineNumbers": {
+    "message": "显示行号"
+  },
+  "codeFold": {
+    "message": "自动折叠长代码"
+  },
+  "codeDanger": {
+    "message": "提示潜在危险命令"
+  },
+  "layoutGroup": {
+    "message": "页面布局"
+  },
+  "layoutGroupHint": {
+    "message": "调整对话页面本身的样子，关闭选项即恢复网站原样。"
+  },
+  "chatWidth": {
+    "message": "聊天区宽度"
+  },
+  "chatWidthHint": {
+    "message": "加宽对话区域，长代码和表格更少换行。"
+  },
+  "chatWidthDefault": {
+    "message": "网站默认"
+  },
+  "chatWidthWide": {
+    "message": "宽"
+  },
+  "chatWidthFull": {
+    "message": "全宽"
+  },
+  "compactSidebar": {
+    "message": "紧凑侧边栏"
+  },
+  "compactSidebarHint": {
+    "message": "缩小左侧对话列表的行距，一屏能看到更多对话。"
+  },
+  "hideClutter": {
+    "message": "隐藏免责声明和升级提示"
+  },
+  "hideClutterHint": {
+    "message": "隐藏输入框下方的免责声明和升级提示横幅。"
+  },
+  "focusMode": {
+    "message": "专注阅读模式"
+  },
+  "focusModeHint": {
+    "message": "隐藏侧边栏和顶部栏，只留对话；右上角的按钮可退出。"
+  },
+  "siteUnsupported": {
+    "message": "此网站暂不支持"
+  },
+  "librarySearch": {
+    "message": "搜索标题、标签和备注"
+  },
+  "libraryAll": {
+    "message": "全部"
+  },
+  "libraryChats": {
+    "message": "对话"
+  },
+  "libraryAnswers": {
+    "message": "回答"
+  },
+  "libraryEmpty": {
+    "message": "还没有收藏。打开一个对话，在右侧目录中收藏对话或其中的回答。"
+  },
+  "libraryNoMatch": {
+    "message": "没有匹配的收藏"
+  },
+  "libraryRemove": {
+    "message": "移除收藏"
+  },
+  "outlineTitle": {
+    "message": "目录"
+  },
+  "outlineShow": {
+    "message": "显示目录"
+  },
+  "outlineHide": {
+    "message": "收起目录"
+  },
+  "outlineEmpty": {
+    "message": "本对话中的提问会列在这里。"
+  },
+  "searchChat": {
+    "message": "搜索本对话"
+  },
+  "searchCount": {
+    "message": "$CURRENT$ / $TOTAL$",
+    "placeholders": {
+      "current": {
+        "content": "$1",
+        "example": "3"
+      },
+      "total": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
+  },
+  "searchNone": {
+    "message": "已加载的消息中没有匹配"
+  },
+  "searchLoadedOnly": {
+    "message": "仅搜索页面已加载的消息"
+  },
+  "searchPrev": {
+    "message": "上一个"
+  },
+  "searchNext": {
+    "message": "下一个"
+  },
+  "bookmarkAnswer": {
+    "message": "收藏这条回答"
+  },
+  "removeAnswerBookmark": {
+    "message": "取消收藏回答"
+  },
+  "starChat": {
+    "message": "收藏对话"
+  },
+  "unstarChat": {
+    "message": "取消收藏对话"
+  },
+  "tagsNote": {
+    "message": "标签和备注"
+  },
+  "addTag": {
+    "message": "输入标签后按回车"
+  },
+  "removeTag": {
+    "message": "移除标签 $TAG$",
+    "placeholders": {
+      "tag": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "notePlaceholder": {
+    "message": "添加备注"
+  },
+  "focusExit": {
+    "message": "退出专注"
+  },
+  "copyLine": {
+    "message": "复制此行"
+  },
+  "copied": {
+    "message": "已复制"
+  },
+  "expandCode": {
+    "message": "展开全部 $N$ 行",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "collapseCode": {
+    "message": "收起"
+  },
+  "dangerCount": {
+    "message": "潜在危险命令 $N$ 条",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "dangerDelete": {
+    "message": "递归删除文件"
+  },
+  "dangerDisk": {
+    "message": "覆写或格式化磁盘"
+  },
+  "dangerRemoteScript": {
+    "message": "直接运行下载的脚本"
+  },
+  "dangerPermissions": {
+    "message": "对所有人开放权限"
+  },
+  "dangerGit": {
+    "message": "丢弃 Git 历史或本地改动"
+  },
+  "dangerDatabase": {
+    "message": "删除数据库数据"
+  },
+  "dangerForkBomb": {
+    "message": "可能卡死系统的 fork 炸弹"
+  },
+  "dangerSystem": {
+    "message": "关机或结束系统进程"
+  },
+  "clearSearch": {
+    "message": "清除搜索"
+  },
+  "libraryTagFilter": {
+    "message": "按标签筛选"
   }
 }

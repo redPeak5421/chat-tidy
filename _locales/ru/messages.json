@@ -441,5 +441,237 @@
   },
   "moveShort": {
     "message": "Переместить"
+  },
+  "noMatches": {
+    "message": "Среди загруженных чатов совпадений нет"
+  },
+  "outline": {
+    "message": "Оглавление и поиск"
+  },
+  "enhance": {
+    "message": "Улучшения чата"
+  },
+  "enhanceHint": {
+    "message": "Оглавление, поиск, закладки, блоки кода и макет"
+  },
+  "enhanceIntro": {
+    "message": "Всё это появляется прямо на странице чата, когда вы открываете диалог."
+  },
+  "outlineHint": {
+    "message": "Откройте любой чат — справа от переписки появится столбик тонких делений, по одному на каждый ваш вопрос. Наведите на деление, чтобы прочитать вопрос, нажмите — чтобы перейти к нему; значок сверху открывает весь список с поиском по чату и закладками ответов."
+  },
+  "codeTools": {
+    "message": "Инструменты для кода"
+  },
+  "codeToolsHint": {
+    "message": "В блоках кода в ответах: номера строк слева, блоки длиннее 24 строк сворачиваются, строку команды можно скопировать отдельно при наведении, а опасные команды вроде rm -rf / выделяются жёлтым."
+  },
+  "library": {
+    "message": "Мои закладки"
+  },
+  "libraryHint": {
+    "message": "Чаты и ответы, добавленные в закладки из оглавления. Ищите по тегам и заметкам, а открыв, сразу вернётесь к нужному месту."
+  },
+  "codeLineNumbers": {
+    "message": "Показывать номера строк"
+  },
+  "codeFold": {
+    "message": "Сворачивать длинный код"
+  },
+  "codeDanger": {
+    "message": "Отмечать опасные команды"
+  },
+  "layoutGroup": {
+    "message": "Макет страницы"
+  },
+  "layoutGroupHint": {
+    "message": "Меняет вид самой страницы чата. Выключите параметр, чтобы вернуть оформление сайта."
+  },
+  "chatWidth": {
+    "message": "Ширина чата"
+  },
+  "chatWidthHint": {
+    "message": "Расширяет область диалога, чтобы длинный код и таблицы меньше переносились."
+  },
+  "chatWidthDefault": {
+    "message": "Как на сайте"
+  },
+  "chatWidthWide": {
+    "message": "Широкая"
+  },
+  "chatWidthFull": {
+    "message": "Во всю ширину"
+  },
+  "compactSidebar": {
+    "message": "Компактная боковая панель"
+  },
+  "compactSidebarHint": {
+    "message": "Более плотные строки в списке чатов слева — на экране помещается больше чатов."
+  },
+  "hideClutter": {
+    "message": "Скрывать дисклеймеры и предложения подписки"
+  },
+  "hideClutterHint": {
+    "message": "Скрывает предупреждение под полем ввода и баннеры с предложением подписки."
+  },
+  "focusMode": {
+    "message": "Режим чтения"
+  },
+  "focusModeHint": {
+    "message": "Скрывает боковую панель и верхнюю строку, оставляя только чат; кнопка справа вверху выключает режим."
+  },
+  "siteUnsupported": {
+    "message": "На этом сайте пока недоступно"
+  },
+  "librarySearch": {
+    "message": "Поиск по названиям, меткам и заметкам"
+  },
+  "libraryAll": {
+    "message": "Все"
+  },
+  "libraryChats": {
+    "message": "Чаты"
+  },
+  "libraryAnswers": {
+    "message": "Ответы"
+  },
+  "libraryEmpty": {
+    "message": "Пока ничего не сохранено. Откройте чат и добавьте его или один из ответов в закладки из оглавления справа."
+  },
+  "libraryNoMatch": {
+    "message": "Нет подходящих закладок"
+  },
+  "libraryRemove": {
+    "message": "Удалить закладку"
+  },
+  "outlineTitle": {
+    "message": "Оглавление"
+  },
+  "outlineShow": {
+    "message": "Показать оглавление"
+  },
+  "outlineHide": {
+    "message": "Скрыть оглавление"
+  },
+  "outlineEmpty": {
+    "message": "Здесь появятся ваши вопросы из этого чата."
+  },
+  "searchChat": {
+    "message": "Поиск в чате"
+  },
+  "searchCount": {
+    "message": "$CURRENT$ из $TOTAL$",
+    "placeholders": {
+      "current": {
+        "content": "$1",
+        "example": "3"
+      },
+      "total": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
+  },
+  "searchNone": {
+    "message": "В загруженных сообщениях совпадений нет"
+  },
+  "searchLoadedOnly": {
+    "message": "Поиск только по загруженным сообщениям"
+  },
+  "searchPrev": {
+    "message": "Предыдущее совпадение"
+  },
+  "searchNext": {
+    "message": "Следующее совпадение"
+  },
+  "bookmarkAnswer": {
+    "message": "Добавить ответ в закладки"
+  },
+  "removeAnswerBookmark": {
+    "message": "Убрать ответ из закладок"
+  },
+  "starChat": {
+    "message": "Добавить чат в закладки"
+  },
+  "unstarChat": {
+    "message": "Убрать чат из закладок"
+  },
+  "tagsNote": {
+    "message": "Метки и заметка"
+  },
+  "addTag": {
+    "message": "Введите метку и нажмите Enter"
+  },
+  "removeTag": {
+    "message": "Удалить метку $TAG$",
+    "placeholders": {
+      "tag": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "notePlaceholder": {
+    "message": "Добавить заметку"
+  },
+  "focusExit": {
+    "message": "Выйти из режима чтения"
+  },
+  "copyLine": {
+    "message": "Копировать строку"
+  },
+  "copied": {
+    "message": "Скопировано"
+  },
+  "expandCode": {
+    "message": "Показать все строки ($N$)",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "collapseCode": {
+    "message": "Свернуть"
+  },
+  "dangerCount": {
+    "message": "Опасные команды: $N$",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "dangerDelete": {
+    "message": "Рекурсивно удаляет файлы"
+  },
+  "dangerDisk": {
+    "message": "Перезаписывает или форматирует диск"
+  },
+  "dangerRemoteScript": {
+    "message": "Сразу запускает скачанный скрипт"
+  },
+  "dangerPermissions": {
+    "message": "Открывает права для всех"
+  },
+  "dangerGit": {
+    "message": "Удаляет историю Git или локальные изменения"
+  },
+  "dangerDatabase": {
+    "message": "Удаляет данные базы"
+  },
+  "dangerForkBomb": {
+    "message": "Fork-бомба, способная повесить систему"
+  },
+  "dangerSystem": {
+    "message": "Выключает систему или завершает её процессы"
+  },
+  "clearSearch": {
+    "message": "Очистить поиск"
+  },
+  "libraryTagFilter": {
+    "message": "Фильтр по тегу"
   }
 }

@@ -539,6 +539,42 @@ test('menu filter highlights matches, adds them to the selection and clears on c
  assert.equal(d.querySelectorAll('.cs-checkbox:checked').length,2);
  }finally{dom.window.close()}
 });
+test('menu filter lists matching titles inside the panel, so rows the panel covers stay findable',async()=>{
+ const {dom,w,d}=await setup({markup:`<nav><h2>聊天</h2><div id="history">${row('1')}${row('2')}${row('4')}</div></nav>`});try{
+ d.querySelector('.cs-toggle').click();const input=d.querySelector('.cs-filter-input'),list=d.querySelector('.cs-results');
+ assert.equal(list.hidden,true);
+ input.value='chat 2';input.dispatchEvent(new w.Event('input'));await wait(150);
+ assert.equal(list.hidden,false);assert.deepEqual([...list.querySelectorAll('.cs-result')].map(n=>n.textContent.trim()),['Chat 2']);
+ const box=list.querySelector('.cs-result input');box.click();
+ assert.equal(box.checked,true);assert.equal(d.querySelector(`.cs-checkbox[data-cs-id="${id('2')}"]`).checked,true);assert.match(d.querySelector('.cs-count').textContent,/1/);
+ assert.equal(d.querySelector('.cs-actions').hidden,false);
+ box.click();assert.equal(d.querySelector(`.cs-checkbox[data-cs-id="${id('2')}"]`).checked,false);
+ d.querySelector(`.cs-checkbox[data-cs-id="${id('2')}"]`).click();assert.equal(box.checked,true,'a sidebar tick shows in the result list');
+ input.value='nothing';input.dispatchEvent(new w.Event('input'));await wait(150);
+ assert.equal(list.hidden,false);assert.equal(list.querySelectorAll('.cs-result').length,0);assert.match(list.textContent,/No loaded chats match/);
+ d.body.click();assert.equal(list.hidden,true);assert.equal(list.children.length,0);
+ }finally{dom.window.close()}
+});
+test('menu result list shows a chat once when it sits in two sidebar sections, and keeps clicks inside the panel',async()=>{
+ const {dom,w,d}=await setup({markup:`<nav><h2>聊天</h2><div id="pinned">${row('2')}</div><div id="history">${row('1')}${row('2')}</div></nav>`});try{
+ let leaked=0;d.querySelector('nav').addEventListener('click',()=>leaked++);
+ d.querySelector('.cs-toggle').click();leaked=0;const input=d.querySelector('.cs-filter-input');
+ input.value='chat 2';input.dispatchEvent(new w.Event('input'));await wait(150);
+ assert.equal(d.querySelectorAll('.cs-result').length,1);
+ d.querySelector('.cs-result input').click();d.querySelector('.cs-result span').click();d.querySelector('.cs-filter').click();
+ assert.equal(leaked,0,'native section headers around the toolbar never see panel clicks');
+ }finally{dom.window.close()}
+});
+test('bookmarked chats get a sidebar mark, and the delete filter never matches their hidden tags or notes',async()=>{
+ const key='chatgpt:'+id('2'),library={[key]:{key,type:'chat',site:'chatgpt',chatId:id('2'),url:'',title:'Chat 2',tags:['work'],note:'quarterly',savedAt:1,updatedAt:1}};
+ const {dom,w,d}=await setup({beforeLoad:w=>w.eval(fs.readFileSync('src/library.js','utf8')),getSettings:async()=>({language:'en',enabled:true,library})});try{
+ await wait(150);
+ assert.deepEqual([...d.querySelectorAll('.cs-starred')].map(n=>n.getAttribute('href')),['/c/'+id('2')]);
+ d.querySelector('.cs-toggle').click();const input=d.querySelector('.cs-filter-input');
+ for(const query of ['work','quarterly']){input.value=query;input.dispatchEvent(new w.Event('input'));await wait(150);assert.equal(d.querySelectorAll('.cs-result').length,0,query);assert.equal(d.querySelectorAll('.cs-match').length,0,query);}
+ input.value='chat 2';input.dispatchEvent(new w.Event('input'));await wait(150);assert.equal(d.querySelectorAll('.cs-result').length,1,'titles still match');
+ }finally{dom.window.close()}
+});
 // Z.ai rows are href-less buttons inside .AgentChatList; src/zai.js maps them from the website's own list.
 const zaiRow=title=>`<div class="w-full relative group"><button data-selected="false"><div class="flex"><div class="truncate">${title}</div></div><span class="contents"></span></button></div>`;
 async function zaiSetup({session='user-a',titles=['Alpha','Beta'],list}={}){

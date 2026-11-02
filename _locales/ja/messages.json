@@ -441,5 +441,237 @@
   },
   "moveShort": {
     "message": "移動"
+  },
+  "noMatches": {
+    "message": "読み込み済みのチャットに一致するものはありません"
+  },
+  "outline": {
+    "message": "目次と検索"
+  },
+  "enhance": {
+    "message": "チャット拡張"
+  },
+  "enhanceHint": {
+    "message": "目次・検索・ブックマーク・コードブロック・レイアウト"
+  },
+  "enhanceIntro": {
+    "message": "ここにある機能は、会話を開くとチャット画面そのものに表示されます。"
+  },
+  "outlineHint": {
+    "message": "会話を開くと、チャット欄の右側に細い目盛りが縦に並びます（1 本が 1 つの質問）。目盛りにカーソルを合わせると質問が見え、クリックでその位置へ移動します。上のアイコンで一覧を開くと、この会話の検索や回答のブックマークができます。"
+  },
+  "codeTools": {
+    "message": "コードブロック拡張"
+  },
+  "codeToolsHint": {
+    "message": "回答内のコードブロックに、左側の行番号、24 行を超えると自動で折りたたみ、コマンド行にカーソルを合わせて 1 行だけコピー、rm -rf / のような危険なコマンドの黄色い警告が加わります。"
+  },
+  "library": {
+    "message": "マイブックマーク"
+  },
+  "libraryHint": {
+    "message": "目次からブックマークした会話と回答がここに集まります。タグやメモで探せて、開くと元の場所へ直接戻ります。"
+  },
+  "codeLineNumbers": {
+    "message": "行番号を表示"
+  },
+  "codeFold": {
+    "message": "長いコードを折りたたむ"
+  },
+  "codeDanger": {
+    "message": "危険なコマンドを警告"
+  },
+  "layoutGroup": {
+    "message": "ページレイアウト"
+  },
+  "layoutGroupHint": {
+    "message": "チャット画面そのものの見た目を変えます。オフにするとサイト本来の表示に戻ります。"
+  },
+  "chatWidth": {
+    "message": "チャット幅"
+  },
+  "chatWidthHint": {
+    "message": "会話の表示幅を広げ、長いコードや表の折り返しを減らします。"
+  },
+  "chatWidthDefault": {
+    "message": "サイトの既定"
+  },
+  "chatWidthWide": {
+    "message": "広め"
+  },
+  "chatWidthFull": {
+    "message": "全幅"
+  },
+  "compactSidebar": {
+    "message": "サイドバーを詰めて表示"
+  },
+  "compactSidebarHint": {
+    "message": "左側の会話リストの行間を詰め、一度に多くの会話を表示します。"
+  },
+  "hideClutter": {
+    "message": "注意書きとアップグレード案内を隠す"
+  },
+  "hideClutterHint": {
+    "message": "入力欄の下の注意書きやアップグレードの案内を隠します。"
+  },
+  "focusMode": {
+    "message": "集中モード"
+  },
+  "focusModeHint": {
+    "message": "サイドバーと上部バーを隠して会話だけにします。右上のボタンで解除できます。"
+  },
+  "siteUnsupported": {
+    "message": "このサイトでは未対応です"
+  },
+  "librarySearch": {
+    "message": "タイトル・タグ・メモを検索"
+  },
+  "libraryAll": {
+    "message": "すべて"
+  },
+  "libraryChats": {
+    "message": "チャット"
+  },
+  "libraryAnswers": {
+    "message": "回答"
+  },
+  "libraryEmpty": {
+    "message": "まだ保存したものはありません。チャットを開き、右側の目次からチャットや回答を保存してください。"
+  },
+  "libraryNoMatch": {
+    "message": "一致するブックマークはありません"
+  },
+  "libraryRemove": {
+    "message": "ブックマークを削除"
+  },
+  "outlineTitle": {
+    "message": "目次"
+  },
+  "outlineShow": {
+    "message": "目次を表示"
+  },
+  "outlineHide": {
+    "message": "目次を閉じる"
+  },
+  "outlineEmpty": {
+    "message": "このチャットでの質問がここに表示されます。"
+  },
+  "searchChat": {
+    "message": "このチャットを検索"
+  },
+  "searchCount": {
+    "message": "$CURRENT$ / $TOTAL$",
+    "placeholders": {
+      "current": {
+        "content": "$1",
+        "example": "3"
+      },
+      "total": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
+  },
+  "searchNone": {
+    "message": "読み込み済みのメッセージに一致なし"
+  },
+  "searchLoadedOnly": {
+    "message": "このページに読み込まれたメッセージのみ検索"
+  },
+  "searchPrev": {
+    "message": "前の一致"
+  },
+  "searchNext": {
+    "message": "次の一致"
+  },
+  "bookmarkAnswer": {
+    "message": "この回答を保存"
+  },
+  "removeAnswerBookmark": {
+    "message": "回答の保存を解除"
+  },
+  "starChat": {
+    "message": "チャットを保存"
+  },
+  "unstarChat": {
+    "message": "チャットの保存を解除"
+  },
+  "tagsNote": {
+    "message": "タグとメモ"
+  },
+  "addTag": {
+    "message": "タグを入力して Enter"
+  },
+  "removeTag": {
+    "message": "タグ $TAG$ を削除",
+    "placeholders": {
+      "tag": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "notePlaceholder": {
+    "message": "メモを追加"
+  },
+  "focusExit": {
+    "message": "集中モードを終了"
+  },
+  "copyLine": {
+    "message": "この行をコピー"
+  },
+  "copied": {
+    "message": "コピーしました"
+  },
+  "expandCode": {
+    "message": "全 $N$ 行を表示",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "collapseCode": {
+    "message": "折りたたむ"
+  },
+  "dangerCount": {
+    "message": "危険なコマンド：$N$ 件",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "dangerDelete": {
+    "message": "ファイルを再帰的に削除"
+  },
+  "dangerDisk": {
+    "message": "ディスクを上書き・フォーマット"
+  },
+  "dangerRemoteScript": {
+    "message": "ダウンロードしたスクリプトを直接実行"
+  },
+  "dangerPermissions": {
+    "message": "全員に権限を開放"
+  },
+  "dangerGit": {
+    "message": "Git の履歴やローカル変更を破棄"
+  },
+  "dangerDatabase": {
+    "message": "データベースのデータを削除"
+  },
+  "dangerForkBomb": {
+    "message": "システムを停止させうる fork 爆弾"
+  },
+  "dangerSystem": {
+    "message": "シャットダウンやシステムプロセスの強制終了"
+  },
+  "clearSearch": {
+    "message": "検索をクリア"
+  },
+  "libraryTagFilter": {
+    "message": "タグで絞り込む"
   }
 }

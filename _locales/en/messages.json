@@ -441,5 +441,237 @@
   },
   "moveShort": {
     "message": "Move"
+  },
+  "noMatches": {
+    "message": "No loaded chats match"
+  },
+  "outline": {
+    "message": "Outline and search"
+  },
+  "enhance": {
+    "message": "Chat enhancements"
+  },
+  "enhanceHint": {
+    "message": "Outline, search, bookmarks, code blocks and page layout"
+  },
+  "enhanceIntro": {
+    "message": "Everything here shows up on the chat page itself once you open a conversation."
+  },
+  "outlineHint": {
+    "message": "Open any chat and a column of thin ticks appears at the right of the conversation, one per question you asked. Hover a tick to read the question, click to jump there; the icon on top opens the full list, where you can search this chat and bookmark answers."
+  },
+  "codeTools": {
+    "message": "Code block tools"
+  },
+  "codeToolsHint": {
+    "message": "In code blocks of answers: line numbers on the left, blocks over 24 lines fold up, hover a command line to copy just that line, and risky commands such as rm -rf / are marked in amber."
+  },
+  "library": {
+    "message": "My bookmarks"
+  },
+  "libraryHint": {
+    "message": "Chats and answers you bookmarked from the outline. Find them by tag or note, and open one to jump straight back to it."
+  },
+  "codeLineNumbers": {
+    "message": "Show line numbers"
+  },
+  "codeFold": {
+    "message": "Fold long code blocks"
+  },
+  "codeDanger": {
+    "message": "Flag risky commands"
+  },
+  "layoutGroup": {
+    "message": "Page layout"
+  },
+  "layoutGroupHint": {
+    "message": "Changes how the chat page itself looks. Turn an option off to get the site’s own layout back."
+  },
+  "chatWidth": {
+    "message": "Chat width"
+  },
+  "chatWidthHint": {
+    "message": "Widens the conversation so long code and tables wrap less."
+  },
+  "chatWidthDefault": {
+    "message": "Site default"
+  },
+  "chatWidthWide": {
+    "message": "Wide"
+  },
+  "chatWidthFull": {
+    "message": "Full width"
+  },
+  "compactSidebar": {
+    "message": "Compact sidebar"
+  },
+  "compactSidebarHint": {
+    "message": "Tighter rows in the chat list on the left, so more chats fit on screen."
+  },
+  "hideClutter": {
+    "message": "Hide disclaimers and upgrade prompts"
+  },
+  "hideClutterHint": {
+    "message": "Hides the disclaimer under the input box and upgrade banners."
+  },
+  "focusMode": {
+    "message": "Focus mode"
+  },
+  "focusModeHint": {
+    "message": "Hides the sidebar and top bar so only the chat remains; a button at the top right turns it off."
+  },
+  "siteUnsupported": {
+    "message": "Not available on this site yet"
+  },
+  "librarySearch": {
+    "message": "Search titles, tags and notes"
+  },
+  "libraryAll": {
+    "message": "All"
+  },
+  "libraryChats": {
+    "message": "Chats"
+  },
+  "libraryAnswers": {
+    "message": "Answers"
+  },
+  "libraryEmpty": {
+    "message": "Nothing saved yet. Open a chat, then bookmark it or one of its answers from the outline on the right."
+  },
+  "libraryNoMatch": {
+    "message": "No bookmarks match"
+  },
+  "libraryRemove": {
+    "message": "Remove bookmark"
+  },
+  "outlineTitle": {
+    "message": "Outline"
+  },
+  "outlineShow": {
+    "message": "Show outline"
+  },
+  "outlineHide": {
+    "message": "Hide outline"
+  },
+  "outlineEmpty": {
+    "message": "Your questions in this chat will be listed here."
+  },
+  "searchChat": {
+    "message": "Search this chat"
+  },
+  "searchCount": {
+    "message": "$CURRENT$ of $TOTAL$",
+    "placeholders": {
+      "current": {
+        "content": "$1",
+        "example": "3"
+      },
+      "total": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
+  },
+  "searchNone": {
+    "message": "No matches in loaded messages"
+  },
+  "searchLoadedOnly": {
+    "message": "Searches messages loaded on this page"
+  },
+  "searchPrev": {
+    "message": "Previous match"
+  },
+  "searchNext": {
+    "message": "Next match"
+  },
+  "bookmarkAnswer": {
+    "message": "Bookmark this answer"
+  },
+  "removeAnswerBookmark": {
+    "message": "Remove answer bookmark"
+  },
+  "starChat": {
+    "message": "Bookmark this chat"
+  },
+  "unstarChat": {
+    "message": "Remove chat bookmark"
+  },
+  "tagsNote": {
+    "message": "Tags and note"
+  },
+  "addTag": {
+    "message": "Add a tag, then press Enter"
+  },
+  "removeTag": {
+    "message": "Remove tag $TAG$",
+    "placeholders": {
+      "tag": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "notePlaceholder": {
+    "message": "Add a note"
+  },
+  "focusExit": {
+    "message": "Exit focus mode"
+  },
+  "copyLine": {
+    "message": "Copy this line"
+  },
+  "copied": {
+    "message": "Copied"
+  },
+  "expandCode": {
+    "message": "Show all $N$ lines",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "collapseCode": {
+    "message": "Fold"
+  },
+  "dangerCount": {
+    "message": "Risky commands: $N$",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "dangerDelete": {
+    "message": "Deletes files recursively"
+  },
+  "dangerDisk": {
+    "message": "Overwrites or formats a disk"
+  },
+  "dangerRemoteScript": {
+    "message": "Runs a downloaded script directly"
+  },
+  "dangerPermissions": {
+    "message": "Opens permissions to everyone"
+  },
+  "dangerGit": {
+    "message": "Discards Git history or local changes"
+  },
+  "dangerDatabase": {
+    "message": "Deletes database data"
+  },
+  "dangerForkBomb": {
+    "message": "Fork bomb that can freeze the system"
+  },
+  "dangerSystem": {
+    "message": "Shuts down or kills system processes"
+  },
+  "clearSearch": {
+    "message": "Clear search"
+  },
+  "libraryTagFilter": {
+    "message": "Filter by tag"
   }
 }

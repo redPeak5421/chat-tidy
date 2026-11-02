@@ -91,6 +91,7 @@
     if(expired)return false;
     try{if(chrome.runtime.id)return true;}catch{}
     expired=true;ChatTidyBatch.cancel();observer?.disconnect();selected.clear();settings.enabled=false;
+    for(const module of readers)module.destroy();
     void grokHistory?.setEnabled(false);cleanup();
     const notice=el('section','cs-status cs-context-expired',t('refresh'));notice.dataset.csOwned='true';
     const close=el('button','cs-button',t('close'));close.onclick=()=>notice.remove();notice.append(close);document.body.append(notice);
@@ -125,7 +126,8 @@
   // Titles from the last scan, so a checkbox click never re-reads the whole sidebar.
   let titles=new Map();
   function applyFilter(query){
-    filterQuery=query;const found=filterQuery.trim()?items():[];matches=core.match(found,filterQuery);
+    filterQuery=query;const found=filterQuery.trim()?items():[];
+    matches=core.match(found,filterQuery);
     const ids=new Set(matches.map(item=>item.id));
     document.querySelectorAll('.cs-match').forEach(link=>{if(!ids.has(rowId(link)))link.classList.remove('cs-match');});
     for(const item of matches)item.link.classList.add('cs-match');
@@ -146,6 +148,7 @@
       bar.hidden=false;
     });
     document.querySelectorAll('.cs-count').forEach(node=>{if(node.textContent!==count)node.textContent=count;});
+    renderResults();
     document.querySelectorAll('.cs-checkbox').forEach(box=>{box.checked=selected.has(box.dataset.csId);box.disabled=busy;box.closest('.cs-chat-link')?.classList.toggle('cs-selected',box.checked);});
     const {coworkOnly,mixed}=coworkState();
     document.querySelectorAll('[data-cs-action]').forEach(button=>{const action=button.dataset.csAction;
@@ -154,6 +157,51 @@
       // Ordinary Claude chats have no native archive, and Cowork tasks cannot be moved into a group.
       if(action==='archive'&&site.id==='claude')button.hidden=!coworkOnly;
       if(action==='move'&&site.id==='claude')button.hidden=mixed;});
+  }
+  // The panel lists the matches itself: on narrow layouts it covers the very rows the filter highlights.
+  // The list is rebuilt only when the matches change; every sync just mirrors the selection onto its checkboxes.
+  function renderResults(){
+    // A chat shown in two sections (pinned and recents) is one entry.
+    const query=filterQuery.trim(),shown=[...new Map(matches.map(item=>[item.id,item])).values()];
+    const key=query&&query+'\n'+shown.map(item=>item.id+'\t'+item.title).join('\n');
+    document.querySelectorAll('.cs-results').forEach(list=>{
+      if(list.dataset.csKey!==key){
+        // A rescan can rename or add a match while the user is in the list; keep focus and scroll across the rebuild.
+        const focused=list.contains(document.activeElement)?document.activeElement.dataset.csResult:null,top=list.scrollTop;
+        list.dataset.csKey=key;list.replaceChildren();list.hidden=!query;
+        if(query&&!shown.length)list.append(el('li','cs-results-empty',t('noMatches')));
+        for(const {id,title} of shown){
+          const entry=el('li'),label=el('label','cs-result'),box=el('input');box.type='checkbox';box.dataset.csResult=id;
+          box.addEventListener('change',()=>{
+            if(busy)return;
+            // Resolve the row at tick time: sites re-render rows before the next scan, and a mapped site (Qwen, Z.ai)
+            // only acts on the very element that still carries this ID. Otherwise the tick waits for a fresh scan.
+            const row=[...document.querySelectorAll('.cs-checkbox')].find(n=>n.dataset.csId===id)?.parentElement||matches.find(item=>item.id===id)?.link;
+            if(box.checked&&row?.isConnected&&(!siteRows||siteRows.idOf(row)===id)){selected.set(id,title);pickedRows.set(id,row);}
+            else{selected.delete(id);if(box.checked)schedule();}
+            sync();
+          });
+          label.append(box,el('span','',title));label.title=title;entry.append(label);list.append(entry);
+        }
+        list.scrollTop=top;if(focused)list.querySelector(`[data-cs-result="${focused}"]`)?.focus();
+        placeMenu(list.closest('.cs-toolbar'));
+      }
+      list.querySelectorAll('input').forEach(box=>{box.checked=selected.has(box.dataset.csResult);box.disabled=busy;});
+    });
+  }
+  // Beside the sidebar when the window has room, so the panel never hides the rows the filter highlights; otherwise under the icon.
+  function placeMenu(bar){
+    const toggle=bar?.querySelector('.cs-toggle'),actions=bar?.querySelector('.cs-actions');if(!toggle||!actions||actions.hidden)return;
+    const rect=toggle.getBoundingClientRect(),panel=actions.getBoundingClientRect().width||300,rtl=getComputedStyle(toggle).direction==='rtl';
+    let side=bar.classList.contains('cs-chatgpt-rail-toolbar')?rect:null;
+    if(!side){
+      let sidebar=null;for(let node=bar.parentElement;node;node=node.parentElement)if(node.matches(rootSelector()+',#sidebar'))sidebar=node;
+      const box=sidebar?.getBoundingClientRect();
+      if(box&&box.width>0&&box.width<window.innerWidth*.6&&(rtl?box.left-panel-16>=0:box.right+panel+16<=window.innerWidth))side=box;
+    }
+    const left=side?(rtl?side.left-panel-8:side.right+8):rect.right-panel;
+    actions.style.top=Math.max(8,Math.min(side?rect.top:rect.bottom+6,window.innerHeight-(actions.offsetHeight||160)-8))+'px';
+    actions.style.left=Math.max(8,Math.min(left,window.innerWidth-panel-8))+'px';
   }
   // An icon button shows a short label (label overrides the key's text) and keeps the full name as its tooltip.
   function button(key,action,icon,label) {
@@ -205,6 +253,9 @@
     const pick=el('button','cs-button cs-pick');pick.type='button';pick.dataset.csAction='matches';pick.hidden=true;
     pick.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();act('matches');});
     field.append(svgIcon('search'),input);filterRow.append(field,pick);
+    const results=el('ul','cs-results');results.hidden=true;results.setAttribute('aria-label',t('filterPlaceholder'));
+    // Space and arrows on the result checkboxes must not reach site shortcuts; Escape still closes the panel.
+    for(const type of ['keydown','keyup','keypress'])results.addEventListener(type,event=>{if(event.key!=='Escape')event.stopPropagation();});
     // Count on its own line, then three labelled, equal-width selection buttons.
     const selectRow=el('div','cs-select-row'),choices=el('div','cs-select-buttons');
     for(const key of ['all','invert','clear'])choices.append(button(key,key,key));
@@ -215,16 +266,18 @@
       if(key==='archive'&&site.id==='claude'){control.title=t('coworkArchiveOnly');control.hidden=true;}
       runRow.append(control);
     }
-    actions.append(filterRow,selectRow,runRow);
+    actions.append(filterRow,results,selectRow,runRow);
+    // The top layer keeps DOM ancestry: on Qwen the toolbar sits inside the "All chats" folder button, so panel clicks
+    // (labels, result rows) must not bubble into native header handlers. Outside-click closing ignores the panel anyway.
+    actions.addEventListener('click',event=>event.stopPropagation());
     if(hasManager){const section=el('div','cs-manager-section');section.append(button('archiveManager','archiveManager'));actions.append(section);}
     actions.hidden=true;const toggle=el('button','cs-button cs-toggle');
     toggle.append(svgIcon('manage'));toggle.type='button';toggle.title=t('manage');toggle.setAttribute('aria-label',t('manage'));toggle.setAttribute('aria-expanded','false');
     toggle.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();
       if(!actions.hidden){closeMenus();return;}
       closeMenus();applyTheme();actions.hidden=false;toggle.setAttribute('aria-expanded','true');
-      const rail=bar.classList.contains('cs-chatgpt-rail-toolbar');if(actions.hasAttribute('popover'))actions.showPopover?.();
-      const rect=toggle.getBoundingClientRect(),panel=actions.getBoundingClientRect().width||300,left=rail?(getComputedStyle(toggle).direction==='rtl'?rect.left-panel-8:rect.right+8):rect.right-panel;
-      actions.style.top=Math.max(8,Math.min(rail?rect.top:rect.bottom+6,window.innerHeight-(actions.offsetHeight||160)-8))+'px';actions.style.left=Math.max(8,Math.min(left,window.innerWidth-panel-8))+'px';input.focus();});
+      if(actions.hasAttribute('popover'))actions.showPopover?.();
+      placeMenu(bar);input.focus();});
     bar.append(toggle,actions);
     placeToolbar(root,bar,found);
   }
@@ -295,6 +348,7 @@
         item.link.prepend(box);
       }
       item.link.classList.add('cs-chat-link');
+      item.link.classList.toggle('cs-starred',!!saved[site.id+':'+item.id]);
       item.link.classList.toggle('cs-chatgpt-row',site.id==='chatgpt'&&!!item.link.closest(chatgptRow));
       const search=site.id==='grok'&&!!item.link.closest('[cmdk-list]');
       item.link.classList.toggle('cs-grok-search-link',search);
@@ -312,7 +366,7 @@
   }
   function schedule(){if(expired||scheduled)return;scheduled=true;setTimeout(()=>{scheduled=false;scan();},80);}
   function watch(){if(expired)return;observer?.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['href','hidden','aria-hidden','aria-expanded','class','data-sidebar-chatgpt-conversation-key','aria-label']});}
-  function cleanup(){clearTimeout(filterTimer);filterQuery='';matches=[];document.querySelectorAll('.cs-match').forEach(n=>n.classList.remove('cs-match'));document.querySelectorAll('.cs-gemini-heading,.cs-heading-row,.cs-chatgpt-heading,.cs-claude-heading,.cs-zai-heading').forEach(n=>n.classList.remove('cs-gemini-heading','cs-heading-row','cs-chatgpt-heading','cs-claude-heading','cs-zai-heading'));document.querySelectorAll('.cs-grok-result').forEach(n=>n.classList.remove('cs-grok-result'));document.querySelectorAll('.cs-grok-search-link').forEach(n=>n.classList.remove('cs-grok-search-link'));document.querySelectorAll('.cs-heading-hover').forEach(node=>node.classList.remove('cs-heading-hover'));document.querySelectorAll('[data-cs-owned]').forEach(node=>node.remove());document.querySelectorAll('.cs-chat-link').forEach(node=>{node.classList.remove('cs-chat-link','cs-chatgpt-row','cs-dynamic','cs-selected','cs-wave-active');node.style.removeProperty('--cs-wave');});}
+  function cleanup(){clearTimeout(filterTimer);filterQuery='';matches=[];document.querySelectorAll('.cs-match').forEach(n=>n.classList.remove('cs-match'));document.querySelectorAll('.cs-gemini-heading,.cs-heading-row,.cs-chatgpt-heading,.cs-claude-heading,.cs-zai-heading').forEach(n=>n.classList.remove('cs-gemini-heading','cs-heading-row','cs-chatgpt-heading','cs-claude-heading','cs-zai-heading'));document.querySelectorAll('.cs-grok-result').forEach(n=>n.classList.remove('cs-grok-result'));document.querySelectorAll('.cs-grok-search-link').forEach(n=>n.classList.remove('cs-grok-search-link'));document.querySelectorAll('.cs-heading-hover').forEach(node=>node.classList.remove('cs-heading-hover'));document.querySelectorAll('[data-cs-owned]').forEach(node=>node.remove());document.querySelectorAll('.cs-chat-link').forEach(node=>{node.classList.remove('cs-chat-link','cs-chatgpt-row','cs-dynamic','cs-selected','cs-wave-active','cs-starred');node.style.removeProperty('--cs-wave');});}
   function confirmDelete(action='delete'){
     if(!contextAlive())return;
     if(!selected.size||document.querySelector('.cs-confirm'))return;
@@ -418,7 +472,7 @@
   document.addEventListener('scroll',()=>{queueWave();},true);
   // Rows can shift sideways without a scan (sidebar resize or slide-in); entering a row or resizing re-measures the band.
   document.addEventListener('pointerover',event=>{if(event.target.closest?.('.cs-chat-link'))band=null;},{passive:true,capture:true});
-  window.addEventListener('resize',()=>{band=null;});
+  window.addEventListener('resize',()=>{band=null;document.querySelectorAll('.cs-toolbar').forEach(placeMenu);});
   document.addEventListener('click',event=>{if(event.target.closest?.('.cs-toolbar,.cs-confirm,.cs-move,.cs-archive-manager'))return;closeMenus();});
   document.addEventListener('keydown',event=>{if(event.key==='Escape'){const open=document.querySelector('.cs-toggle[aria-expanded="true"]');closeMenus();open?.focus();} });
   // Prevent parent React link handlers, while preserving the checkbox's native toggle.
@@ -432,14 +486,24 @@
     if(busy){notice(t('apiError')+' (busy)');return;}
     if(!sameWorkspace()){sync();notice(t('apiError')+' (workspace-changed)');return;}
     void runBatch(snapshot,approved,'move',target);}}):null;
+  // Reading tools work in the chat area with their own observers; the sidebar scan above never looks inside <main>.
+  const library=globalThis.ChatTidyLibrary||null;
+  const readerAdapter=globalThis.ChatTidyReaderSites?.get(site.id)||null;
+  const readerOptions={t,site,adapter:readerAdapter,library,titleOf:id=>titles.get(id)||''};
+  // Outline and code tools run only where the site's chat structure was verified (core.supports); layout options degrade per option.
+  const readers=readerAdapter?[[globalThis.ChatTidyLayout,true],[globalThis.ChatTidyCode,core.supports(site,'codeTools')],[globalThis.ChatTidyReader,core.supports(site,'outline')]].filter(([module,on])=>module&&on).map(([module])=>module.create(readerOptions)).filter(Boolean):[];
+  function updateReaders(){if(!expired)for(const module of readers)module.update({...settings});}
+  // Bookmarked chats are marked in the sidebar. The sidebar filter stays title-only: its matches can be selected for deletion,
+  // so a chat must never match on hidden tags or notes; finding by tag lives in the popup's bookmarks page.
+  let saved={};
   function restoreRows(ids){for(const id of ids)deleted.delete(id);siteRows?.unforget(ids);document.querySelectorAll('.cs-deleted-row').forEach(row=>{const link=row.matches('a,'+chatgptRow)?row:row.querySelector('a');const id=link&&rowId(link);if(id&&!deleted.has(id))row.classList.remove('cs-deleted-row');});schedule();}
   const managerOptions=()=>({t,site,canRun:()=>!expired&&settings.enabled,onCompleted:(ids,action)=>{if(action==='restore')restoreRows(ids);}});
   let archiveManager=hasManager&&globalThis.ChatTidyArchive?ChatTidyArchive.create(managerOptions()):null;
   chrome.runtime.onMessage.addListener((message,sender,reply)=>{if(message?.type==='cs-site'&&sender.id===chrome.runtime.id){reply({site:site.id});}if(message?.type==='cs-open-archive'&&sender.id===chrome.runtime.id&&archiveManager){void archiveManager.open();reply({ok:true});}return false;});
   document.addEventListener('pointerdown',event=>{if(event.target.matches?.('.cs-checkbox'))event.stopPropagation();},true);
   document.addEventListener('keydown',event=>{if(event.target.matches?.('.cs-checkbox'))event.stopPropagation();},true);
-  chrome.storage.local.get(settings).then(saved=>{
-    settings={...settings,...saved};applyTheme();
+  chrome.storage.local.get(settings).then(stored=>{
+    settings={...settings,...stored};applyTheme();
     // Sites switch themes by toggling attributes on <html>/<body> or following the OS. pageTheme() walks computed
     // styles, so bursts of attribute writes collapse into one check per frame.
     let themeFrame=0;const queueTheme=()=>{if(!themeFrame)themeFrame=requestAnimationFrame(()=>{themeFrame=0;applyTheme();});};
@@ -462,16 +526,20 @@
         return [...record.addedNodes,...record.removedNodes].some(node=>!own(node));
       }))schedule();
     });if(settings.enabled)refreshSiteUser();scan();watch();void grokHistory?.setEnabled(settings.enabled&&settings.grokShowAll);
+    updateReaders();
+    if(library){library.load().then(items=>{saved=items;schedule();}).catch(()=>{});library.onChange(items=>{saved=items;schedule();});}
   }).catch(()=>{ /* Invalidated extension: refreshing the page re-injects it. */ });
   chrome.storage.onChanged.addListener((changes,area)=>{
     const keys=Object.keys(settings).filter(key=>changes[key]&&!['concurrency','hideSupport'].includes(key));
     if(area!=='local'||!keys.length)return;
     for(const key of keys)settings[key]=changes[key].newValue;
-    applyTheme();botsController?.update(settings);
+    applyTheme();botsController?.update(settings);updateReaders();
     if(!['enabled','language','checkboxMode','grokShowAll'].some(key=>changes[key]))return;
     if(busy)return;
     archiveManager?.destroy();archiveManager=hasManager&&settings.enabled&&globalThis.ChatTidyArchive?ChatTidyArchive.create(managerOptions()):null;
     mover?.close();
     cleanup();void grokHistory?.setEnabled(settings.enabled&&settings.grokShowAll);if(!settings.enabled)selected.clear();else{refreshSiteUser();scan();}
+    // cleanup() removed every owned node, reading tools included; they rebuild in the new language or stay off.
+    updateReaders();
   });
 })();

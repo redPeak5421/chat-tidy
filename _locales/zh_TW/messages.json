@@ -441,5 +441,237 @@
   },
   "moveShort": {
     "message": "移動"
+  },
+  "noMatches": {
+    "message": "已載入的對話中沒有相符項目"
+  },
+  "outline": {
+    "message": "對話目錄與搜尋"
+  },
+  "enhance": {
+    "message": "對話增強"
+  },
+  "enhanceHint": {
+    "message": "目錄、搜尋、收藏、程式碼區塊和頁面版面"
+  },
+  "enhanceIntro": {
+    "message": "以下功能都會在開啟某個對話後，出現在聊天頁面中。"
+  },
+  "outlineHint": {
+    "message": "開啟任一對話後，聊天區右側會出現一列細刻度（每個刻度是你的一個提問）。滑鼠移上去看問題、點擊即跳轉；點頂部圖示展開列表，可搜尋本對話、收藏回答。"
+  },
+  "codeTools": {
+    "message": "程式碼區塊增強"
+  },
+  "codeToolsHint": {
+    "message": "回答中的程式碼區塊：左側顯示行號，超過 24 行自動摺疊，滑鼠移到指令行可單獨複製一行，rm -rf / 這類危險指令會標黃提醒。"
+  },
+  "library": {
+    "message": "我的收藏"
+  },
+  "libraryHint": {
+    "message": "在目錄中收藏的對話和回答都在這裡，可依標籤、備註尋找，點開直接跳回原處。"
+  },
+  "codeLineNumbers": {
+    "message": "顯示行號"
+  },
+  "codeFold": {
+    "message": "自動摺疊長程式碼"
+  },
+  "codeDanger": {
+    "message": "提示潛在危險指令"
+  },
+  "layoutGroup": {
+    "message": "頁面版面"
+  },
+  "layoutGroupHint": {
+    "message": "調整對話頁面本身的樣子，關閉選項即恢復網站原樣。"
+  },
+  "chatWidth": {
+    "message": "聊天區寬度"
+  },
+  "chatWidthHint": {
+    "message": "加寬對話區域，長程式碼和表格更少換行。"
+  },
+  "chatWidthDefault": {
+    "message": "網站預設"
+  },
+  "chatWidthWide": {
+    "message": "寬"
+  },
+  "chatWidthFull": {
+    "message": "全寬"
+  },
+  "compactSidebar": {
+    "message": "緊湊側邊欄"
+  },
+  "compactSidebarHint": {
+    "message": "縮小左側對話列表的行距，一屏能看到更多對話。"
+  },
+  "hideClutter": {
+    "message": "隱藏免責聲明和升級提示"
+  },
+  "hideClutterHint": {
+    "message": "隱藏輸入框下方的免責聲明和升級提示橫幅。"
+  },
+  "focusMode": {
+    "message": "專注閱讀模式"
+  },
+  "focusModeHint": {
+    "message": "隱藏側邊欄和頂部列，只留對話；右上角的按鈕可退出。"
+  },
+  "siteUnsupported": {
+    "message": "此網站暫不支援"
+  },
+  "librarySearch": {
+    "message": "搜尋標題、標籤和備註"
+  },
+  "libraryAll": {
+    "message": "全部"
+  },
+  "libraryChats": {
+    "message": "對話"
+  },
+  "libraryAnswers": {
+    "message": "回答"
+  },
+  "libraryEmpty": {
+    "message": "還沒有收藏。打開一個對話，在右側目錄中收藏對話或其中的回答。"
+  },
+  "libraryNoMatch": {
+    "message": "沒有相符的收藏"
+  },
+  "libraryRemove": {
+    "message": "移除收藏"
+  },
+  "outlineTitle": {
+    "message": "目錄"
+  },
+  "outlineShow": {
+    "message": "顯示目錄"
+  },
+  "outlineHide": {
+    "message": "收起目錄"
+  },
+  "outlineEmpty": {
+    "message": "本對話中的提問會列在這裡。"
+  },
+  "searchChat": {
+    "message": "搜尋本對話"
+  },
+  "searchCount": {
+    "message": "$CURRENT$ / $TOTAL$",
+    "placeholders": {
+      "current": {
+        "content": "$1",
+        "example": "3"
+      },
+      "total": {
+        "content": "$2",
+        "example": "3"
+      }
+    }
+  },
+  "searchNone": {
+    "message": "已載入的訊息中沒有相符"
+  },
+  "searchLoadedOnly": {
+    "message": "僅搜尋頁面已載入的訊息"
+  },
+  "searchPrev": {
+    "message": "上一個"
+  },
+  "searchNext": {
+    "message": "下一個"
+  },
+  "bookmarkAnswer": {
+    "message": "收藏這則回答"
+  },
+  "removeAnswerBookmark": {
+    "message": "取消收藏回答"
+  },
+  "starChat": {
+    "message": "收藏對話"
+  },
+  "unstarChat": {
+    "message": "取消收藏對話"
+  },
+  "tagsNote": {
+    "message": "標籤和備註"
+  },
+  "addTag": {
+    "message": "輸入標籤後按 Enter"
+  },
+  "removeTag": {
+    "message": "移除標籤 $TAG$",
+    "placeholders": {
+      "tag": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "notePlaceholder": {
+    "message": "新增備註"
+  },
+  "focusExit": {
+    "message": "退出專注"
+  },
+  "copyLine": {
+    "message": "複製此行"
+  },
+  "copied": {
+    "message": "已複製"
+  },
+  "expandCode": {
+    "message": "展開全部 $N$ 行",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "collapseCode": {
+    "message": "收起"
+  },
+  "dangerCount": {
+    "message": "潛在危險指令 $N$ 條",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "dangerDelete": {
+    "message": "遞迴刪除檔案"
+  },
+  "dangerDisk": {
+    "message": "覆寫或格式化磁碟"
+  },
+  "dangerRemoteScript": {
+    "message": "直接執行下載的腳本"
+  },
+  "dangerPermissions": {
+    "message": "對所有人開放權限"
+  },
+  "dangerGit": {
+    "message": "丟棄 Git 歷史或本機變更"
+  },
+  "dangerDatabase": {
+    "message": "刪除資料庫資料"
+  },
+  "dangerForkBomb": {
+    "message": "可能讓系統當機的 fork 炸彈"
+  },
+  "dangerSystem": {
+    "message": "關機或結束系統程序"
+  },
+  "clearSearch": {
+    "message": "清除搜尋"
+  },
+  "libraryTagFilter": {
+    "message": "依標籤篩選"
   }
 }

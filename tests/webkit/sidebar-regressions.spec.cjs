@@ -25,6 +25,26 @@ test('Claude menu covers isolated native rows and selection controls keep it exp
  await page.screenshot({path:testInfo.outputPath('claude-menu.png')});
  await page.keyboard.press('Escape');await expect(menu).toBeHidden();await page.locator('.cs-toggle').click();await page.locator('main').click();await expect(menu).toBeHidden();
 });
+test('Claude menu opens beside the sidebar so filtered rows stay visible',async({page,context})=>{
+ await load(page,context,'claude.ai',`<div data-testid="sidebar"><div class="native-label"><div class="labelrow"><button data-group-toggle><span data-group-name>最近</span></button></div></div>${['Alpha','Web page notes','Gamma'].map((title,n)=>`<div class="native-row"><a href="/chat/${id(String(n+1))}">${title}</a></div>`).join('')}</div><main>Outside</main>`);
+ await page.locator('.cs-toggle').click();const menu=page.locator('.cs-actions');await expect(menu).toBeVisible();
+ const panel=await menu.boundingBox(),sidebar=await page.locator('[data-testid=sidebar]').boundingBox();
+ expect(panel.x).toBeGreaterThanOrEqual(sidebar.x+sidebar.width);
+ await page.locator('.cs-filter-input').fill('web');
+ await expect(page.locator('.cs-chat-link.cs-match')).toHaveCount(1);
+ const row=page.locator('.cs-chat-link.cs-match');
+ expect(await row.evaluate(n=>{const r=n.getBoundingClientRect();return !document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)?.closest('.cs-actions');})).toBe(true);
+ await expect(menu.locator('.cs-result')).toHaveText(['Web page notes']);
+ await menu.locator('.cs-result input').check();await expect(row.locator('.cs-checkbox')).toBeChecked();await expect(menu).toBeVisible();
+});
+test('narrow windows keep the menu over the sidebar but still list the matches',async({page,context})=>{
+ await page.setViewportSize({width:420,height:700});
+ await load(page,context,'claude.ai',`<div data-testid="sidebar"><div class="native-label"><div class="labelrow"><button data-group-toggle><span data-group-name>最近</span></button></div></div>${['Alpha','Web page notes'].map((title,n)=>`<div class="native-row"><a href="/chat/${id(String(n+1))}">${title}</a></div>`).join('')}</div>`);
+ await page.locator('.cs-toggle').click();const menu=page.locator('.cs-actions');
+ const panel=await menu.boundingBox();expect(panel.x).toBeGreaterThanOrEqual(8);expect(panel.x+panel.width).toBeLessThanOrEqual(412);
+ await page.locator('.cs-filter-input').fill('web');await expect(menu.locator('.cs-result')).toHaveText(['Web page notes']);
+ const after=await menu.boundingBox();expect(after.y+after.height).toBeLessThanOrEqual(692);
+});
 test('Grok localized Bots in the new sidebar use the native collapse control and hide the whole section',async({page,context})=>{
  await load(page,context,'grok.com',`<div data-sidebar="sidebar"><div data-sidebar="group" id="bots"><div class="labelrow"><button aria-expanded="true"><span>机器人</span><svg></svg></button><button>+</button></div><ul><li><a href="/bot/example">Grok Bot</a></li><li><button>未分配</button><a href="/bot/other">Bot</a></li><li><button>展开</button></li></ul></div><div id="chats"><h2>聊天</h2><a href="/c/${id('1')}">Example chat</a></div></div>`);
  await page.evaluate(()=>{const b=document.querySelector('#bots button');b.onclick=()=>{const open=b.getAttribute('aria-expanded')!=='true';b.setAttribute('aria-expanded',String(open));document.querySelector('#bots ul').hidden=!open;};change({grokCollapseBots:{newValue:true}},'local');});

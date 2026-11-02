@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
-  "version": "1.11.19",
+  "version": "1.11.22",
   "description": "__MSG_extensionDescription__",
   "permissions": [
     "storage"
@@ -27,10 +27,17 @@
         "src/i18n.js",
         "src/archive.js",
         "src/projects.js",
+        "src/library.js",
+        "src/reader-sites.js",
+        "src/layout.js",
+        "src/code.js",
+        "src/reader.js",
         "src/content.js"
       ],
       "css": [
-        "src/content.css"
+        "src/content.css",
+        "src/reader.css",
+        "src/code.css"
       ],
       "run_at": "document_idle"
     },
@@ -43,10 +50,17 @@
         "src/batch.js",
         "src/i18n.js",
         "src/projects.js",
+        "src/library.js",
+        "src/reader-sites.js",
+        "src/layout.js",
+        "src/code.js",
+        "src/reader.js",
         "src/content.js"
       ],
       "css": [
-        "src/content.css"
+        "src/content.css",
+        "src/reader.css",
+        "src/code.css"
       ],
       "run_at": "document_idle"
     },
@@ -60,10 +74,17 @@
         "src/i18n.js",
         "src/grok.js",
         "src/bots.js",
+        "src/library.js",
+        "src/reader-sites.js",
+        "src/layout.js",
+        "src/code.js",
+        "src/reader.js",
         "src/content.js"
       ],
       "css": [
-        "src/content.css"
+        "src/content.css",
+        "src/reader.css",
+        "src/code.css"
       ],
       "run_at": "document_idle"
     },
@@ -76,10 +97,17 @@
         "src/gemini.js",
         "src/batch.js",
         "src/i18n.js",
+        "src/library.js",
+        "src/reader-sites.js",
+        "src/layout.js",
+        "src/code.js",
+        "src/reader.js",
         "src/content.js"
       ],
       "css": [
-        "src/content.css"
+        "src/content.css",
+        "src/reader.css",
+        "src/code.css"
       ],
       "run_at": "document_idle"
     },
@@ -92,10 +120,17 @@
         "src/kimi.js",
         "src/batch.js",
         "src/i18n.js",
+        "src/library.js",
+        "src/reader-sites.js",
+        "src/layout.js",
+        "src/code.js",
+        "src/reader.js",
         "src/content.js"
       ],
       "css": [
-        "src/content.css"
+        "src/content.css",
+        "src/reader.css",
+        "src/code.css"
       ],
       "run_at": "document_idle"
     },
@@ -110,10 +145,17 @@
         "src/i18n.js",
         "src/archive.js",
         "src/projects.js",
+        "src/library.js",
+        "src/reader-sites.js",
+        "src/layout.js",
+        "src/code.js",
+        "src/reader.js",
         "src/content.js"
       ],
       "css": [
-        "src/content.css"
+        "src/content.css",
+        "src/reader.css",
+        "src/code.css"
       ],
       "run_at": "document_idle"
     },
@@ -126,10 +168,17 @@
         "src/zai.js",
         "src/batch.js",
         "src/i18n.js",
+        "src/library.js",
+        "src/reader-sites.js",
+        "src/layout.js",
+        "src/code.js",
+        "src/reader.js",
         "src/content.js"
       ],
       "css": [
-        "src/content.css"
+        "src/content.css",
+        "src/reader.css",
+        "src/code.css"
       ],
       "run_at": "document_idle"
     }
