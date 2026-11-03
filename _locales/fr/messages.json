@@ -24,7 +24,7 @@
     "message": "Tout sélectionner et inverser concernent uniquement les discussions déjà chargées. Faites défiler pour en charger davantage. Actualiser efface la sélection."
   },
   "privacy": {
-    "message": "Fonctionne sur ChatGPT, Claude, Grok, Gemini, Kimi, Qwen et Z.ai. Les réglages et vos favoris (titres, courts extraits, étiquettes, notes) restent dans ce navigateur ; aucun identifiant n’est conservé et rien n’est envoyé au développeur ni à des tiers."
+    "message": "Réglages et favoris restent dans ce navigateur : rien n’est envoyé, aucun identifiant n’est conservé."
   },
   "clear": {
     "message": "Désélectionner"
@@ -503,10 +503,13 @@
     "message": "Pleine largeur"
   },
   "compactSidebar": {
-    "message": "Barre latérale compacte"
+    "message": "Barre latérale redimensionnable"
   },
   "compactSidebarHint": {
-    "message": "Lignes plus serrées dans la liste de gauche, pour voir plus de conversations."
+    "message": "Faites glisser le bord droit de la barre latérale pour la redimensionner ; double-cliquez pour rétablir. Chaque site garde sa largeur."
+  },
+  "sidebarResize": {
+    "message": "Faire glisser pour redimensionner la barre latérale"
   },
   "hideClutter": {
     "message": "Masquer avertissements et offres payantes"

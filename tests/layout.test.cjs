@@ -5,7 +5,7 @@ function load(){
  w.chrome={storage:{local:{set:async data=>{writes.push(data);}}}};
  for(const name of ['core','reader-sites'])w.eval(fs.readFileSync('src/'+name+'.js','utf8'));w.eval(source);return {w,d:w.document,writes,layout:w.ChatTidyLayout};
 }
-const adapter={layout:{width:'main{max-width:{width}}',compactSidebar:'nav a{padding:2px}',clutter:'.upsell{display:none}',focus:'nav{display:none}'}};
+const adapter={id:'site',layout:{width:'main{max-width:{width}}',compactSidebar:'nav{width:{sidebar}}',sidebar:'nav',clutter:'.upsell{display:none}',focus:'nav{display:none}'}};
 const base={enabled:true,chatWidth:'default',compactSidebar:false,hideClutter:false,focusMode:false};
 test('css() builds one rule per enabled option from the adapter and nothing otherwise',()=>{
  const {layout}=load();
@@ -13,19 +13,24 @@ test('css() builds one rule per enabled option from the adapter and nothing othe
  assert.equal(layout.css(adapter,{...base,chatWidth:'wide'}),'main{max-width:1040px}');
  assert.equal(layout.css(adapter,{...base,chatWidth:'full'}),'main{max-width:calc(100% - 48px)}');
  assert.equal(layout.css(adapter,{...base,chatWidth:'bogus'}),'','unknown widths change nothing');
- assert.equal(layout.css(adapter,{...base,compactSidebar:true}),'nav a{padding:2px}');
+ assert.equal(layout.css(adapter,{...base,compactSidebar:true}),'','resizable but never dragged: the site keeps its width');
+ assert.equal(layout.css(adapter,{...base,compactSidebar:true,sidebarWidths:{site:260,other:400}}),'nav{width:260px}');
+ assert.equal(layout.css(adapter,{...base,compactSidebar:true,sidebarWidths:{site:20}}),'nav{width:180px}','clamped to the minimum');
+ assert.equal(layout.css(adapter,{...base,compactSidebar:true,sidebarWidths:{site:2000}}),'nav{width:480px}','clamped to the maximum');
+ assert.equal(layout.css(adapter,{...base,compactSidebar:true,sidebarWidths:{site:'x'}}),'','junk widths change nothing');
+ assert.equal(layout.css(adapter,{...base,compactSidebar:false,sidebarWidths:{site:260}}),'','off ignores the stored width');
  assert.equal(layout.css(adapter,{...base,hideClutter:true}),'.upsell{display:none}');
  assert.equal(layout.css(adapter,{...base,focusMode:true}),'nav{display:none}');
- assert.equal(layout.css(adapter,{...base,chatWidth:'wide',compactSidebar:true,hideClutter:true,focusMode:true}),'main{max-width:1040px}\nnav a{padding:2px}\n.upsell{display:none}\nnav{display:none}');
+ assert.equal(layout.css(adapter,{...base,chatWidth:'wide',compactSidebar:true,sidebarWidths:{site:260},hideClutter:true,focusMode:true}),'main{max-width:1040px}\nnav{width:260px}\n.upsell{display:none}\nnav{display:none}');
  assert.equal(layout.css(adapter,{...base,enabled:false,chatWidth:'full',focusMode:true}),'','disabled extension applies nothing');
  assert.equal(layout.css({layout:{width:'',compactSidebar:'',clutter:'',focus:''}},{...base,chatWidth:'wide',compactSidebar:true,hideClutter:true,focusMode:true}),'','empty adapter strings apply nothing');
  assert.equal(layout.css(null,{...base,chatWidth:'wide'}),'');
  assert.deepEqual({...layout.widths},{wide:'1040px',full:'calc(100% - 48px)'});
  assert.equal(layout.css({layout:{width:'a{width:{width}}b{max-width:{width}}'}},{...base,chatWidth:'wide'}),'a{width:1040px}b{max-width:1040px}','every placeholder is replaced');
 });
-test('real adapters keep the {width} placeholder resolvable for the sites that define one',()=>{
+test('real adapters keep the {width} and {sidebar} placeholders resolvable for the sites that define one',()=>{
  const {w,layout}=load();
- for(const id of Object.keys(w.ChatTidyReaderSites.sites)){const real=w.ChatTidyReaderSites.get(id),text=layout.css(real,{...base,chatWidth:'full'});assert.doesNotMatch(text,/\{width\}/,id);if(real.layout.width)assert.match(text,/calc\(100% - 48px\)/,id);}
+ for(const id of Object.keys(w.ChatTidyReaderSites.sites)){const real=w.ChatTidyReaderSites.get(id),text=layout.css(real,{...base,chatWidth:'full',compactSidebar:true,sidebarWidths:{[id]:300}});assert.doesNotMatch(text,/\{width\}|\{sidebar\}/,id);assert.equal(!!real.layout.compactSidebar,!!real.layout.sidebar,id+': a width rule needs a sidebar to put the handle on');if(real.layout.compactSidebar)assert.match(text,/300px/,id);if(real.layout.width)assert.match(text,/calc\(100% - 48px\)/,id);}
 });
 test('one owned stylesheet follows the settings and disappears when nothing applies',()=>{
  const {d,layout}=load(),module=layout.create({t:k=>k,adapter});

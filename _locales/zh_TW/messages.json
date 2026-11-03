@@ -24,7 +24,7 @@
     "message": "全選與反向選擇只處理側欄已載入的聊天。向下捲動可載入更多；重新整理會清空選擇。"
   },
   "privacy": {
-    "message": "在 ChatGPT、Claude、Grok、Gemini、Kimi、Qwen 和 Z.ai 頁面執行。設定和你的收藏（標題、簡短摘錄、標籤、備註）只儲存在本瀏覽器；不儲存登入憑證，不向開發者或第三方傳送資料。"
+    "message": "設定和收藏只儲存在本瀏覽器，不上傳，也不儲存登入憑證。"
   },
   "clear": {
     "message": "取消選擇"
@@ -503,10 +503,13 @@
     "message": "全寬"
   },
   "compactSidebar": {
-    "message": "緊湊側邊欄"
+    "message": "可調側邊欄寬度"
   },
   "compactSidebarHint": {
-    "message": "縮小左側對話列表的行距，一屏能看到更多對話。"
+    "message": "在側邊欄右邊緣拖動調寬，雙擊恢復預設，每個網站分別記住。"
+  },
+  "sidebarResize": {
+    "message": "拖動調整側邊欄寬度"
   },
   "hideClutter": {
     "message": "隱藏免責聲明和升級提示"

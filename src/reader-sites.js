@@ -69,7 +69,8 @@ globalThis.ChatTidyReaderSites = (() => {
     lazy: false,
     codeLang: null,
     // CSS for the layout options; {width} is replaced with the chosen max-width. An empty string means unsupported here.
-    layout: {width: '', compactSidebar: '', clutter: '', focus: ''}
+    // compactSidebar sets the dragged sidebar width ({sidebar}); sidebar is the open panel the drag handle sits on.
+    layout: {width: '', compactSidebar: '', sidebar: '', clutter: '', focus: ''}
   };
   const chatgptId = el => {
     const key = el.getAttribute('data-content-search-unit-key');
@@ -93,7 +94,8 @@ globalThis.ChatTidyReaderSites = (() => {
         width: '[data-request-input-activity-root],main{--thread-content-responsive-max-width:{width}!important}[class*="transcriptContent"],[class*="thread-content-max-width"]{--thread-content-max-width:{width}!important}',
         // The app-shell sidebar is natively resizable (inline width set by its drag handle), so compact stays off here.
         compactSidebar: '',
-        clutter: '[data-request-input-activity-root]{--thread-composer-disclaimer-visibility:hidden!important}',
+        // In a chat the disclaimer reads a visibility variable; on the new-chat page it sits alone in the composer banner portal.
+        clutter: '[data-request-input-activity-root]{--thread-composer-disclaimer-visibility:hidden!important}[class*="ComposerBannerPortal"] > [data-markdown-copy="exclude"]{display:none!important}',
         focus: 'aside.app-shell-left-panel,nav[data-app-navigation-rail],[data-app-shell-main-titlebar],#stage-slideover-sidebar,#page-header{display:none!important}'
       }
     },
@@ -108,7 +110,8 @@ globalThis.ChatTidyReaderSites = (() => {
       order: el => el.closest('[data-rs-index]')?.getAttribute('data-rs-index'),
       layout: {
         width: '[data-testid="chat-column-body"]{--transcript-width:{width}!important}',
-        compactSidebar: '.dframe-root{--df-sidebar-width:232px!important}',
+        // The sidebar has its own drag handle (232-420px, written to --df-sidebar-width inline), so ours stays off here.
+        compactSidebar: '',
         clutter: '[role="note"][data-disclaimer="true"]{display:none!important}',
         focus: '.dframe-root{--df-sidebar-width:0px!important}aside.dframe-sidebar,[data-testid="chat-header"]{display:none!important}'
       }
@@ -127,7 +130,9 @@ globalThis.ChatTidyReaderSites = (() => {
       order: el => el.getBoundingClientRect().top,
       layout: {
         width: '[class*="@container/chat"]{--content-max-width:{width}!important}',
-        compactSidebar: '[class*="group/sidebar-wrapper"]{--sidebar-width:13.5rem!important}',
+        // The native rail at the edge only collapses on click; the trigger button in the sidebar header still does that.
+        compactSidebar: '[class*="group/sidebar-wrapper"]{--sidebar-width:{sidebar}!important}',
+        sidebar: 'div.peer[data-side="left"][data-state="expanded"] [data-sidebar="sidebar"]',
         clutter: '',
         // The shadcn peer wrapper reserves the sidebar's width; hiding it lets the chat take the whole row.
         focus: 'div.peer[data-side="left"][data-state],[data-sidebar="sidebar"],[data-sidebar="resize-handle"]{display:none!important}'
@@ -147,7 +152,8 @@ globalThis.ChatTidyReaderSites = (() => {
         // xl-grid caps every child at 708px with no variable; the legacy layout reads the variable.
         width: 'chat-window,.chat-history{--bard-chat-window-max-width-default:{width}!important}.conversation-container,.conversation-container user-query,model-response .markdown > *,.response-container-header,.response-container-footer,model-response-disclaimers,code-block{max-width:{width}!important}',
         // The open width comes from a variable; the collapsed rail uses its own (--bard-sidenav-closed-width) and is untouched.
-        compactSidebar: 'bard-sidenav,side-navigation-content{--bard-sidenav-open-width:240px!important}',
+        compactSidebar: 'bard-sidenav,side-navigation-content{--bard-sidenav-open-width:{sidebar}!important}',
+        sidebar: 'bard-sidenav',
         clutter: 'hallucination-disclaimer,chat-app-banners.app-upsell-banner,g1-dynamic-upsell-button,.buttons-container.adv-upsell{display:none!important}',
         focus: 'bard-sidenav,top-bar-actions{display:none!important}'
       }
@@ -163,7 +169,8 @@ globalThis.ChatTidyReaderSites = (() => {
       layout: {
         width: '.chat-content-list{max-width:{width}!important}',
         // Only while the sidebar is shown (.has-sidebar); .main keeps a left margin equal to the sidebar width.
-        compactSidebar: '.app.has-sidebar>.sidebar-slot,.app.has-sidebar aside.next-sidebar{width:200px!important;min-width:200px!important}.app.has-sidebar>.main{margin-left:200px!important}',
+        compactSidebar: '.app.has-sidebar>.sidebar-slot,.app.has-sidebar aside.next-sidebar{width:{sidebar}!important;min-width:{sidebar}!important}.app.has-sidebar>.main{margin-left:{sidebar}!important}',
+        sidebar: '.app.has-sidebar aside.next-sidebar',
         clutter: '.chat-bottom .legal-footer,a.membership-plan{display:none!important}',
         // .main keeps a left margin equal to the sidebar width.
         focus: '.sidebar-slot,aside.next-sidebar,.layout-header{display:none!important}.app.has-sidebar>.main{margin-left:0!important}'
@@ -183,7 +190,8 @@ globalThis.ChatTidyReaderSites = (() => {
       layout: {
         width: '.qwen-chat-message{max-width:{width}!important}',
         // Only the open desktop sidebar: the collapsed rail (.sidebar-collapse, 60px) and the mobile drawer are left alone.
-        compactSidebar: 'html:not(.mobile) .sidebar-wrapper .sidebar:not(.sidebar-collapse):not(.sidebar-floating-collapse),html:not(.mobile) .sidebar-wrapper .sidebar:not(.sidebar-collapse):not(.sidebar-floating-collapse) .sidebar-side{width:200px!important;max-width:200px!important}',
+        compactSidebar: 'html:not(.mobile) .sidebar-wrapper .sidebar:not(.sidebar-collapse):not(.sidebar-floating-collapse),html:not(.mobile) .sidebar-wrapper .sidebar:not(.sidebar-collapse):not(.sidebar-floating-collapse) .sidebar-side{width:{sidebar}!important;max-width:{sidebar}!important}',
+        sidebar: 'html:not(.mobile) .sidebar-wrapper .sidebar:not(.sidebar-collapse):not(.sidebar-floating-collapse)',
         clutter: '.chat-container-statement{display:none!important}',
         focus: '.sidebar-wrapper,header.header-desktop{display:none!important}'
       }
@@ -197,7 +205,8 @@ globalThis.ChatTidyReaderSites = (() => {
       layout: {
         width: '#messages-container [class*="max-w-[808px]"]{max-width:{width}!important}',
         // Two nested Tailwind w-[238px] boxes fix the width; a collapsed sidebar (data-collapsed=true) is left alone.
-        compactSidebar: '#sidebar[data-collapsed="false"] [class*="w-[238px]"]{width:200px!important}',
+        compactSidebar: '#sidebar[data-collapsed="false"] [class*="w-[238px]"]{width:{sidebar}!important}',
+        sidebar: '#sidebar[data-collapsed="false"]',
         clutter: '',
         focus: '#sidebar,#chat-container nav.sticky.top-0{display:none!important}'
       }
@@ -225,6 +234,6 @@ globalThis.ChatTidyReaderSites = (() => {
     };
   }
   // Layout features a site really offers: an option with no CSS for that site is reported as unsupported.
-  function layoutSupport(id) { const layout = {...generic.layout, ...sites[id]?.layout}; return {chatWidth: !!layout.width, compactSidebar: !!layout.compactSidebar, hideClutter: !!layout.clutter, focusMode: !!layout.focus}; }
+  function layoutSupport(id) { const layout = {...generic.layout, ...sites[id]?.layout}; return {chatWidth: !!layout.width, compactSidebar: !!(layout.compactSidebar && layout.sidebar), hideClutter: !!layout.clutter, focusMode: !!layout.focus}; }
   return {get, sites, generic, collect, scrollerOf, codeBlocks, text, layoutSupport};
 })();

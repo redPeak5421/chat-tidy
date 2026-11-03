@@ -24,7 +24,7 @@
     "message": "Select all and invert affect only chats currently loaded in the sidebar. Scroll to load more. Refreshing clears your selection."
   },
   "privacy": {
-    "message": "Runs on ChatGPT, Claude, Grok, Gemini, Kimi, Qwen and Z.ai. Settings and your bookmarks (titles, short excerpts, tags, notes) stay in this browser; no credentials are saved and nothing is sent to the developer or third parties."
+    "message": "Settings and bookmarks stay in this browser. Nothing is uploaded and no credentials are kept."
   },
   "clear": {
     "message": "Clear selection"
@@ -503,10 +503,13 @@
     "message": "Full width"
   },
   "compactSidebar": {
-    "message": "Compact sidebar"
+    "message": "Resizable sidebar"
   },
   "compactSidebarHint": {
-    "message": "Tighter rows in the chat list on the left, so more chats fit on screen."
+    "message": "Drag the sidebar's right edge to resize it; double-click to restore. Each website keeps its own width."
+  },
+  "sidebarResize": {
+    "message": "Drag to resize the sidebar"
   },
   "hideClutter": {
     "message": "Hide disclaimers and upgrade prompts"

@@ -24,7 +24,7 @@
     "message": "全选和反选仅处理侧栏当前已加载的聊天。向下滚动可加载更多；页面刷新后选择会清空。"
   },
   "privacy": {
-    "message": "在 ChatGPT、Claude、Grok、Gemini、Kimi、Qwen 和 Z.ai 页面运行。设置和你的收藏（标题、简短摘录、标签、备注）只保存在本浏览器；不保存登录凭据，不向开发者或第三方发送数据。"
+    "message": "设置和收藏只保存在本浏览器，不上传，也不保存登录凭据。"
   },
   "clear": {
     "message": "取消选择"
@@ -503,10 +503,13 @@
     "message": "全宽"
   },
   "compactSidebar": {
-    "message": "紧凑侧边栏"
+    "message": "可调侧边栏宽度"
   },
   "compactSidebarHint": {
-    "message": "缩小左侧对话列表的行距，一屏能看到更多对话。"
+    "message": "在侧边栏右边缘拖动调宽，双击恢复默认，每个网站分别记住。"
+  },
+  "sidebarResize": {
+    "message": "拖动调整侧边栏宽度"
   },
   "hideClutter": {
     "message": "隐藏免责声明和升级提示"

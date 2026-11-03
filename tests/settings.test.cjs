@@ -44,12 +44,12 @@ test('concurrency offers exactly 1, 3, 5, 10 and 15, defaults to 5 and stores nu
 });
 
 // Chat enhancements and the library page. This harness also loads src/library.js and fires storage change events.
-async function popupWith(site='chatgpt',initial={}){
+async function popupWith(site='chatgpt',initial={},tab={}){
  const dom=new JSDOM(fs.readFileSync('popup.html','utf8'),{url:'https://extension.test',runScripts:'outside-only'}),w=dom.window;
  const saved={language:'en',...initial},listeners=new Set(),created=[];w.matchMedia=()=>({matches:false,addEventListener(){}});
  const set=async data=>{const changes={};for(const [k,v] of Object.entries(data)){changes[k]={newValue:v};saved[k]=v;}for(const fn of listeners)fn(changes,'local');};
  w.chrome={runtime:{getManifest:()=>JSON.parse(fs.readFileSync('manifest.json','utf8'))},storage:{local:{get:async defaults=>({...defaults,...saved}),set,remove:async key=>{delete saved[key];}},onChanged:{addListener:fn=>listeners.add(fn),removeListener:fn=>listeners.delete(fn)}},
-  tabs:{query:async()=>site?[{id:1}]:[],sendMessage:async()=>({site}),create:async options=>{created.push({...options,jump:saved.readerJump?.key||null});return {id:2};}}};
+  tabs:{query:async()=>site?[{id:1,url:tab.url}]:[],sendMessage:tab.sendMessage||(async()=>({site})),create:async options=>{created.push({...options,jump:saved.readerJump?.key||null});return {id:2};}}};
  for(const name of ['core','i18n','library','popup'])w.eval(fs.readFileSync('src/'+name+'.js','utf8'));await new Promise(r=>setTimeout(r,0));return {w,d:w.document,saved,created,set};
 }
 const tick=()=>new Promise(r=>setTimeout(r,0));
@@ -73,7 +73,7 @@ test('chat enhancement settings save to storage with their defaults',async()=>{
 test('home keeps every original element and adds one chat enhancements entry before the guide',async()=>{
  const {w,d}=await popupWith();try{
   const order=[...d.getElementById('main-page').children].map(n=>n.id||n.className||n.tagName.toLowerCase());
-  assert.deepEqual(order,['open-archive','settings','open-enhance','details','refresh','privacy','support-section']);
+  assert.deepEqual(order,['open-archive','settings','open-enhance','details','support-section','refresh','privacy']);
   const entry=d.getElementById('open-enhance');assert.equal(entry.tagName,'BUTTON');assert.match(entry.className,/\bnavigation\b/);
   assert.equal(entry.querySelector('.copy>span').textContent,'Chat enhancements');assert.equal(entry.querySelector('small').textContent,'Outline, search, bookmarks, code blocks and page layout');
   assert.equal(d.querySelector('#main-page input#outline,#main-page input#codeTools,#main-page #open-library'),null,'no feature switches or library row on the home page');
@@ -86,7 +86,7 @@ test('chat enhancements page explains where each feature appears, in order',asyn
  const {w,d}=await popupWith('chatgpt',{language:'zh-CN'});try{
   d.getElementById('open-enhance').click();const page=d.getElementById('enhance-page');
   assert.equal(page.hidden,false);assert.equal(d.getElementById('main-page').hidden,true);assert.equal(d.activeElement,d.getElementById('back-enhance'));
-  assert.deepEqual([...page.children].map(n=>n.id||n.className||n.tagName.toLowerCase()),['back-enhance','enhance-title','page-intro','outline-feature','open-library','code-feature','layout-feature']);
+  assert.deepEqual([...page.children].map(n=>n.id||n.className||n.tagName.toLowerCase()),['back-enhance','enhance-title','page-intro','open-library','outline-feature','code-feature','layout-feature']);
   assert.equal(d.getElementById('enhance-title').textContent,'对话增强');assert.match(page.querySelector('.page-intro').textContent,/打开某个对话后/);
   const text=id=>d.querySelector('#'+id+' .feature-text').textContent;
   assert.equal(d.getElementById('outline-title').textContent,'对话目录与搜索');assert.match(text('outline-feature'),/^打开任意对话后，聊天区右侧出现一列细刻度/);
@@ -114,8 +114,8 @@ test('code sub-options are inactive while the code block master switch is off',a
  const {w,d,saved}=await popupWith();try{
   for(const key of ['codeLineNumbers','codeFold','codeDanger'])assert.equal(d.getElementById(key).disabled,false);
   const code=d.getElementById('codeTools');code.checked=false;code.dispatchEvent(new w.Event('change'));await tick();assert.equal(saved.codeTools,false);
-  for(const key of ['codeLineNumbers','codeFold','codeDanger'])assert.equal(d.getElementById(key).disabled,true,key);assert.ok(d.getElementById('code-options').hasAttribute('data-off'));
-  code.checked=true;code.dispatchEvent(new w.Event('change'));await tick();assert.equal(d.getElementById('codeFold').disabled,false);assert.equal(d.getElementById('code-options').hasAttribute('data-off'),false);
+  for(const key of ['codeLineNumbers','codeFold','codeDanger']){assert.equal(d.getElementById(key).disabled,true,key);assert.equal(d.getElementById(key).checked,false,key+' reads as off');assert.equal(saved[key]??true,true,key+' keeps its stored choice');}assert.ok(d.getElementById('code-options').hasAttribute('data-off'));
+  code.checked=true;code.dispatchEvent(new w.Event('change'));await tick();assert.equal(d.getElementById('codeFold').disabled,false);assert.equal(d.getElementById('codeFold').checked,true,'the stored choice shows again');assert.equal(d.getElementById('code-options').hasAttribute('data-off'),false);
   const off=await popupWith('chatgpt',{codeTools:false});try{assert.equal(off.d.getElementById('codeDanger').disabled,true,'reopened popup keeps them inactive');}finally{off.w.close();}
  }finally{w.close();}
 });
@@ -124,7 +124,7 @@ test('features a site lacks keep their row with a not-available hint',async()=>{
   const rows=[...d.querySelectorAll('[data-feature]')];assert.deepEqual(rows.map(r=>r.dataset.feature),['outline','codeTools','chatWidth','compactSidebar','hideClutter','focusMode']);
   for(const row of rows){const off=!!site&&!w.ChatTidyCore.supports(site,row.dataset.feature);assert.equal(row.classList.contains('unsupported'),off,site+' '+row.dataset.feature);if(off)assert.equal(row.querySelector('small').textContent,'Not available on this site yet');}
   if(site==='example')assert.equal(rows.every(r=>r.classList.contains('unsupported')),true);
-  if(!site)assert.equal(d.querySelector('[data-feature="compactSidebar"] small').textContent,'Tighter rows in the chat list on the left, so more chats fit on screen.');
+  if(!site)assert.equal(d.querySelector('[data-feature="compactSidebar"] small').textContent,"Drag the sidebar's right edge to resize it; double-click to restore. Each website keeps its own width.");
   assert.equal(d.querySelector('[data-feature="outline"] small').textContent,site==='example'?'Not available on this site yet':'','titles carry no hint unless the site lacks the feature');
  }finally{w.close();}}
 });
@@ -199,4 +199,15 @@ test('only one popup page shows at a time, and settings returns to the page it w
   d.getElementById('open-settings').click();d.getElementById('back-settings').click();assert.deepEqual(shown(),['main-page']);
   assert.equal(d.activeElement,d.getElementById('open-settings'),'focus returns to the gear');
  }finally{w.close();}
+});
+test('an option the site lacks cannot be switched on there, and is usable again on a site that has it',async()=>{
+ const {w,d}=await popupWith('chatgpt');try{
+  const compact=d.getElementById('compactSidebar'),clutter=d.getElementById('hideClutter');
+  assert.equal(compact.disabled,true,'ChatGPT sidebar is natively resizable');assert.equal(compact.checked,false,'a locked switch reads as off');assert.equal(clutter.disabled,false);
+ }finally{w.close();}
+ const claude=await popupWith('claude');try{assert.equal(claude.d.getElementById('compactSidebar').disabled,true,'Claude has its own drag handle too');}finally{claude.w.close();}
+ const gemini=await popupWith('gemini');try{assert.equal(gemini.d.getElementById('compactSidebar').disabled,false);}finally{gemini.w.close();}
+ // A tab left open across an extension reload has no content script: the URL still identifies ChatGPT.
+ const stale=await popupWith('chatgpt',{},{sendMessage:async()=>{throw Error('Receiving end does not exist.');},url:'https://chatgpt.com/'});try{assert.equal(stale.d.getElementById('compactSidebar').disabled,true);}finally{stale.w.close();}
+ const none=await popupWith(null);try{assert.equal(none.d.getElementById('compactSidebar').disabled,false,'no site known: everything stays editable');}finally{none.w.close();}
 });

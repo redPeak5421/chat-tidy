@@ -4,6 +4,8 @@ English | [简体中文](README.zh-CN.md)
 
 A browser extension for selecting and bulk-managing ChatGPT, Claude, Grok, Gemini, Kimi, Qwen and Z.ai conversations from the sidebar, with optional chat enhancements inside each conversation.
 
+1.13.35 makes the sidebar resizable: drag its right edge on Grok, Gemini, Kimi, Qwen and Z.ai (ChatGPT and Claude already offer this), double-click to restore, and each website remembers its own width. Options a website does not support now read as off in the popup.
+
 1.12.28 adds chat enhancements: an outline of your questions beside each chat (click to jump), search across the loaded messages with highlights, bookmarks with tags and notes for chats and single answers, code block tools (line numbers, folding of long blocks, per-line copy of commands and warnings for risky commands), and optional layout settings (chat width, compact sidebar, hidden disclaimers and a focus mode). The sidebar filter panel now opens beside the sidebar and lists its matches. Everything is set up under Chat enhancements in the popup.
 
 1.11.19 adds Z.ai (chat.z.ai) bulk deletion, much faster batch deletion (a rolling pool that keeps 1, 3, 5, 10 or 15 requests genuinely in flight at once, default 5, and pauses and resumes on short rate limits instead of fixed waits), a refreshed popup and a larger icon, an always-visible management entry in the ChatGPT navigation rail and the Z.ai sidebar, and fixes the Claude sidebar icon sizing. It also introduced an ocean-blue icon and a lighter footprint: each website loads only the scripts it needs, and sidebar scanning and pointer tracking do far less layout work. Since 1.10.5, Chat Tidy supports the redesigned ChatGPT, Claude and Grok sidebars, adds title filtering and keeps the management menu open after actions. The redesigned ChatGPT management entry appears in the application navigation rail below Explore. It stays visible in both checkbox modes, so the menu is always one click away even while checkboxes are hidden. Conversation buttons, rerenders, recycled rows and legacy chat links remain supported.
@@ -41,12 +43,12 @@ Open any conversation to use them; the popup's Chat enhancements page explains e
 - **Outline and search**: a thin rail of ticks on the right of the chat, one per question. Hover to read a question, click to jump. Open the list to search the messages loaded on the page (matches are highlighted and you can step through them), bookmark answers, and add tags and a note to the chat or to an answer.
 - **My bookmarks**: the popup lists bookmarked chats and answers. Search titles, tags and notes or filter by tag; opening an answer scrolls back to it.
 - **Code blocks**: line numbers, folding of blocks longer than 24 lines, per-line copy for shell commands and an amber warning for risky commands such as `rm -rf /` or `curl … | sh`. Where the website already shows line numbers (Qwen), only copy and warnings are added.
-- **Page layout** (off by default): chat width, compact sidebar, hide disclaimers and upgrade prompts, focus mode. An option a website does not support is marked in the popup.
+- **Page layout** (off by default): chat width, resizable sidebar, hide disclaimers and upgrade prompts, focus mode. An option a website does not support is marked in the popup.
 
-| | Outline, search, bookmarks, code | Width | Compact sidebar | Hide disclaimers | Focus mode |
+| | Outline, search, bookmarks, code | Width | Resizable sidebar | Hide disclaimers | Focus mode |
 |---|---|---|---|---|---|
 | ChatGPT | ✓ | ✓ | – (native resizable sidebar) | ✓ | ✓ |
-| Claude | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Claude | ✓ | ✓ | – (native resizable sidebar) | ✓ | ✓ |
 | Grok | ✓ | ✓ | ✓ | – (nothing to hide) | ✓ |
 | Gemini | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Kimi | ✓ | ✓ | ✓ | ✓ | ✓ |

@@ -26,10 +26,13 @@
     document.getElementById('language').value=settings.language;
     for(const key of ['checkboxMode','concurrency'])document.querySelectorAll('input[name="'+key+'"]').forEach(input=>input.checked=input.value===String(settings[key]));
     for(const key of reading){const field=document.getElementById(key);if(!field)continue;if(field.type==='checkbox')field.checked=!!settings[key];else field.value=settings[key];}
-    for(const key of codeOptions){const field=document.getElementById(key);if(field)field.disabled=!settings.codeTools;}
+    // A disabled switch reads as off, so it never looks like it is working; the stored choice returns once it is usable again.
+    for(const key of codeOptions){const field=document.getElementById(key);if(field){field.disabled=!settings.codeTools;field.checked=!!settings[key]&&settings.codeTools;}}
     document.getElementById('code-options')?.toggleAttribute('data-off',!settings.codeTools);
     // Settings are global; a site without the feature still shows the row, saying so in place of its hint.
-    document.querySelectorAll('[data-hint]').forEach(node=>{const row=node.closest('[data-feature]'),off=!!site&&!!row&&!core.supports(site,row.dataset.feature);row?.classList.toggle('unsupported',off);node.textContent=off?api.t(settings.language,'siteUnsupported'):node.dataset.hint?api.t(settings.language,node.dataset.hint):'';});
+    // Its control is disabled there too, so a switch cannot be turned on to no effect; only a lock set here is released here.
+    document.querySelectorAll('[data-hint]').forEach(node=>{const row=node.closest('[data-feature]'),off=!!site&&!!row&&!core.supports(site,row.dataset.feature);row?.classList.toggle('unsupported',off);node.textContent=off?api.t(settings.language,'siteUnsupported'):node.dataset.hint?api.t(settings.language,node.dataset.hint):'';
+      const control=row?.querySelector('input,select');if(!control)return;if(off){control.disabled=true;control.dataset.siteOff='';if(control.type==='checkbox')control.checked=false;}else if('siteOff' in control.dataset){control.disabled=false;delete control.dataset.siteOff;}});
     placeHelp();renderLibrary();
   }
   const help=document.getElementById('concurrency-help'),note=document.getElementById('concurrency-note');
@@ -140,7 +143,8 @@
       document.getElementById('saved').textContent=api.t(settings.language,'supportOpenError');
     }finally{delete link.dataset.opening;}
   }));
-  if(chrome.tabs){try{const [tab]=await chrome.tabs.query({active:true,currentWindow:true});if(tab?.id){const result=await chrome.tabs.sendMessage(tab.id,{type:'cs-site'});document.getElementById('open-archive').hidden=!core.supports(result?.site,'manager');document.getElementById('grok-options').hidden=result?.site!=='grok';document.getElementById('grok-bots-options').hidden=result?.site!=='grok';if(result?.site){site=result.site;render();}}}catch{}}
+  // A tab opened before the extension was (re)loaded has no content script to answer; its URL still names the site.
+  if(chrome.tabs){try{const [tab]=await chrome.tabs.query({active:true,currentWindow:true});if(tab?.id){const result=await chrome.tabs.sendMessage(tab.id,{type:'cs-site'}).catch(()=>({site:core.siteForUrl(tab.url)?.id}));document.getElementById('open-archive').hidden=!core.supports(result?.site,'manager');document.getElementById('grok-options').hidden=result?.site!=='grok';document.getElementById('grok-bots-options').hidden=result?.site!=='grok';if(result?.site){site=result.site;render();}}}catch{}}
   for(const key of fields)document.getElementById(key).addEventListener('change',async event=>{
     const value=typeof defaults[key]==='boolean'?event.target.checked:typeof defaults[key]==='number'?Number(event.target.value):event.target.value;
     settings[key]=value;render();

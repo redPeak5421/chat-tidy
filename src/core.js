@@ -15,8 +15,9 @@ globalThis.ChatTidyCore = (() => {
   });
   // One schema for every stored preference. Language is absent: its default follows the browser through ChatTidyI18n.
   // Reading tools: the outline (with search and answer bookmarks) and code tools are on by default; layout changes are opt-in.
+  // sidebarWidths holds the dragged sidebar width per site id, in px; a site without an entry keeps its own width.
   const settings = Object.freeze({enabled:true,theme:'system',checkboxMode:'dynamic',concurrency:5,hideSupport:false,grokShowAll:false,grokHideBots:false,grokCollapseBots:false,
-    outline:true,codeTools:true,codeLineNumbers:true,codeFold:true,codeDanger:true,chatWidth:'default',compactSidebar:false,hideClutter:false,focusMode:false});
+    outline:true,codeTools:true,codeLineNumbers:true,codeFold:true,codeDanger:true,chatWidth:'default',compactSidebar:false,sidebarWidths:{},hideClutter:false,focusMode:false});
   const chatWidths = Object.freeze(['default','wide','full']);
   // The only accepted requests-in-flight values; anything else stored (such as the old default 2) means the default.
   const concurrencyOptions = Object.freeze([1,3,5,10,15]);
@@ -25,7 +26,7 @@ globalThis.ChatTidyCore = (() => {
   const readers = ['chatgpt','claude','grok','gemini','kimi','qwen','zai'];
   const features = Object.freeze({archive:['chatgpt','claude','qwen'],manager:['chatgpt','qwen'],move:['chatgpt','claude','qwen'],
     // Layout options exist only where the site's structure was verified (see the layout CSS in src/reader-sites.js).
-    outline:readers,codeTools:readers,library:readers,chatWidth:['chatgpt','claude','grok','gemini','kimi','qwen','zai'],compactSidebar:['claude','grok','gemini','kimi','qwen','zai'],
+    outline:readers,codeTools:readers,library:readers,chatWidth:['chatgpt','claude','grok','gemini','kimi','qwen','zai'],compactSidebar:['grok','gemini','kimi','qwen','zai'],
     hideClutter:['chatgpt','claude','gemini','kimi','qwen'],focusMode:readers});
   function supports(site, feature) { return !!features[feature]?.includes(typeof site === 'string' ? site : site?.id); }
   function siteForUrl(value) {
