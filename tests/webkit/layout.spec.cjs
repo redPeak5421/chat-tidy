@@ -81,6 +81,30 @@ for(const [site,s] of Object.entries(compactShells))test(`the ${site} sidebar dr
  if(site==='zai'){await page.locator('#sidebar').evaluate(n=>n.dataset.collapsed='true');expect(await width()).toBe(238,'a collapsed sidebar is left alone');await expect(handle).toBeHidden();}
  if(site==='grok'){await page.locator('.peer').evaluate(n=>n.dataset.state='collapsed');await expect(handle).toBeHidden();}
 });
+// Grok chat width, mirroring the live DOM (2026-11-06): :root sets --content-max-width:44rem and derives
+// --content-breakout-max-width from it, so the root value is already resolved for the new-chat composer (max-w-breakout).
+// The new-chat page has only the @container/mainview wrapper, and its composer is also capped at 4/5 of the row (@xl:w-4/5);
+// both live variants are covered: the cap on the breakout box itself, or on the wrapper of a breakout query bar.
+// A chat adds @container/chat, which sets both variables again; each message row already pads a 24px gutter (px-gutter).
+const grokPages={
+ home:'<div class="mv @container/mainview"><div class="w-full @xl:w-4/5 max-w-breakout"><div id="composer" class="query-bar">Ask</div></div></div>',
+ 'new-chat variant':'<div class="mv @container/mainview"><div class="w-full @xl:w-4/5"><div id="composer" class="query-bar max-w-breakout">Ask</div></div></div>',
+ chat:'<div class="mv @container/mainview"><div class="chat @container/chat"><div class="px-gutter"><div id="message">Answer</div></div><div id="composer" class="max-w-breakout">Ask</div></div></div>'
+};
+for(const [kind,body] of Object.entries(grokPages))test(`chat width widens the Grok ${kind} page, composer included`,async({page})=>{
+ await page.route('https://grok.com/**',route=>route.fulfill({contentType:'text/html',body:`<meta charset="utf-8"><style>body{margin:0;font:14px system-ui}:root{--content-max-width:44rem;--content-breakout-max-width:calc(var(--content-max-width) + 3rem)}.chat{--content-max-width:clamp(32rem,100cqw - 3rem,44rem);--content-breakout-max-width:calc(var(--content-max-width) + 3rem)}.px-gutter{padding:0 24px}#message{max-width:var(--content-max-width)}.max-w-breakout{max-width:var(--content-breakout-max-width)}[class~="@xl:w-4/5"]{width:80%}</style>${body}`}));
+ await page.goto(kind!=='chat'?'https://grok.com/':'https://grok.com/c/11111111-1111-4111-8111-111111111111');
+ await page.evaluate(()=>{globalThis.chrome={storage:{local:{set:async()=>{}}}};});
+ for(const f of ['core','i18n','reader-sites','layout'])await page.addScriptTag({path:`src/${f}.js`});
+ await page.evaluate(()=>{globalThis.layout=ChatTidyLayout.create({t:k=>k,adapter:ChatTidyReaderSites.get('grok')});});
+ const width=selector=>page.locator(selector).evaluate(n=>Math.round(n.getBoundingClientRect().width)),viewport=page.viewportSize().width;
+ const check=async(message,composer,note)=>{if(kind==='chat')expect(await width('#message')).toBe(message,note);expect(await width('#composer')).toBe(composer,note);};
+ await check(704,752,'the site width');
+ await page.evaluate(()=>layout.update({enabled:true,chatWidth:'wide'}));await check(1040,1088,'wide');
+ // Full: messages keep only the row's own 24px gutter, and the composer is no longer held at 4/5 of the row.
+ await page.evaluate(()=>layout.update({enabled:true,chatWidth:'full'}));await check(viewport-48,viewport,'full');
+ await page.evaluate(()=>layout.update({enabled:false,chatWidth:'full'}));await check(704,752,'off restores the site width');
+});
 test('hide disclaimers covers the ChatGPT new-chat page, where the disclaimer sits in the composer banner portal',async({page})=>{
  await page.route('https://chatgpt.com/**',route=>route.fulfill({contentType:'text/html',body:`<meta charset="utf-8"><main><div class="flex min-w-0 flex-col gap-2 empty:hidden ComposerBannerPortal-Z8AOnR"><div data-markdown-copy="exclude"><div class="text-center text-xs" id="note">ChatGPT can make mistakes.</div></div></div><div id="composer">Ask</div></main>`}));
  await page.goto('https://chatgpt.com/');

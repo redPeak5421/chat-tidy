@@ -27,10 +27,15 @@ test('css() builds one rule per enabled option from the adapter and nothing othe
  assert.equal(layout.css(null,{...base,chatWidth:'wide'}),'');
  assert.deepEqual({...layout.widths},{wide:'1040px',full:'calc(100% - 48px)'});
  assert.equal(layout.css({layout:{width:'a{width:{width}}b{max-width:{width}}'}},{...base,chatWidth:'wide'}),'a{width:1040px}b{max-width:1040px}','every placeholder is replaced');
+ // A site whose rows already pad a gutter can name its own value for one width; the other keeps the shared one.
+ const padded={layout:{width:'main{max-width:{width}}',widths:{full:'100%'}}};
+ assert.equal(layout.css(padded,{...base,chatWidth:'full'}),'main{max-width:100%}');
+ assert.equal(layout.css(padded,{...base,chatWidth:'wide'}),'main{max-width:1040px}');
+ assert.equal(layout.css({layout:{width:'main{max-width:{width}}',widths:{full:'100%'}}},{...base,chatWidth:'bogus'}),'','an override never adds a width');
 });
 test('real adapters keep the {width} and {sidebar} placeholders resolvable for the sites that define one',()=>{
  const {w,layout}=load();
- for(const id of Object.keys(w.ChatTidyReaderSites.sites)){const real=w.ChatTidyReaderSites.get(id),text=layout.css(real,{...base,chatWidth:'full',compactSidebar:true,sidebarWidths:{[id]:300}});assert.doesNotMatch(text,/\{width\}|\{sidebar\}/,id);assert.equal(!!real.layout.compactSidebar,!!real.layout.sidebar,id+': a width rule needs a sidebar to put the handle on');if(real.layout.compactSidebar)assert.match(text,/300px/,id);if(real.layout.width)assert.match(text,/calc\(100% - 48px\)/,id);}
+ for(const id of Object.keys(w.ChatTidyReaderSites.sites)){const real=w.ChatTidyReaderSites.get(id),text=layout.css(real,{...base,chatWidth:'full',compactSidebar:true,sidebarWidths:{[id]:300}});assert.doesNotMatch(text,/\{width\}|\{sidebar\}/,id);assert.equal(!!real.layout.compactSidebar,!!real.layout.sidebar,id+': a width rule needs a sidebar to put the handle on');if(real.layout.compactSidebar)assert.match(text,/300px/,id);if(real.layout.width)assert.ok(text.includes(real.layout.widths?.full||'calc(100% - 48px)'),id);}
 });
 test('one owned stylesheet follows the settings and disappears when nothing applies',()=>{
  const {d,layout}=load(),module=layout.create({t:k=>k,adapter});

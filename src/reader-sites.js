@@ -129,7 +129,14 @@ globalThis.ChatTidyReaderSites = (() => {
       // Plane rows are absolutely positioned with translateY, so their DOM order is not the reading order.
       order: el => el.getBoundingClientRect().top,
       layout: {
-        width: '[class*="@container/chat"]{--content-max-width:{width}!important}',
+        // :root derives --content-breakout-max-width (content + 2 x 1.5rem gutter) from --content-max-width and resolves it there,
+        // so both are set again: on @container/chat in a chat, and on @container/mainview, the only wrapper on the new-chat page,
+        // whose composer (max-w-breakout) reads the root value and is also held at 4/5 of its row (@xl:w-4/5, on the breakout
+        // box or on the query bar's wrapper, both seen live), so it takes the full row and only the max-width limits it
+        // (checked live 2026-11-06).
+        width: '[class*="@container/mainview"],[class*="@container/chat"]{--content-max-width:{width}!important;--content-breakout-max-width:calc({width} + 3rem)!important}[class*="@container/mainview"] [class*="w-4/5"]:has(.query-bar){width:100%}',
+        // Message rows already pad a 24px gutter (px-gutter), so full uses the whole row instead of losing another 48px.
+        widths: {full: '100%'},
         // The native rail at the edge only collapses on click; the trigger button in the sidebar header still does that.
         compactSidebar: '[class*="group/sidebar-wrapper"]{--sidebar-width:{sidebar}!important}',
         sidebar: 'div.peer[data-side="left"][data-state="expanded"] [data-sidebar="sidebar"]',

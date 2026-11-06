@@ -32,7 +32,8 @@ globalThis.ChatTidyLayout = (() => {
   function css(adapter, settings) {
     const layout = adapter?.layout || {}, parts = [];
     if (!settings?.enabled) return '';
-    const width = widths[settings.chatWidth];
+    // An adapter may name its own value for a width it already knows (layout.widths), e.g. rows that pad their own gutter.
+    const width = Object.hasOwn(widths, settings.chatWidth) ? layout.widths?.[settings.chatWidth] || widths[settings.chatWidth] : '';
     if (width && layout.width) parts.push(layout.width.split('{width}').join(width));
     const sidebar = settings.compactSidebar && layout.sidebar ? sidebarWidth(adapter, settings) : 0;
     if (sidebar && layout.compactSidebar) parts.push(layout.compactSidebar.split('{sidebar}').join(sidebar + 'px'));
