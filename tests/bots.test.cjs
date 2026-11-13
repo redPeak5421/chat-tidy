@@ -11,6 +11,16 @@ test('modern localized Bots in a div sidebar hide and collapse independently of 
  ctl.update({enabled:false});assert.equal(d.querySelector('#bots button').getAttribute('aria-expanded'),'true');assert.equal(d.querySelector('#bots .entries').hidden,false);assert.equal(d.querySelector('#bots').className,'');
  ctl.destroy();}finally{w.close();}
 });
+test('the current Bots section (data-reorder-item) hides and collapses without touching chats',()=>{
+ const dom=new JSDOM(`<aside id="app-sidebar"><div data-reorder-item="bots" id="bots"><div data-open><div><button aria-expanded="true">机器人</button></div><div id="entries"><button>Grok Bot</button><button id="bots-more">展开</button></div></div></div><div data-reorder-item="recent" id="chats"><div data-open><button aria-expanded="true">聊天</button><div><button>Example chat</button></div></div></div></aside>`,{url:'https://grok.com/',runScripts:'outside-only'}),w=dom.window,d=w.document;
+ try{w.eval(fs.readFileSync('src/bots.js','utf8'));const b=d.querySelector('#bots button');b.onclick=()=>{const open=b.getAttribute('aria-expanded')!=='true';b.setAttribute('aria-expanded',String(open));d.querySelector('#entries').hidden=!open;};const ctl=w.ChatTidyBots.create();ctl.update({grokHideBots:true,grokCollapseBots:true});
+  assert.equal(d.querySelector('#bots').classList.contains('cs-bots-hidden'),true);assert.equal(d.querySelector('#chats').className,'');
+  ctl.update({grokHideBots:false});assert.equal(b.getAttribute('aria-expanded'),'false');assert.equal(d.querySelector('#entries').hidden,true);assert.equal(d.querySelector('#chats button').getAttribute('aria-expanded'),'true');
+  // Collapsed, the site swaps data-open for data-closed; the section is still the one we track and restore.
+  d.querySelector('#bots > div').removeAttribute('data-open');d.querySelector('#bots > div').setAttribute('data-closed','');
+  ctl.update({enabled:false});assert.equal(b.getAttribute('aria-expanded'),'true','disabling restores the collapsed section');
+  ctl.destroy();}finally{w.close();}
+});
 test('localized native Bots toggle is supported and unrelated groups are left alone',()=>{
  const dom=new JSDOM('<aside><div data-sidebar="group" id="bots"><button aria-expanded="true">機器人</button><a href="/bot/example">Bot</a></div><div data-sidebar="group" id="chats"><button aria-expanded="true">Bots</button><a href="/c/11111111-1111-4111-8111-111111111111">Chat</a></div></aside>',{url:'https://grok.com',runScripts:'outside-only'}),w=dom.window,d=w.document;
  try{w.eval(fs.readFileSync('src/bots.js','utf8'));const b=d.querySelector('#bots button');b.onclick=()=>b.setAttribute('aria-expanded',String(b.getAttribute('aria-expanded')!=='true'));const ctl=w.ChatTidyBots.create();ctl.update({grokCollapseBots:true});assert.equal(b.getAttribute('aria-expanded'),'false');assert.equal(d.querySelector('#chats button').getAttribute('aria-expanded'),'true');ctl.destroy();}finally{w.close();}

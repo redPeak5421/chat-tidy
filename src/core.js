@@ -5,7 +5,8 @@ globalThis.ChatTidyCore = (() => {
     'https://gemini.google.com': Object.freeze({id:'gemini',name:'Gemini',origin:'https://gemini.google.com',route:'/app/',roots:'side-navigation-content'}),
     'https://chatgpt.com': Object.freeze({id:'chatgpt',name:'ChatGPT',origin:'https://chatgpt.com',route:'(?:/g/[^/]+)?/c/',roots:'nav,aside,[data-testid="history"],#history,[data-testid="sidebar"]'}),
     'https://claude.ai': Object.freeze({id:'claude',name:'Claude',origin:'https://claude.ai',route:'/chat/',roots:'[data-testid="sidebar"]'}),
-    'https://grok.com': Object.freeze({id:'grok',name:'Grok',origin:'https://grok.com',route:'/c/',roots:'[data-sidebar="sidebar"]'}),
+    // #app-sidebar is the current rail (2026-11-13). The data-sidebar root is the previous shell.
+    'https://grok.com': Object.freeze({id:'grok',name:'Grok',origin:'https://grok.com',route:'/c/',roots:'#app-sidebar,[data-sidebar="sidebar"]'}),
     // Kimi renders history and pinned rows as RouterLink anchors inside the "next-sidebar" sections.
     'https://www.kimi.com': Object.freeze({id:'kimi',name:'Kimi',origin:'https://www.kimi.com',route:'/chat/',roots:'[class*="next-sidebar"]:has(.next-sidebar-history-list),.next-sidebar-history-list,.next-sidebar-pinned-list'}),
     // Qwen sidebar rows carry no href; src/qwen.js maps them to chat IDs before selection runs.

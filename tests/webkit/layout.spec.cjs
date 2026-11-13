@@ -37,8 +37,8 @@ for(const shell of Object.keys(shells))for(const theme of ['light','dark'])test(
 });
 // Resizable sidebar with each site's real rule, on the sidebar shells measured live (see .omc/research/reader-dom.md addendum).
 const compactShells={
- grok:{url:'https://grok.com/c/11111111-1111-4111-8111-111111111111',css:'.wrap{display:flex;width:100%}.peer{flex:none}[data-sidebar="sidebar"]{width:var(--sidebar-width);height:100vh}main{flex:1}',
-  body:'<div class="wrap group/sidebar-wrapper" style="--sidebar-width:16rem"><div class="peer" data-side="left" data-state="expanded"><div data-sidebar="sidebar">History</div></div><main>Chat</main></div>',sidebar:'[data-sidebar="sidebar"]',main:'main',before:256},
+ grok:{url:'https://grok.com/c/11111111-1111-4111-8111-111111111111',css:'.wrap{display:flex;width:100%}#app-sidebar{flex:none;width:var(--x-width);height:100vh}main{flex:1}',
+  body:'<div class="wrap"><aside id="app-sidebar" style="--x-width:254px;--x-minWidth:241px">History</aside><main>Chat</main></div>',sidebar:'#app-sidebar',main:'main',before:254},
  gemini:{url:'https://gemini.google.com/app/9f2c4e1a7b3d5e60',css:'bard-sidenav{display:block;flex:none;--bard-sidenav-open-width:288px;--bard-sidenav-closed-width:52px;width:var(--bard-sidenav-open-width);height:100vh}bard-sidenav-content{display:block;flex:1}',
   body:'<bard-sidenav><side-navigation-content>History</side-navigation-content></bard-sidenav><bard-sidenav-content><main>Chat</main></bard-sidenav-content>',sidebar:'bard-sidenav',main:'bard-sidenav-content',before:288},
  kimi:{url:'https://www.kimi.com/chat/11111111-1111-4111-8111-111111111111',css:'.app{position:relative;width:100%}.sidebar-slot{position:absolute;left:0;top:0;width:240px;height:100vh}aside.next-sidebar{width:240px;height:100vh}.app.has-sidebar>.main{margin-left:240px}.layout-header{height:52px}',
@@ -79,31 +79,24 @@ for(const [site,s] of Object.entries(compactShells))test(`the ${site} sidebar dr
  await page.evaluate(site=>layout.update({enabled:true,compactSidebar:true,sidebarWidths:{[site]:300}}),site);expect(await width()).toBe(300);
  if(site==='qwen'){await page.locator('.sidebar').evaluate(n=>n.classList.add('sidebar-collapse'));expect(await width()).toBe(60,'the collapsed rail is left alone');await expect(handle).toBeHidden();}
  if(site==='zai'){await page.locator('#sidebar').evaluate(n=>n.dataset.collapsed='true');expect(await width()).toBe(238,'a collapsed sidebar is left alone');await expect(handle).toBeHidden();}
- if(site==='grok'){await page.locator('.peer').evaluate(n=>n.dataset.state='collapsed');await expect(handle).toBeHidden();}
+ if(site==='grok'){await page.locator('#app-sidebar').evaluate(n=>n.style.setProperty('display','none'));await expect(handle).toBeHidden();}
 });
-// Grok chat width, mirroring the live DOM (2026-11-06): :root sets --content-max-width:44rem and derives
-// --content-breakout-max-width from it, so the root value is already resolved for the new-chat composer (max-w-breakout).
-// The new-chat page has only the @container/mainview wrapper, and its composer is also capped at 4/5 of the row (@xl:w-4/5);
-// both live variants are covered: the cap on the breakout box itself, or on the wrapper of a breakout query bar.
-// A chat adds @container/chat, which sets both variables again; each message row already pads a 24px gutter (px-gutter).
-const grokPages={
- home:'<div class="mv @container/mainview"><div class="w-full @xl:w-4/5 max-w-breakout"><div id="composer" class="query-bar">Ask</div></div></div>',
- 'new-chat variant':'<div class="mv @container/mainview"><div class="w-full @xl:w-4/5"><div id="composer" class="query-bar max-w-breakout">Ask</div></div></div>',
- chat:'<div class="mv @container/mainview"><div class="chat @container/chat"><div class="px-gutter"><div id="message">Answer</div></div><div id="composer" class="max-w-breakout">Ask</div></div></div>'
-};
-for(const [kind,body] of Object.entries(grokPages))test(`chat width widens the Grok ${kind} page, composer included`,async({page})=>{
- await page.route('https://grok.com/**',route=>route.fulfill({contentType:'text/html',body:`<meta charset="utf-8"><style>body{margin:0;font:14px system-ui}:root{--content-max-width:44rem;--content-breakout-max-width:calc(var(--content-max-width) + 3rem)}.chat{--content-max-width:clamp(32rem,100cqw - 3rem,44rem);--content-breakout-max-width:calc(var(--content-max-width) + 3rem)}.px-gutter{padding:0 24px}#message{max-width:var(--content-max-width)}.max-w-breakout{max-width:var(--content-breakout-max-width)}[class~="@xl:w-4/5"]{width:80%}</style>${body}`}));
- await page.goto(kind!=='chat'?'https://grok.com/':'https://grok.com/c/11111111-1111-4111-8111-111111111111');
+// Grok chat width, mirroring the live DOM (2026-11-13). Home and chat both cap the column with
+// max-width: calc(var(--grok-page-max-width) - 2*space-4 - 2*space-0.5). The site default is 800px, so the column is 764px.
+test('chat width widens the Grok column on the home and chat pages',async({page})=>{
+ // Grok also writes --grok-page-max-width:800px inline on the app shell, below :root; the rule must win there too.
+ const body='<div id="shell" style="--grok-page-max-width:800px"><div class="mv @container/mainview"><div class="chat @container/chat"><div id="message">Answer</div><div id="composer">Ask</div></div></div></div>';
+ await page.route('https://grok.com/**',route=>route.fulfill({contentType:'text/html',body:`<meta charset="utf-8"><style>body{margin:0;font:14px system-ui}:root{--grok-page-max-width:800px;--grok-space-4:16px;--grok-space-0-5:2px}#message,#composer{max-width:calc(var(--grok-page-max-width) - 2*var(--grok-space-4) - 2*var(--grok-space-0-5))}</style>${body}`}));
+ await page.goto('https://grok.com/');
  await page.evaluate(()=>{globalThis.chrome={storage:{local:{set:async()=>{}}}};});
  for(const f of ['core','i18n','reader-sites','layout'])await page.addScriptTag({path:`src/${f}.js`});
  await page.evaluate(()=>{globalThis.layout=ChatTidyLayout.create({t:k=>k,adapter:ChatTidyReaderSites.get('grok')});});
  const width=selector=>page.locator(selector).evaluate(n=>Math.round(n.getBoundingClientRect().width)),viewport=page.viewportSize().width;
- const check=async(message,composer,note)=>{if(kind==='chat')expect(await width('#message')).toBe(message,note);expect(await width('#composer')).toBe(composer,note);};
- await check(704,752,'the site width');
- await page.evaluate(()=>layout.update({enabled:true,chatWidth:'wide'}));await check(1040,1088,'wide');
- // Full: messages keep only the row's own 24px gutter, and the composer is no longer held at 4/5 of the row.
- await page.evaluate(()=>layout.update({enabled:true,chatWidth:'full'}));await check(viewport-48,viewport,'full');
- await page.evaluate(()=>layout.update({enabled:false,chatWidth:'full'}));await check(704,752,'off restores the site width');
+ const check=async(size,note)=>{expect(await width('#message')).toBe(size,note);expect(await width('#composer')).toBe(size,note);};
+ await check(764,'the site width');
+ await page.evaluate(()=>layout.update({enabled:true,chatWidth:'wide'}));await check(1040,'wide');
+ await page.evaluate(()=>layout.update({enabled:true,chatWidth:'full'}));await check(viewport,'full');
+ await page.evaluate(()=>layout.update({enabled:false,chatWidth:'full'}));await check(764,'off restores the site width');
 });
 test('hide disclaimers covers the ChatGPT new-chat page, where the disclaimer sits in the composer banner portal',async({page})=>{
  await page.route('https://chatgpt.com/**',route=>route.fulfill({contentType:'text/html',body:`<meta charset="utf-8"><main><div class="flex min-w-0 flex-col gap-2 empty:hidden ComposerBannerPortal-Z8AOnR"><div data-markdown-copy="exclude"><div class="text-center text-xs" id="note">ChatGPT can make mistakes.</div></div></div><div id="composer">Ask</div></main>`}));

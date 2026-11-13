@@ -11,7 +11,9 @@ globalThis.ChatTidyBots={create(){
     if(location.hostname!=='grok.com'||!settings.enabled){reset();return;}
     for(const button of document.querySelectorAll(roots.split(',').map(root=>root+' button[aria-expanded]').join(','))){
       if(button.closest('main')||!labels.has((button.getAttribute('aria-label')||button.textContent).trim().toLowerCase()))continue;
-      const group=button.closest('[data-sidebar="group"],[data-slot="sidebar-group"]');if(!group||group.querySelector('a[href^="/c/"]'))continue;
+      // The current sidebar names each section with data-reorder-item ("bots", "recent"), open or collapsed alike.
+      const group=button.closest('[data-reorder-item="bots"],[data-sidebar="group"],[data-slot="sidebar-group"]');
+      if(!group||group.matches('[data-reorder-item]:not([data-reorder-item="bots"])')||group.querySelector('a[href^="/c/"]'))continue;
       if(!touched.has(group))touched.set(group,{button,expanded:button.getAttribute('aria-expanded'),changed:false,revision:-1});
       const snapshot=touched.get(group);snapshot.button=button;group.classList.toggle('cs-bots-hidden',!!settings.grokHideBots);
       if(!settings.grokHideBots&&snapshot.revision!==revision){const desired=String(!settings.grokCollapseBots);if(button.getAttribute('aria-expanded')!==desired){snapshot.changed=true;button.click();}snapshot.revision=revision;}

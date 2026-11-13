@@ -61,10 +61,12 @@
       const id=key?.match(/^chatgpt:conversation:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i)?.[1];
       return id?.toLowerCase()||null;
     }
+    if(site.id==='grok'&&link.tagName==='BUTTON')return grokHistory?.idOf(link)||null;
     return siteRows?siteRows.idOf(link):core.chatId(link.getAttribute('href'),site.origin);
   }
   function rowNodes(root){
     const links=[...root.querySelectorAll('a[href]')];
+    if(site.id==='grok')return [...links,...(grokHistory?[...root.querySelectorAll('button')].filter(button=>grokHistory.idOf(button)):[])];
     if(site.id!=='chatgpt')return links;
     // New app-shell rows navigate through a role=button; only the surrounding conversation key is authoritative.
     return [...links.filter(link=>!link.closest(chatgptRow)),...root.querySelectorAll(chatgptRow)].map(node=>node.matches(chatgptRow)?node.querySelector('[role="button"][aria-label],a[href]'):node).filter(Boolean);
@@ -319,6 +321,7 @@
     if(!contextAlive()||!settings.enabled||busy)return;
     observer?.disconnect();
     sameWorkspace();
+    grokHistory?.sync(!!(settings.enabled&&settings.grokShowAll));
     grokHistory?.render();
     botsController?.update(settings);
     archiveManager?.scan();
@@ -393,6 +396,7 @@
     for(const link of links) {
       if(!deleted.has(rowId(link)))continue;
       let row=(site.id==='chatgpt'?link.closest(chatgptRow):null)||link.closest('.cs-grok-result')||(qwenRows?link.closest('.chat-item-drag'):null)||(zaiRows?zaiWrapper(link):null)||link;
+      if(site.id==='grok'&&link.tagName==='BUTTON'){const box=grokHistory?.listOf(link);const wrap=box&&[...box.children].find(child=>child.contains(link));if(wrap)row=wrap;}
       const parent=link.parentElement;
       if(row===link&&parent && !parent.matches('nav,aside,ul,ol,#history') && parent.querySelectorAll('a[href]').length===1 && !parent.querySelector('.cs-toolbar')) row=parent;
       row.classList.add('cs-deleted-row');
@@ -496,7 +500,7 @@
   // Bookmarked chats are marked in the sidebar. The sidebar filter stays title-only: its matches can be selected for deletion,
   // so a chat must never match on hidden tags or notes; finding by tag lives in the popup's bookmarks page.
   let saved={};
-  function restoreRows(ids){for(const id of ids)deleted.delete(id);siteRows?.unforget(ids);document.querySelectorAll('.cs-deleted-row').forEach(row=>{const link=row.matches('a,'+chatgptRow)?row:row.querySelector('a');const id=link&&rowId(link);if(id&&!deleted.has(id))row.classList.remove('cs-deleted-row');});schedule();}
+  function restoreRows(ids){for(const id of ids)deleted.delete(id);siteRows?.unforget(ids);document.querySelectorAll('.cs-deleted-row').forEach(row=>{const link=row.matches('a,button,'+chatgptRow)?row:row.querySelector('a[href],button');const id=link&&rowId(link);if(id&&!deleted.has(id))row.classList.remove('cs-deleted-row');});schedule();}
   const managerOptions=()=>({t,site,canRun:()=>!expired&&settings.enabled,onCompleted:(ids,action)=>{if(action==='restore')restoreRows(ids);}});
   let archiveManager=hasManager&&globalThis.ChatTidyArchive?ChatTidyArchive.create(managerOptions()):null;
   chrome.runtime.onMessage.addListener((message,sender,reply)=>{if(message?.type==='cs-site'&&sender.id===chrome.runtime.id){reply({site:site.id});}if(message?.type==='cs-open-archive'&&sender.id===chrome.runtime.id&&archiveManager){void archiveManager.open();reply({ok:true});}return false;});
@@ -516,7 +520,7 @@
         if(record.type==='attributes'&&record.attributeName==='class'){
           // Our wave/selection class writes arrive here on every hover frame: decide on the row itself before any
           // ancestor walk, and repair only missing row markers.
-          const box=node.matches?.('a,[role="button"]')&&node.querySelector('.cs-checkbox');
+          const box=node.matches?.('a,button,[role="button"]')&&node.querySelector('.cs-checkbox');
           if(!box || node.classList.contains('cs-chat-link') &&
             node.classList.contains('cs-dynamic')===(!node.classList.contains('cs-grok-search-link')&&settings.checkboxMode!=='always') &&
             node.classList.contains('cs-selected')===selected.has(box.dataset.csId))return false;

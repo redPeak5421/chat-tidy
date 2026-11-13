@@ -4,7 +4,7 @@ English | [简体中文](README.zh-CN.md)
 
 A browser extension for selecting and bulk-managing ChatGPT, Claude, Grok, Gemini, Kimi, Qwen and Z.ai conversations from the sidebar, with optional chat enhancements inside each conversation.
 
-1.13.35 makes the sidebar resizable: drag its right edge on Grok, Gemini, Kimi, Qwen and Z.ai (ChatGPT and Claude already offer this), double-click to restore, and each website remembers its own width. Options a website does not support now read as off in the popup. 1.13.37 fixes the chat width on Grok: it now applies on the new-chat page too, and full width really fills the chat area.
+1.13.35 makes the sidebar resizable: drag its right edge on Grok, Gemini, Kimi, Qwen and Z.ai (ChatGPT and Claude already offer this), double-click to restore, and each website remembers its own width. Options a website does not support now read as off in the popup. 1.13.37 fixes the chat width on Grok: it now applies on the new-chat page too, and full width really fills the chat area. 1.13.47 adapts Grok to its redesigned page: batch select and delete in the new sidebar, Show all history, hide and collapse Bots, chat width, sidebar resize and the outline all work again.
 
 1.12.28 adds chat enhancements: an outline of your questions beside each chat (click to jump), search across the loaded messages with highlights, bookmarks with tags and notes for chats and single answers, code block tools (line numbers, folding of long blocks, per-line copy of commands and warnings for risky commands), and optional layout settings (chat width, compact sidebar, hidden disclaimers and a focus mode). The sidebar filter panel now opens beside the sidebar and lists its matches. Everything is set up under Chat enhancements in the popup.
 

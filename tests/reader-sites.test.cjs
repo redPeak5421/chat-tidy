@@ -44,6 +44,10 @@ for(const [site,markup] of Object.entries(fixtures))test(`${site}: messages, rol
  // Search skips the site chrome named by exclude (screen-reader headings, code headers, reasoning panes).
  for(const m of messages)for(const node of m.body.querySelectorAll(adapter.exclude||':not(*)'))assert.ok(node.matches(adapter.exclude));
 });
+test('grok reads a question from its text span when the markdown body is gone',()=>{
+ const {d,sites}=load(`<div data-testid="drop-ui"><div id="response-aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"><div data-testid="user-message" class="message-bubble"><h2 class="sr-only">You</h2><span>Explain DNS</span><div data-testid="user-message-actions"><button>Edit</button></div></div></div><div id="response-aaaaaaaa-bbbb-4ccc-8ddd-ffffffffffff"><div data-testid="assistant-message"><div class="response-content-markdown"><p>DNS maps names.</p></div></div></div></div>`);
+ assert.deepEqual(summary(sites.get('grok').messages(d.body)),[['user','aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee','Explain DNS'],['assistant','aaaaaaaa-bbbb-4ccc-8ddd-ffffffffffff','DNS maps names.']]);
+});
 test('chatgpt keeps the legacy role attributes as a fallback',()=>{
  const {d,sites}=load(`<main><div data-message-author-role="user" data-message-id="old-u"><div class="whitespace-pre-wrap">Old question</div></div><div data-message-author-role="assistant" data-message-id="old-a"><div class="markdown"><p>Old answer</p></div></div></main>`);
  assert.deepEqual(summary(sites.get('chatgpt').messages(d.body)),[['user','old-u','Old question'],['assistant','old-a','Old answer']]);

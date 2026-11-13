@@ -119,7 +119,8 @@ globalThis.ChatTidyReaderSites = (() => {
     grok: {
       thread: 'main,[data-testid="drop-ui"]',
       messages: [
-        {selector: '[data-testid="user-message"]', role: 'user', id: el => el.closest('[id^="response-"]')?.id.slice(9) || null, body: '.response-content-markdown'},
+        // Live 2026-11-13: the question is a direct span; older turns still use the markdown body.
+        {selector: '[data-testid="user-message"]', role: 'user', id: el => el.closest('[id^="response-"]')?.id.slice(9) || null, body: ['.response-content-markdown', ':scope > span']},
         {selector: '[data-testid="assistant-message"]', role: 'assistant', id: el => el.closest('[id^="response-"]')?.id.slice(9) || null, body: '.response-content-markdown'}
       ],
       exclude: '.sr-only,.thinking-container,[data-testid="code-block"] > div > div:first-child',
@@ -129,20 +130,18 @@ globalThis.ChatTidyReaderSites = (() => {
       // Plane rows are absolutely positioned with translateY, so their DOM order is not the reading order.
       order: el => el.getBoundingClientRect().top,
       layout: {
-        // :root derives --content-breakout-max-width (content + 2 x 1.5rem gutter) from --content-max-width and resolves it there,
-        // so both are set again: on @container/chat in a chat, and on @container/mainview, the only wrapper on the new-chat page,
-        // whose composer (max-w-breakout) reads the root value and is also held at 4/5 of its row (@xl:w-4/5, on the breakout
-        // box or on the query bar's wrapper, both seen live), so it takes the full row and only the max-width limits it
-        // (checked live 2026-11-06).
-        width: '[class*="@container/mainview"],[class*="@container/chat"]{--content-max-width:{width}!important;--content-breakout-max-width:calc({width} + 3rem)!important}[class*="@container/mainview"] [class*="w-4/5"]:has(.query-bar){width:100%}',
-        // Message rows already pad a 24px gutter (px-gutter), so full uses the whole row instead of losing another 48px.
+        // Checked live 2026-11-13. The column max-width is calc(var(--grok-page-max-width) - 2*space-4 - 2*space-0.5)
+        // (800px page max, 764px column). Adding those spaces back makes {width} the column width. Grok also writes
+        // --grok-page-max-width inline on the app shell, so the rule targets that node too. The older
+        // --content-max-width rules stay for any breakout composer that still reads them.
+        width: ':root,[style*="--grok-page-max-width"]{--grok-page-max-width:calc({width} + 2*var(--grok-space-4, 16px) + 2*var(--grok-space-0-5, 2px))!important}[class*="@container/mainview"],[class*="@container/chat"]{--content-max-width:{width}!important;--content-breakout-max-width:calc({width} + 3rem)!important}[class*="@container/mainview"] [class*="w-4/5"]:has(.query-bar){width:100%}',
         widths: {full: '100%'},
-        // The native rail at the edge only collapses on click; the trigger button in the sidebar header still does that.
-        compactSidebar: '[class*="group/sidebar-wrapper"]{--sidebar-width:{sidebar}!important}',
-        sidebar: 'div.peer[data-side="left"][data-state="expanded"] [data-sidebar="sidebar"]',
+        // The open rail's width is the inline --x-width / --x-minWidth on #app-sidebar (width: var(--x-width)).
+        compactSidebar: '#app-sidebar{--x-width:{sidebar}!important;--x-minWidth:{sidebar}!important}',
+        sidebar: '#app-sidebar',
         clutter: '',
-        // The shadcn peer wrapper reserves the sidebar's width; hiding it lets the chat take the whole row.
-        focus: 'div.peer[data-side="left"][data-state],[data-sidebar="sidebar"],[data-sidebar="resize-handle"]{display:none!important}'
+        // Hiding the rail collapses its column; the chat section then takes the row (checked live 2026-11-13).
+        focus: '#app-sidebar{display:none!important}'
       }
     },
     gemini: {

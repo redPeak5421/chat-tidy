@@ -47,3 +47,38 @@ test('expanded history groups native and extra rows, opens native history once, 
  assert.equal(period(new Date(2025,11,31),now),'Week');assert.equal(period(new Date(2025,0,1),now),'Older');assert.equal(period('bad',now),null);
  }finally{w.close()}
 });
+test('button rows keep the conversation id, and show-all fills that list without the bots control',async()=>{
+ const dom=new JSDOM(`<aside id="app-sidebar"><div data-open><button aria-expanded="true">机器人</button><div><button id="bots-more">展开</button></div></div><div data-open><button aria-expanded="true">聊天</button><div class="cs-toolbar"><button class="cs-toggle">Manage</button></div><div id="list"><div class="native-row"><div class="wrap"><button id="one" class="native-link">One</button><span><button aria-haspopup="menu" aria-label="One 的操作"></button></span></div></div><button id="more">展开</button></div></div></aside>`,{url:'https://grok.com/',runScripts:'outside-only'}),w=dom.window;
+ try{
+  const one=w.document.querySelector('#one'),menu=w.document.querySelector('[aria-haspopup]');
+  const fiber={memoizedProps:{conversation:{conversationId:id('1'),title:'One'}},return:null};
+  one.__reactFiber$test={memoizedProps:{},return:fiber};menu.__reactFiber$test={memoizedProps:{},return:fiber};
+  const ago=n=>{const d=new Date();d.setDate(d.getDate()-n);return d.toISOString()};
+  w.fetch=async()=>({ok:true,json:async()=>({conversations:[{conversationId:id('1'),title:'One',modifyTime:ago(1)},{conversationId:id('2'),title:'<script>Two</script>',modifyTime:ago(3)}]})});
+  w.eval(fs.readFileSync('src/core.js','utf8'));w.eval(fs.readFileSync('src/grok.js','utf8'));
+  const manager=w.ChatTidyGrok.create({changed:()=>{},error:e=>assert.fail(e)});
+  assert.equal(manager.idOf(one),id('1'));assert.equal(manager.idOf(menu),null);assert.equal(manager.listOf(one),w.document.querySelector('#list'));
+  let opened=0;w.document.querySelector('#more').onclick=()=>opened++;w.document.querySelector('#bots-more').onclick=()=>opened+=10;
+  await manager.setEnabled(true);
+  const extra=w.document.querySelector('[data-cs-extra]'),link=extra.querySelector('a');
+  assert.equal(extra.querySelector('button'),null);assert.equal(link.getAttribute('href'),'/c/'+id('2'));assert.equal(link.classList.contains('native-link'),true);assert.equal(w.document.querySelector('script'),null);
+  assert.equal(w.document.querySelector('#more').classList.contains('cs-grok-view-all'),true);assert.equal(w.document.querySelector('#bots-more').classList.contains('cs-grok-view-all'),false);
+  w.document.querySelector('.cs-grok-open').click();assert.equal(opened,1);
+  assert.deepEqual([...w.document.querySelectorAll('#list .cs-grok-period')].map(n=>n.tagName+n.textContent),['DIVgrokPeriodYesterday','DIVgrokPeriodWeek']);
+  await manager.setEnabled(false);assert.equal(w.document.querySelectorAll('[data-cs-extra],.cs-grok-period,.cs-grok-open').length,0);assert.equal(w.document.querySelector('#more').classList.contains('cs-grok-view-all'),false);
+ }finally{w.close()}
+});
+test('content script selects only the conversation title button',async()=>{
+ const dom=new JSDOM(`<aside id="app-sidebar"><div data-open><button aria-expanded="true">机器人</button><button>Grok Bot</button></div><div data-open><button aria-expanded="true">聊天</button><div id="list"><div class="row"><div><button id="title">One</button><span><button aria-haspopup="menu" aria-label="One 的操作"></button></span></div></div><div class="row"><div><button id="same-a">Same</button></div></div><div class="row"><div><button id="same-b">Same</button></div></div><button id="more">展开</button></div></div></aside>`,{url:'https://grok.com/',runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window;
+ w.HTMLElement.prototype.getClientRects=function(){return this.hidden?[]:[{width:100,height:30,top:0,left:0,bottom:30,right:100}]};
+ w.chrome={storage:{local:{get:async()=>({language:'en',enabled:true})},onChanged:{addListener(){}}},runtime:{id:'test',onMessage:{addListener(){},removeListener(){}},sendMessage:async()=>({})}};
+ w.fetch=async()=>({ok:true,json:async()=>({conversations:[{conversationId:id('1'),title:'One'},{conversationId:id('2'),title:'Same'},{conversationId:id('3'),title:'Same'}]})});
+ try{
+  for(const file of ['core','i18n','grok','content'])w.eval(fs.readFileSync('src/'+file+'.js','utf8'));
+  await new Promise(resolve=>setTimeout(resolve,400));
+  const title=w.document.querySelector('#title');
+  assert.equal(w.document.querySelectorAll('.cs-checkbox').length,1);
+  assert.equal(w.document.querySelector('.cs-checkbox').parentElement,title);
+  assert.equal(w.document.querySelector('#same-a .cs-checkbox'),null);
+ }finally{w.close()}
+});
